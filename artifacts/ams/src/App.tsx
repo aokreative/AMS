@@ -30,6 +30,7 @@ import Reports from '@/pages/reports';
 import Settings from '@/pages/settings';
 import ForgotPassword from '@/pages/forgot-password';
 import ResetPassword from '@/pages/reset-password';
+import Legal from '@/pages/legal';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ component: Component }: { component: React.ComponentType }) => {
@@ -69,6 +70,8 @@ function Router() {
       <Route path="/join" component={Join} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/privacy" component={() => <Legal kind="privacy" />} />
+      <Route path="/terms" component={() => <Legal kind="terms" />} />
       
       <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/clients" component={() => <ProtectedRoute component={Clients} />} />

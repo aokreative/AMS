@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { BrandLockup } from '@/components/BrandLockup';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { TermsConsent, TERMS_REQUIRED_MESSAGE } from '@/components/TermsConsent';
 
 export default function Register() {
   const [agencyName, setAgencyName] = useState('');
@@ -16,11 +17,16 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [agreed, setAgreed] = useState(false);
   const { refreshProfile } = useAuth();
   const [, setLocation] = useLocation();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!agreed) {
+      setError(TERMS_REQUIRED_MESSAGE);
+      return;
+    }
     setLoading(true);
     setError(null);
 
@@ -78,6 +84,7 @@ export default function Register() {
         p_agency_name: agencyName,
         p_owner_name: ownerName,
         p_owner_phone: null,
+        p_terms_accepted: true,
       });
 
       if (rpcError) {
@@ -87,9 +94,9 @@ export default function Register() {
         throw new Error(rpcError.message);
       }
 
-      // Step 4: Load profile into context and navigate to dashboard
+      // Step 4: Load profile, then pick a plan (a new agency is read-only until it pays)
       await refreshProfile();
-      setLocation('/dashboard');
+      setLocation('/settings/billing?welcome=1');
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
@@ -175,6 +182,8 @@ export default function Register() {
                   autoComplete="new-password"
                 />
               </div>
+
+              <TermsConsent checked={agreed} onChange={(v) => { setAgreed(v); setError(null); }} disabled={loading} />
             </CardContent>
 
             <CardFooter className="flex flex-col space-y-3 pt-4">

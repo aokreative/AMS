@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { BrandLockup } from '@/components/BrandLockup';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { TermsConsent, TERMS_REQUIRED_MESSAGE } from '@/components/TermsConsent';
 
 interface InvitePreview {
   agency_name: string;
@@ -58,6 +59,7 @@ export default function Join() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [agreed, setAgreed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -88,6 +90,7 @@ export default function Join() {
     const { error: rpcError } = await supabase.rpc('accept_invite', {
       p_code: code,
       p_full_name: fullName.trim(),
+      p_terms_accepted: true,
     });
     if (rpcError) throw new Error(rpcError.message);
     await refreshProfile();
@@ -98,6 +101,10 @@ export default function Join() {
   const handleAcceptSignedIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
+    if (!agreed) {
+      setError(TERMS_REQUIRED_MESSAGE);
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -117,6 +124,10 @@ export default function Join() {
 
     if (!fullName.trim()) {
       setError('Enter your full name');
+      return;
+    }
+    if (!agreed) {
+      setError(TERMS_REQUIRED_MESSAGE);
       return;
     }
     if (mode === 'signup' && password.length < 8) {
@@ -267,6 +278,7 @@ export default function Join() {
                 autoComplete="name"
               />
             </div>
+            <TermsConsent checked={agreed} onChange={(v) => { setAgreed(v); setError(null); }} disabled={submitting} />
           </CardContent>
           <CardFooter className="pt-4">
             <Button type="submit" className="w-full" disabled={submitting}>
@@ -320,6 +332,8 @@ export default function Join() {
               autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
             />
           </div>
+
+          <TermsConsent checked={agreed} onChange={(v) => { setAgreed(v); setError(null); }} disabled={submitting} />
         </CardContent>
 
         <CardFooter className="flex flex-col space-y-3 pt-4">
