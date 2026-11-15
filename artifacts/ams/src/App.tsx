@@ -31,6 +31,7 @@ import Settings from '@/pages/settings';
 import ForgotPassword from '@/pages/forgot-password';
 import ResetPassword from '@/pages/reset-password';
 import Legal from '@/pages/legal';
+import BillingReturn from '@/pages/billing-return';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ component: Component }: { component: React.ComponentType }) => {
@@ -89,6 +90,8 @@ function Router() {
       <Route path="/insurers" component={() => <ProtectedRoute component={Insurers} />} />
       <Route path="/product-lines" component={() => <ProtectedRoute component={ProductLines} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
+      <Route path="/settings/billing" component={() => <ProtectedRoute component={() => <Settings tab="billing" />} />} />
+      <Route path="/billing/return" component={() => <ProtectedRoute component={BillingReturn} />} />
       
       <Route component={NotFound} />
     </Switch>
