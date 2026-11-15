@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { ALLOWED_MONTHS, paymentAmountKes, verifySignature, type Tier } from './billing';
+import { ALLOWED_MONTHS, paymentAmountKes, verifyOutcome, verifySignature, type Tier } from './billing';
 
 const TIERS: Tier[] = [
   { key: 'starter', name: 'Starter', price_kes: 3500, max_members: 3, max_active_policies: 300, sort_order: 1 },
@@ -40,6 +40,18 @@ describe('paymentAmountKes', () => {
   });
   it('unknown tier', () => {
     expect(() => paymentAmountKes(TIERS, 'starter', 'gold', 1, null, TODAY)).toThrow('Pick a plan');
+  });
+});
+
+describe('verifyOutcome', () => {
+  it('only success applies and only failed fails', () => {
+    expect(verifyOutcome('success')).toBe('apply');
+    expect(verifyOutcome('failed')).toBe('fail');
+  });
+  it('abandoned, ongoing and pending can still complete (M-Pesa prompt not yet answered)', () => {
+    for (const s of ['abandoned', 'ongoing', 'pending', 'processing', 'queued', undefined]) {
+      expect(verifyOutcome(s)).toBe('wait');
+    }
   });
 });
 

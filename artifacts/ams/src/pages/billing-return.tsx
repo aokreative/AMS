@@ -34,14 +34,18 @@ export default function BillingReturn() {
     icon = <CheckCircle2 className="h-8 w-8 text-emerald-600" />;
     title = 'Payment received';
     body = d.paid_until ? `${tierName(d.tier)} plan, active until ${format(parseISO(d.paid_until), 'd MMM yyyy')}.` : 'Your plan has been upgraded.';
+  } else if (d?.status === 'needs_review') {
+    icon = <Clock className="h-8 w-8 text-amber-600" />;
+    title = 'Payment received, held for review';
+    body = 'Your plan changed while this payment was open, so we will apply or refund it by hand. Contact support with the reference below.';
   } else if (d?.status === 'failed') {
     icon = <XCircle className="h-8 w-8 text-destructive" />;
     title = 'Payment not completed';
-    body = 'Nothing was charged. You can try again from Billing.';
+    body = 'Paystack reported this payment as failed. If money left your account, contact support with the reference below.';
   } else if (d) {
     icon = <Clock className="h-8 w-8 text-amber-600" />;
     title = "We haven't seen the payment yet";
-    body = 'M-Pesa confirmations can take a minute. Check again shortly.';
+    body = 'If you still need to approve the M-Pesa prompt on your phone, do that now. Confirmations can take a minute.';
   }
 
   return (
@@ -51,6 +55,7 @@ export default function BillingReturn() {
           {icon}
           <CardTitle className="mt-2">{title}</CardTitle>
           <CardDescription>{body}</CardDescription>
+          {reference && <p className="mt-2 text-xs text-muted-foreground">Reference: {reference}</p>}
         </CardHeader>
         <CardContent />
         <CardFooter className="flex flex-col gap-2">

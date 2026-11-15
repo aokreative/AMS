@@ -61,6 +61,17 @@ export async function verifySignature(rawBody: string, signature: string | null,
   return diff === 0;
 }
 
+/**
+ * What to do with a Paystack transaction status on verify. Only 'success'
+ * applies and only 'failed' fails; 'abandoned' / 'ongoing' / 'pending' can
+ * still complete (an unanswered M-Pesa prompt), so keep waiting.
+ */
+export function verifyOutcome(status: string | null | undefined): 'apply' | 'fail' | 'wait' {
+  if (status === 'success') return 'apply';
+  if (status === 'failed') return 'fail';
+  return 'wait';
+}
+
 /** Today's date in Nairobi as 'yyyy-MM-dd'. */
 export function todayNairobi(now: Date = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Nairobi' }).format(now);

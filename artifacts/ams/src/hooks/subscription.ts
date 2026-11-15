@@ -74,7 +74,7 @@ export function useVerifyPayment() {
     mutationFn: async (reference: string) => {
       const { data, error } = await supabase.functions.invoke('paystack-verify', { body: { reference } });
       if (error) throw await functionError(error);
-      return data as { status: 'paid' | 'pending' | 'failed'; paid_until: string | null; tier: string | null };
+      return data as { status: 'paid' | 'pending' | 'failed' | 'needs_review'; paid_until: string | null; tier: string | null };
     },
     onSuccess: async (d) => {
       if (d.status === 'paid') {

@@ -1,5 +1,6 @@
 // POST {reference} with the Owner's JWT → {status, paid_until, tier}
 // Called by the return page so the Owner sees the result even if the webhook is late.
+import { verifyOutcome } from '../_shared/billing.ts';
 import { cors, json, paystack, requireOwner, serviceClient } from '../_shared/http.ts';
 
 Deno.serve(async (req) => {
@@ -24,9 +25,10 @@ Deno.serve(async (req) => {
     try {
       const res = await paystack(`/transaction/verify/${encodeURIComponent(reference)}`);
       const d = res.data;
-      if (d?.status === 'success' && Number(d.amount) === pay.amount_kes * 100 && d.currency === 'KES') {
+      const outcome = verifyOutcome(d?.status);
+      if (outcome === 'apply' && Number(d.amount) === pay.amount_kes * 100 && d.currency === 'KES') {
         await svc.rpc('apply_subscription_payment', { p_reference: reference, p_channel: d.channel ?? null, p_raw: d });
-      } else if (d?.status === 'failed' || d?.status === 'abandoned') {
+      } else if (outcome === 'fail') {
         await svc.from('subscription_payments').update({ status: 'failed' }).eq('id', pay.id).eq('status', 'pending');
       }
     } catch (e) {

@@ -103,7 +103,7 @@ export function BillingTab({ welcome }: { welcome?: boolean }) {
                     <TableCell className="text-right whitespace-nowrap">{formatKes(p.amount_kes)}</TableCell>
                     <TableCell className="capitalize">{p.channel === 'mobile_money' ? 'M-Pesa' : p.channel ?? '—'}</TableCell>
                     <TableCell>
-                      <Badge variant={p.status === 'paid' ? 'secondary' : p.status === 'failed' ? 'destructive' : 'outline'} className="capitalize">{p.status}</Badge>
+                      <Badge variant={p.status === 'paid' ? 'secondary' : p.status === 'failed' ? 'destructive' : 'outline'} className="capitalize">{p.status === 'needs_review' ? 'Held for review' : p.status}</Badge>
                     </TableCell>
                   </TableRow>
                 ))}

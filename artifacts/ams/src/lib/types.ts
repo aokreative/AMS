@@ -31,7 +31,7 @@ export interface SubscriptionPayment {
   amount_kes: number;
   paystack_reference: string;
   channel: string | null;
-  status: 'pending' | 'paid' | 'failed';
+  status: 'pending' | 'paid' | 'failed' | 'needs_review';
   paid_until_before: string | null;
   paid_until_after: string | null;
   created_at: string;
