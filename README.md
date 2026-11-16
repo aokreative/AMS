@@ -57,6 +57,7 @@ Three fixed roles, enforced by Postgres RLS and role-checked RPCs. An Agent call
 | Policies | All, full edit | All, full edit | Only their own; no delete |
 | Commissions | All; mark received | All; mark received | Read only, on own policies |
 | Renewal pipeline | Any policy; reopen lost | Any policy; reopen lost | Own policies, when the agency allows it |
+| Billing (plan, payments) | Yes | No | No |
 | Reports & company totals | Read, generate | Read, generate | None |
 | Insurers, product lines | Edit | Edit | Read |
 | Team list | All members | All members | Own row only |
@@ -72,7 +73,7 @@ Demo logins exist for the demo agency: `demo@ams.co.ke` (Owner), `manager@ams.co
 
 ## Database
 
-Supabase project: **ERP Demo** (`frzjhknbocuaduuduxkk`). Migrations 001–014 are applied
+Supabase project: **ERP Demo** (`frzjhknbocuaduuduxkk`). Migrations 001–015 are applied
 (`006a` is its own file and must be run after 006; `007a` and `008a` were live follow-ups folded into `007` and `008`; `009a`, `010a` and `010b` were live follow-ups folded into `009` and `010`).
 New migrations go in `supabase/migrations/` and should be applied in order.
 
@@ -94,10 +95,11 @@ New migrations go in `supabase/migrations/` and should be applied in order.
 | 013 | Agent commission & payouts: rates, earnings ledger, payouts |
 | 013a | Payout follow-ups: expected-total guard on create_agent_payout, reversal/adjustment dating (Africa/Nairobi), rates for removed members, remove_member clears rates |
 | 014 | Renewal pipeline: stages, history, renew_policy, agents switch, policy numbers unique only among active terms, placeholder reminders retired, renewal figures in the monthly report |
+| 015 | Subscriptions: tiers, paid-until / comp dates, read-only trigger on every agency table, member and policy limits, Paystack payment RPCs, consent recorded at sign-up and join, daily reminder cron job (off until set up) |
 
 ### Running the database tests
 
-`supabase/tests/` holds one script per feature (`006` to `014`: team access, invites, team management, reconciliation schema, reconciliation RPCs, opening balances, reconciliation follow-ups, agent payouts, payout follow-ups, renewal pipeline). Paste each file into the Supabase SQL editor, or run it through the Supabase MCP `execute_sql`. Each runs inside a transaction that is always rolled back (nothing is saved) and prints `ALL PASSED`; a failed assertion aborts the batch with the reason.
+`supabase/tests/` holds one script per feature (`006` to `015`: team access, invites, team management, reconciliation schema, reconciliation RPCs, opening balances, reconciliation follow-ups, agent payouts, payout follow-ups, renewal pipeline, subscriptions). Test fixtures comp their agencies so the subscription trigger doesn't block them. Paste each file into the Supabase SQL editor, or run it through the Supabase MCP `execute_sql`. Each runs inside a transaction that is always rolled back (nothing is saved) and prints `ALL PASSED`; a failed assertion aborts the batch with the reason.
 
 ## Receipts & reconciliation
 
@@ -131,6 +133,22 @@ Every active policy expiring within 90 days (or already expired) is in the pipel
 - The old auto-scheduled 90/60/30-day placeholder reminders were never sent, so migration 014 removed them; manually logged reminders were copied into the renewal history. Automatic WhatsApp/email reminders belong to the automated-reports phase.
 - Full design: `docs/superpowers/specs/2026-11-11-renewal-pipeline-design.md`.
 
+## Subscriptions
+
+| Plan | KES / month | Team members | Active policies |
+|---|---|---|---|
+| Starter | 3,500 | 3 | 300 |
+| Growth | 7,000 | 10 | unlimited |
+| Enterprise | 15,000 | 25 | unlimited |
+| Enterprise Plus | 30,000 | unlimited | unlimited |
+
+- No free trial. A new agency is read-only until the Owner pays (Settings → Billing, or the sign-up redirect).
+- Pay-to-renew: the Owner pays 1, 3, 6 or 12 months through Paystack (M-Pesa or card); time adds on to the current paid period. Upgrading mid-period charges the pro-rated difference for the days left, optionally plus more months.
+- 3 days of grace after `paid_until`, then **read-only**: everyone can sign in and view/export, but every write is refused by a database trigger. Agency settings stay editable. Never a lock-out.
+- Limits are enforced in the database: invites count pending invites; adding or re-activating a policy counts active/pending policies; renewing a term doesn't add one.
+- Comp an agency (partner, pilot): `update agencies set complimentary_until = '2027-06-30' where id = '…';` Comped agencies have no limits. The demo agency is comped to 2099.
+- Paystack and the reminder emails run as Supabase Edge Functions; see `supabase/functions/README.md` for secrets and setup, and `docs/LAUNCH.md` for the go-live checklist.
+
 ## Deploying (Vercel)
 
 Project `insurance-management-system-ams`, root directory `artifacts/ams`. Pushing to `main` deploys.
@@ -147,6 +165,7 @@ Required env vars: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
 - ✅ Statement reconciliation: insurer receipts, statement lines, applied/unapplied money, part-paid commissions
 - ✅ Agent commission & payouts: agent rates, earnings ledger, payouts, statements, My earnings
 - ✅ Renewal pipeline: contacted → quoted → renewed/lost, one-step renew, lost reasons, renewal rate
+- ✅ Subscriptions & launch: Paystack plans, read-only on lapse, plan limits, privacy notice and terms with consent
 - 🔲 Phase 6: Polish (mobile-first, onboarding flow)
 
 ## Gotchas

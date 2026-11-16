@@ -2,7 +2,7 @@
 // AMS Database Types — matches supabase/migrations/001_initial_schema.sql
 // ============================================================
 
-export type AgencySubscriptionTier = 'starter' | 'pro' | 'enterprise';
+export type AgencySubscriptionTier = 'starter' | 'growth' | 'enterprise' | 'enterprise_plus';
 
 export interface Agency {
   id: string;
@@ -15,7 +15,33 @@ export interface Agency {
   subscription_tier: AgencySubscriptionTier;
   /** Agents may update renewals of their own policies (Owner toggles). */
   agents_manage_renewals: boolean;
+  /** Last paid day (inclusive); null until the first payment. */
+  paid_until: string | null;
+  /** Comped through this day (no payment, no limits); null when not comped. */
+  complimentary_until: string | null;
+  terms_accepted_at: string | null;
   created_at: string;
+}
+
+export interface SubscriptionPayment {
+  id: string;
+  agency_id: string;
+  tier: AgencySubscriptionTier;
+  months: number;
+  amount_kes: number;
+  paystack_reference: string;
+  channel: string | null;
+  status: 'pending' | 'paid' | 'failed' | 'needs_review';
+  paid_until_before: string | null;
+  paid_until_after: string | null;
+  created_at: string;
+  paid_at: string | null;
+}
+
+export interface SubscriptionUsage {
+  members: number;
+  pending_invites: number;
+  active_policies: number;
 }
 
 export type RenewalStage = 'to_contact' | 'contacted' | 'quoted' | 'renewed' | 'lost';

@@ -29,6 +29,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { BrandMark } from '@/components/BrandLockup';
+import { SubscriptionBanner } from '@/components/SubscriptionBanner';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { agency, profile, signOut, session, isOwnerOrManager } = useAuth();
@@ -208,6 +209,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Page Content */}
         <main className="flex-1 overflow-auto print:overflow-visible bg-background/50">
+          <SubscriptionBanner />
           <div className="container mx-auto p-4 md:p-6 max-w-7xl">
             {children}
           </div>

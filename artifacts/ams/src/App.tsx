@@ -30,6 +30,8 @@ import Reports from '@/pages/reports';
 import Settings from '@/pages/settings';
 import ForgotPassword from '@/pages/forgot-password';
 import ResetPassword from '@/pages/reset-password';
+import Legal from '@/pages/legal';
+import BillingReturn from '@/pages/billing-return';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ component: Component }: { component: React.ComponentType }) => {
@@ -69,6 +71,8 @@ function Router() {
       <Route path="/join" component={Join} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/privacy" component={() => <Legal kind="privacy" />} />
+      <Route path="/terms" component={() => <Legal kind="terms" />} />
       
       <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/clients" component={() => <ProtectedRoute component={Clients} />} />
@@ -86,6 +90,8 @@ function Router() {
       <Route path="/insurers" component={() => <ProtectedRoute component={Insurers} />} />
       <Route path="/product-lines" component={() => <ProtectedRoute component={ProductLines} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
+      <Route path="/settings/billing" component={() => <ProtectedRoute component={() => <Settings tab="billing" />} />} />
+      <Route path="/billing/return" component={() => <ProtectedRoute component={BillingReturn} />} />
       
       <Route component={NotFound} />
     </Switch>

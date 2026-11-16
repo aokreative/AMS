@@ -19,9 +19,11 @@ import { Switch } from '@/components/ui/switch';
 import { useSetAgentsManageRenewals } from '@/hooks/renewals';
 import { usePendingInvites, useRevokeInvite, useChangeMemberRole, useClientCountsByAgent } from '@/hooks/team';
 import { useForm } from 'react-hook-form';
+import { BillingTab } from '@/components/billing/BillingTab';
+import { tierName } from '@/lib/subscription';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
-export default function Settings() {
+export default function Settings({ tab }: { tab?: string } = {}) {
   const { agency, profile, session, isOwner, isOwnerOrManager } = useAuth();
   const updateAgency = useUpdateAgency();
   const { data: users, isLoading: usersLoading } = useAgencyUsers();
@@ -62,11 +64,12 @@ export default function Settings() {
         <p className="text-muted-foreground">Manage your workspace configuration and team.</p>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-6">
+      <Tabs defaultValue={tab === 'billing' && isOwner ? 'billing' : 'profile'} className="space-y-6">
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="agency">Agency</TabsTrigger>
           {isOwnerOrManager && <TabsTrigger value="team">Team</TabsTrigger>}
+          {isOwner && <TabsTrigger value="billing">Billing</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="profile" className="space-y-4 max-w-md">
@@ -79,7 +82,7 @@ export default function Settings() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{agency?.name}</div>
-              <Badge variant="outline" className="mt-2 capitalize bg-background">{agency?.subscription_tier} Plan</Badge>
+              <Badge variant="outline" className="mt-2 capitalize bg-background">{tierName(agency?.subscription_tier)} Plan</Badge>
             </CardContent>
           </Card>
 
@@ -339,6 +342,11 @@ export default function Settings() {
             <InviteMemberDialog open={inviteOpen} onOpenChange={setInviteOpen} />
             <AgentRatesDialog member={ratesFor} canEdit={isOwner} onOpenChange={(o) => { if (!o) setRatesFor(null); }} />
             <RemoveMemberDialog member={removing} onOpenChange={(o) => { if (!o) setRemoving(null); }} />
+          </TabsContent>
+        )}
+        {isOwner && (
+          <TabsContent value="billing">
+            <BillingTab welcome={new URLSearchParams(window.location.search).has('welcome')} />
           </TabsContent>
         )}
       </Tabs>

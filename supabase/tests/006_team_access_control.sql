@@ -48,6 +48,7 @@ BEGIN
     (a2, 'a2-006@test.local', 'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000');
 
   INSERT INTO agencies (id, name) VALUES (ag, 'Test Agency 006');
+  UPDATE agencies SET complimentary_until = DATE '2099-12-31' WHERE created_at = now();   -- test agencies are comped (015)
 
   INSERT INTO users (id, agency_id, role, full_name, email) VALUES
     (o,  ag, 'owner',   'Owner 006',   'o-006@test.local'),

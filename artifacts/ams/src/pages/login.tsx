@@ -122,6 +122,11 @@ export default function Login() {
             </CardFooter>
           </form>
         </Card>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          <a href="/privacy" className="hover:underline">Privacy Notice</a>
+          <span className="mx-2">·</span>
+          <a href="/terms" className="hover:underline">Terms of Service</a>
+        </p>
       </div>
     </div>
   );
