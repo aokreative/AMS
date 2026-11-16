@@ -243,12 +243,12 @@ export default function Settings({ tab }: { tab?: string } = {}) {
                                 <Button variant="outline" size="sm" onClick={() => setRatesFor({ id: user.id, full_name: user.full_name })}>
                                   Rates
                                 </Button>
-                                {isOwner && user.role !== 'owner' && (
+                                {isOwner && user.id !== session?.id && (
                                   <>
                                     <Select
                                       value={user.role}
                                       onValueChange={(role) => changeRole.mutate(
-                                        { userId: user.id, role: role as 'manager' | 'agent' },
+                                        { userId: user.id, role: role as 'owner' | 'manager' | 'agent' },
                                         {
                                           onSuccess: () => toast({ title: 'Role updated' }),
                                           onError: (err: any) => toast({ title: 'Could not change role', description: err.message, variant: 'destructive' }),
@@ -257,6 +257,7 @@ export default function Settings({ tab }: { tab?: string } = {}) {
                                     >
                                       <SelectTrigger className="w-28 h-8"><SelectValue /></SelectTrigger>
                                       <SelectContent>
+                                        <SelectItem value="owner">Owner</SelectItem>
                                         <SelectItem value="manager">Manager</SelectItem>
                                         <SelectItem value="agent">Agent</SelectItem>
                                       </SelectContent>

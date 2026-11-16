@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { agencyAccess, daysLeft, formatKes, TIERS } from './subscription';
+import { agencyAccess, daysLeft, formatKes, OWNERS, TIERS } from './subscription';
 
 const today = '2026-11-15';
 const ag = (paid_until: string | null, complimentary_until: string | null = null) => ({ paid_until, complimentary_until });
@@ -12,6 +12,12 @@ describe('TIERS mirrors subscription_tiers', () => {
       ['enterprise', 'Enterprise', 15000, 25, null],
       ['enterprise_plus', 'Enterprise Plus', 30000, null, null],
     ]);
+  });
+});
+
+describe('OWNERS mirrors max_owners', () => {
+  it('1 / 2 / 3 / unlimited', () => {
+    expect(TIERS.map((t) => OWNERS[t.key])).toEqual([1, 2, 3, null]);
   });
 });
 

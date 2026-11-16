@@ -12,6 +12,22 @@ Everything in the code is done; these steps need your accounts and keys. Work to
 - [ ] **Attack Protection:** turn on leaked password protection.
 - [ ] **Emails → SMTP:** connect your email provider (e.g. Resend: host `smtp.resend.com`, port `465`, user `resend`, password = API key, sender on a verified domain).
 
+## 2b. Email code at sign-up (required: sign-up waits for it)
+
+Sign-up asks for a 6-digit code from the confirmation email. Supabase's default email sends a link, not a code, so:
+
+- [ ] Supabase → Authentication → Emails → **Confirm signup** template: replace the body with
+
+  ```html
+  <h2>Confirm your AMS account</h2>
+  <p>Your code is:</p>
+  <p style="font-size:28px;font-weight:bold;letter-spacing:6px">{{ .Token }}</p>
+  <p>It expires in 1 hour. If you didn't sign up, ignore this email.</p>
+  ```
+
+  and save. Keep **Confirm email** switched on (Authentication → Sign In / Providers → Email).
+- [ ] Until custom SMTP is connected, Supabase's built-in sender only manages a few emails an hour; test sign-ups may wait.
+
 ## 3. Paystack
 
 - [ ] Kenyan business account with **M-Pesa** enabled for KES.

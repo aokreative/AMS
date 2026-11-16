@@ -4,6 +4,8 @@ import { queryClient } from '@/lib/queryClient';
 import type { Agency, AgencyUser } from '@/lib/types';
 import { useLocation } from 'wouter';
 import { isPublicAuthPath } from '@/lib/auth';
+import { setCurrency } from '@/lib/money';
+import { setLanguage } from '@/i18n';
 
 interface AuthContextType {
   session: { id: string; email: string } | null;
@@ -159,6 +161,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
     setLocation('/login');
   };
+
+  // Show amounts in the agency's currency, and use the person's chosen language.
+  useEffect(() => {
+    setCurrency(agency?.currency);
+  }, [agency?.currency]);
+  useEffect(() => {
+    if (profile?.language) setLanguage(profile.language);
+  }, [profile?.language]);
 
   const isOwner = profile?.role === 'owner';
   const isOwnerOrManager = profile?.role === 'owner' || profile?.role === 'manager';

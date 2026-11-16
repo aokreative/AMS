@@ -19,7 +19,7 @@ export function InviteMemberDialog({ open, onOpenChange }: Props) {
   const { toast } = useToast();
   const createInvite = useCreateInvite();
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'manager' | 'agent'>('agent');
+  const [role, setRole] = useState<'owner' | 'manager' | 'agent'>('agent');
   const [result, setResult] = useState<InviteResult | null>(null);
 
   const handleOpenChange = (next: boolean) => {
@@ -96,9 +96,10 @@ export function InviteMemberDialog({ open, onOpenChange }: Props) {
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select value={isOwner ? role : 'agent'} onValueChange={(v) => setRole(v as 'manager' | 'agent')} disabled={!isOwner}>
+              <Select value={isOwner ? role : 'agent'} onValueChange={(v) => setRole(v as 'owner' | 'manager' | 'agent')} disabled={!isOwner}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
+                  {isOwner && <SelectItem value="owner">Owner</SelectItem>}
                   {isOwner && <SelectItem value="manager">Manager</SelectItem>}
                   <SelectItem value="agent">Agent</SelectItem>
                 </SelectContent>

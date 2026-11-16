@@ -58,6 +58,7 @@ Three fixed roles, enforced by Postgres RLS and role-checked RPCs. An Agent call
 | Commissions | All; mark received | All; mark received | Read only, on own policies |
 | Renewal pipeline | Any policy; reopen lost | Any policy; reopen lost | Own policies, when the agency allows it |
 | Billing (plan, payments) | Yes | No | No |
+| Invite / promote Owners | Yes (within plan) | No | No |
 | Reports & company totals | Read, generate | Read, generate | None |
 | Insurers, product lines | Edit | Edit | Read |
 | Team list | All members | All members | Own row only |
@@ -73,7 +74,7 @@ Demo logins exist for the demo agency: `demo@ams.co.ke` (Owner), `manager@ams.co
 
 ## Database
 
-Supabase project: **ERP Demo** (`frzjhknbocuaduuduxkk`). Migrations 001–015 are applied
+Supabase project: **ERP Demo** (`frzjhknbocuaduuduxkk`). Migrations 001–016 are applied
 (`006a` is its own file and must be run after 006; `007a` and `008a` were live follow-ups folded into `007` and `008`; `009a`, `010a` and `010b` were live follow-ups folded into `009` and `010`).
 New migrations go in `supabase/migrations/` and should be applied in order.
 
@@ -96,6 +97,8 @@ New migrations go in `supabase/migrations/` and should be applied in order.
 | 013a | Payout follow-ups: expected-total guard on create_agent_payout, reversal/adjustment dating (Africa/Nairobi), rates for removed members, remove_member clears rates |
 | 014 | Renewal pipeline: stages, history, renew_policy, agents switch, policy numbers unique only among active terms, placeholder reminders retired, renewal figures in the monthly report |
 | 015 | Subscriptions: tiers, paid-until / comp dates, read-only trigger on every agency table, member and policy limits, Paystack payment RPCs, consent recorded at sign-up and join, daily reminder cron job (off until set up) |
+| 015a | Subscription review fixes: billing columns locked, stale payments held for review, lapsed agencies can reduce usage |
+| 016 | Onboarding: agency currency and language, setup_completed_at, user language, owners per plan, multiple owners |
 
 ### Running the database tests
 
@@ -148,6 +151,13 @@ Every active policy expiring within 90 days (or already expired) is in the pipel
 - Limits are enforced in the database: invites count pending invites; adding or re-activating a policy counts active/pending policies; renewing a term doesn't add one.
 - Comp an agency (partner, pilot): `update agencies set complimentary_until = '2027-06-30' where id = '…';` Comped agencies have no limits. The demo agency is comped to 2099.
 - Paystack and the reminder emails run as Supabase Edge Functions; see `supabase/functions/README.md` for secrets and setup, and `docs/LAUNCH.md` for the go-live checklist.
+
+## Sign-up, setup, languages and currencies
+
+- **Sign-up:** details → 6-digit email code (Supabase "Confirm signup" template must contain `{{ .Token }}`; see `docs/LAUNCH.md`) → agency created → **setup wizard** at `/onboarding`: language → currency → plan (pay with Paystack or "pay later", read-only). Owners of an agency whose setup isn't finished are sent back to the wizard. Signing in with an unconfirmed email asks for a code too.
+- **Currencies:** each agency works in KES, TZS, UGX or USD (`agencies.currency`, chosen once in setup). Every amount in the app shows in it (`formatCurrency` → `lib/money.ts`). Plans are still billed in KES.
+- **Languages:** English, Kiswahili, French, Portuguese, Spanish, Arabic (right-to-left). Per person (`users.language`, switcher in the sidebar and on sign-in pages). Translations live in `artifacts/ams/src/i18n/locales/*.json`; a test checks every language has every key. Sign-in, sign-up, code, setup, menus, plans and the banner are translated; other pages fall back to English for now.
+- **Owners per plan:** Starter 1, Growth 2, Enterprise 3, Enterprise Plus unlimited. Owners can invite an Owner or promote a member; the last Owner can't be demoted, and nobody can remove themselves. Reminder emails go to every Owner.
 
 ## Deploying (Vercel)
 

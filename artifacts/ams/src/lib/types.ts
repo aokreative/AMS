@@ -20,6 +20,12 @@ export interface Agency {
   /** Comped through this day (no payment, no limits); null when not comped. */
   complimentary_until: string | null;
   terms_accepted_at: string | null;
+  /** Working currency for every amount shown in the app. */
+  currency: 'KES' | 'TZS' | 'UGX' | 'USD';
+  /** Default interface language for new members. */
+  language: string;
+  /** Set when the Owner finishes the setup wizard; null sends Owners to /onboarding. */
+  setup_completed_at: string | null;
   created_at: string;
 }
 
@@ -109,6 +115,8 @@ export interface AgencyUser {
   phone?: string | null;
   email?: string | null;
   deactivated_at: string | null;
+  /** Interface language chosen by this person (null: agency default). */
+  language?: string | null;
   created_at: string;
 }
 
@@ -116,7 +124,7 @@ export interface AgencyInvite {
   id: string;
   agency_id: string;
   email: string;
-  role: 'manager' | 'agent';
+  role: UserRole;
   invited_by: string;
   created_at: string;
   expires_at: string;

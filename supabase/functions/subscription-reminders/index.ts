@@ -35,16 +35,16 @@ Deno.serve(async (req) => {
   let sent = 0;
   for (const a of agencies ?? []) {
     if (a.complimentary_until && a.complimentary_until >= today) continue;
-    const { data: owner } = await svc
+    const { data: owners } = await svc
       .from('users')
       .select('email, full_name')
       .eq('agency_id', a.id)
       .eq('role', 'owner')
-      .is('deactivated_at', null)
-      .maybeSingle();
-    if (!owner?.email) continue;
+      .is('deactivated_at', null);
 
     const subject = plan[a.paid_until];
+    for (const owner of owners ?? []) {
+    if (!owner.email) continue;
     const text =
       `Hi ${owner.full_name ?? ''},\n\n` +
       (subject.includes('read-only')
@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
     });
     if (res.ok) sent++;
     else console.error('reminder failed', a.id, res.status, await res.text());
+    }
   }
   return json({ sent });
 });

@@ -7,6 +7,10 @@ import { Label } from '@/components/ui/label';
 import { BrandLockup } from '@/components/BrandLockup';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { isEmailNotConfirmed } from '@/lib/auth';
+import { VerifyEmailCode } from '@/components/VerifyEmailCode';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -14,6 +18,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [, setLocation] = useLocation();
+  const { t } = useTranslation();
+  const [needsCode, setNeedsCode] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,10 +35,10 @@ export default function Login() {
             signInError.message.toLowerCase().includes('invalid credentials')) {
           throw new Error('Incorrect email or password. Double-check and try again.');
         }
-        if (signInError.message.toLowerCase().includes('email not confirmed')) {
-          throw new Error(
-            'Your email has not been confirmed. Go to your Supabase dashboard → Authentication → Email settings and disable "Confirm email", then try again.'
-          );
+        if (isEmailNotConfirmed(signInError.message)) {
+          // Not confirmed yet: send a fresh code and ask for it here.
+          setNeedsCode(true);
+          return;
         }
         if (signInError.message.toLowerCase().includes('fetch') ||
             signInError.message.toLowerCase().includes('network') ||
@@ -60,10 +66,18 @@ export default function Login() {
         </div>
 
         <Card className="border-border/50 shadow-xl">
+          {needsCode ? (
+            <VerifyEmailCode
+              email={email.trim()}
+              sendOnMount
+              onVerified={() => setLocation('/dashboard')}
+              onChangeEmail={() => setNeedsCode(false)}
+            />
+          ) : (<>
           <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-2xl font-bold tracking-tight text-center">Welcome back</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight text-center">{t('auth.signInTitle')}</CardTitle>
             <CardDescription className="text-center">
-              Enter your credentials to access your agency cockpit
+              {t('auth.signInSubtitle')}
             </CardDescription>
           </CardHeader>
 
@@ -77,7 +91,7 @@ export default function Login() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="email">{t('common.email')}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -91,9 +105,9 @@ export default function Login() {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{t('common.password')}</Label>
                   <a href="/forgot-password" className="text-xs text-primary font-medium hover:underline">
-                    Forgot password?
+                    {t('auth.forgotPassword')}
                   </a>
                 </div>
                 <Input
@@ -111,21 +125,25 @@ export default function Login() {
             <CardFooter className="flex flex-col space-y-3 pt-4">
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Sign in
+                {t('auth.signIn')}
               </Button>
               <p className="text-xs text-center text-muted-foreground">
-                Don't have an account?{' '}
+                {t('auth.noAccount')}{' '}
                 <a href="/register" className="text-primary font-medium hover:underline">
-                  Create your agency
+                  {t('auth.createAgency')}
                 </a>
               </p>
             </CardFooter>
           </form>
+          </>)}
         </Card>
+        <div className="mx-auto mt-4 w-48">
+          <LanguageSwitcher />
+        </div>
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          <a href="/privacy" className="hover:underline">Privacy Notice</a>
+          <a href="/privacy" className="hover:underline">{t('auth.privacyLink')}</a>
           <span className="mx-2">·</span>
-          <a href="/terms" className="hover:underline">Terms of Service</a>
+          <a href="/terms" className="hover:underline">{t('auth.termsLink')}</a>
         </p>
       </div>
     </div>

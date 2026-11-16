@@ -13,3 +13,27 @@ export function newPasswordError(password: string, confirm: string): string | nu
   if (password !== confirm) return "The passwords don't match.";
   return null;
 }
+
+/** What happened after supabase.auth.signUp. */
+export function signUpOutcome(data: {
+  user?: { identities?: unknown[] | null } | null;
+  session?: unknown | null;
+}): 'signed_in' | 'verify' | 'exists' {
+  if (data.session) return 'signed_in';
+  // Supabase hides an already-registered email by returning a user with no identities.
+  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) return 'exists';
+  return 'verify';
+}
+
+export function isEmailNotConfirmed(message: string | null | undefined): boolean {
+  return /email not confirmed/i.test(message ?? '');
+}
+
+/** Digits only, at most 8 (Supabase email codes are 6 by default, configurable up to 8). */
+export function cleanCode(input: string): string {
+  return input.replace(/\D/g, '').slice(0, 8);
+}
+
+export function isCompleteCode(code: string): boolean {
+  return /^\d{6,8}$/.test(code);
+}
