@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cleanCode, isCompleteCode, isEmailNotConfirmed, isPublicAuthPath, newPasswordError, signUpOutcome } from './auth';
+import { cleanCode, isCompleteCode, isEmailNotConfirmed, isPublicAuthPath, needsAgencySetup, newPasswordError, registerNextStep, signUpOutcome } from './auth';
 
 describe('newPasswordError', () => {
   it('needs at least 8 characters', () => {
@@ -55,5 +55,35 @@ describe('cleanCode', () => {
   it('a code is complete at 6 digits', () => {
     expect(isCompleteCode('12345')).toBe(false);
     expect(isCompleteCode('123456')).toBe(true);
+  });
+});
+
+describe('registerNextStep', () => {
+  const base = { signedIn: true, hasProfile: false, busy: false, step: 'form' as const };
+  it('signed-out visitors stay on the form', () => {
+    expect(registerNextStep({ ...base, signedIn: false })).toBeNull();
+  });
+  it('signed in without an agency: name the agency', () => {
+    expect(registerNextStep(base)).toBe('finish');
+  });
+  it('signed in with an agency: go to the app', () => {
+    expect(registerNextStep({ ...base, hasProfile: true })).toBe('dashboard');
+  });
+  it('waits while a request is running or the code step is creating the agency', () => {
+    expect(registerNextStep({ ...base, busy: true })).toBeNull();
+    expect(registerNextStep({ ...base, step: 'code' })).toBeNull();
+  });
+});
+
+describe('needsAgencySetup', () => {
+  it('signed in, profile fetched, no profile: send to /register', () => {
+    expect(needsAgencySetup('u1', 'u1', false)).toBe(true);
+  });
+  it('not yet fetched for this user: wait (no flash of /register)', () => {
+    expect(needsAgencySetup('u1', null, false)).toBe(false);
+    expect(needsAgencySetup('u1', 'u0', false)).toBe(false);
+  });
+  it('has a profile: fine', () => {
+    expect(needsAgencySetup('u1', 'u1', true)).toBe(false);
   });
 });

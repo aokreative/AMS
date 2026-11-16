@@ -70,7 +70,7 @@ export default function Login() {
             <VerifyEmailCode
               email={email.trim()}
               sendOnMount
-              onVerified={() => setLocation('/dashboard')}
+              onVerified={() => setLocation('/register')}
               onChangeEmail={() => setNeedsCode(false)}
             />
           ) : (<>

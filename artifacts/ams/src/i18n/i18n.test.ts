@@ -11,10 +11,24 @@ describe('translations', () => {
   it('offers English, Kiswahili, French, Portuguese, Spanish and Arabic', () => {
     expect(LANGUAGES.map((l) => l.code)).toEqual(['en', 'sw', 'fr', 'pt', 'es', 'ar']);
   });
-  it('every language has exactly the English keys', () => {
-    const en = keys(resources.en.translation);
+  it('every language has the English keys (plural forms aside)', () => {
+    const base = (k: string) => k.replace(/_(zero|one|two|few|many|other)$/, '');
+    const en = [...new Set(keys(resources.en.translation).map(base))];
     for (const { code } of LANGUAGES) {
-      expect(keys(resources[code].translation), code).toEqual(en);
+      expect([...new Set(keys(resources[code].translation).map(base))], code).toEqual(en);
+    }
+  });
+  it('every language has the plural forms its grammar needs for counts 0–30', () => {
+    const plural = [...new Set(keys(resources.en.translation).filter((k) => /_(one|other)$/.test(k)).map((k) => k.replace(/_(one|other)$/, '')))];
+    for (const { code } of LANGUAGES) {
+      const have = new Set(keys(resources[code].translation));
+      const rules = new Intl.PluralRules(code);
+      for (const k of plural) {
+        for (let n = 0; n <= 30; n++) {
+          const form = `${k}_${rules.select(n)}`;
+          expect(have.has(form), `${code}: ${form}`).toBe(true);
+        }
+      }
     }
   });
   it('no translation is empty', () => {

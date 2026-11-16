@@ -3,7 +3,7 @@ import { Link, useLocation } from 'wouter';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { signUpOutcome, isEmailNotConfirmed } from '@/lib/auth';
+import { signUpOutcome, isEmailNotConfirmed, registerNextStep } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,11 +36,14 @@ export default function Register() {
 
   // Signed in already: either finish creating the agency, or move on.
   useEffect(() => {
-    if (isLoading || !session || loading) return;
-    if (profile) {
+    if (isLoading) return;
+    const next = registerNextStep({ signedIn: !!session, hasProfile: !!profile, busy: loading, step });
+    if (next === null) return;
+    if (next === 'dashboard') {
       setLocation('/dashboard');
       return;
     }
+    if (step === 'finish') return;
     void supabase.auth.getUser().then(({ data }) => {
       const meta = (data.user?.user_metadata ?? {}) as { agency_name?: string; full_name?: string };
       setAgencyName((v) => v || meta.agency_name || '');
@@ -48,7 +51,7 @@ export default function Register() {
       setStep('finish');
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, session?.id, profile?.id]);
+  }, [isLoading, session?.id, profile?.id, loading, step]);
 
   const createAgency = async () => {
     const { error: rpcError } = await supabase.rpc('create_agency_with_owner', {

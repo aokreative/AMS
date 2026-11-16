@@ -37,3 +37,19 @@ export function cleanCode(input: string): string {
 export function isCompleteCode(code: string): boolean {
   return /^\d{6,8}$/.test(code);
 }
+
+/** Where the register page should send a visitor who is (or becomes) signed in. */
+export function registerNextStep(s: {
+  signedIn: boolean;
+  hasProfile: boolean;
+  busy: boolean;
+  step: 'form' | 'code' | 'finish';
+}): 'dashboard' | 'finish' | null {
+  if (!s.signedIn || s.busy || s.step === 'code') return null;
+  return s.hasProfile ? 'dashboard' : 'finish';
+}
+
+/** Signed in, profile already fetched for this user, and none exists: they still need to create the agency. */
+export function needsAgencySetup(sessionUserId: string | null, profileLoadedFor: string | null, hasProfile: boolean): boolean {
+  return !!sessionUserId && profileLoadedFor === sessionUserId && !hasProfile;
+}

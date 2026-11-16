@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
+import { getCurrency } from '@/lib/money';
 import { usePolicies } from '@/hooks/queries';
 import {
   useReceipt, useLinkStatementLine, useApplyReceiptAllocations, useInsurerReceivables, useUndoAllocation, useDeleteReceipt, getReceiptPdfUrl,
@@ -280,12 +281,12 @@ export default function ReceiptDetail() {
           <DialogHeader>
             <DialogTitle>Apply unapplied money</DialogTitle>
             <DialogDescription>
-              KES {formatKes(unappliedCents)} is unapplied on this receipt. Tick the {receipt.insurer?.name ?? 'insurer'} commissions it pays.
+              {getCurrency()} {formatKes(unappliedCents)} is unapplied on this receipt. Tick the {receipt.insurer?.name ?? 'insurer'} commissions it pays.
             </DialogDescription>
           </DialogHeader>
           <AllocateOutstanding commissions={applyCommissions} state={allocState} onChange={setAllocState} />
           {overCents > 0 && (
-            <div className="text-sm text-destructive">Applied amount is KES {formatKes(overCents)} more than the unapplied money</div>
+            <div className="text-sm text-destructive">Applied amount is {getCurrency()} {formatKes(overCents)} more than the unapplied money</div>
           )}
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setApplyOpen(false)}>Cancel</Button>

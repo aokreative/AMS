@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Trash2 } from 'lucide-react';
 import { toCents } from '@/lib/reconcile';
+import { getCurrency } from '@/lib/money';
 import { emptyRow, parsePastedRows, isMultiCellPaste, rowErrors, rowIsEmpty, formatKes, type GridRow } from '@/lib/receipt-grid';
 
 const FIELDS: (keyof GridRow)[] = ['policyNumber', 'clientName', 'premium', 'commission', 'period'];
@@ -132,10 +133,10 @@ export function LinesGrid({
           Add row
         </Button>
         <div className="text-sm">
-          Lines total KES {formatKes(linesTotal)} vs received KES {amountCents === null ? '—' : formatKes(amountCents)}
+          Lines total {getCurrency()} {formatKes(linesTotal)} vs received {getCurrency()} {amountCents === null ? '—' : formatKes(amountCents)}
           {diff !== null && diff !== 0 && (
             <span className={diff > 0 ? 'text-destructive ml-2' : 'text-muted-foreground ml-2'}>
-              ({diff > 0 ? '+' : '-'}KES {formatKes(Math.abs(diff))})
+              ({diff > 0 ? '+' : '-'}{getCurrency()} {formatKes(Math.abs(diff))})
             </span>
           )}
         </div>

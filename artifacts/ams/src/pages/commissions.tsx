@@ -279,7 +279,7 @@ export default function Commissions() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Amount ({getCurrency()})</FormLabel>
-                        <FormControl><Input type="number" {...field} /></FormControl>
+                        <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -527,7 +527,7 @@ export default function Commissions() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Amount received ({getCurrency()})</label>
-              <Input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
+              <Input type="number" step="0.01" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Bank reference (optional)</label>

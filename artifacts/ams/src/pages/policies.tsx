@@ -243,7 +243,7 @@ export default function Policies() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Premium ({getCurrency()})</FormLabel>
-                        <FormControl><Input type="number" {...field} /></FormControl>
+                        <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
