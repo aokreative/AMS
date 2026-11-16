@@ -1,3 +1,4 @@
+import { getCurrency } from '@/lib/money';
 import React, { useState, useEffect } from 'react';
 import { useRoute } from 'wouter';
 import { useClient, useUpdateClient, usePolicies, useInsurers, useProductLines, useCreatePolicy, useDeletePolicy } from '@/hooks/queries';
@@ -297,7 +298,7 @@ export default function ClientDetail() {
                         name="premium_amount"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Premium (KES)</FormLabel>
+                            <FormLabel>Premium ({getCurrency()})</FormLabel>
                             <FormControl><Input type="number" {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>

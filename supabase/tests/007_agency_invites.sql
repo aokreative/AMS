@@ -79,11 +79,11 @@ BEGIN
     'o manager invite: expires_at should be ~7 days out';
 
   BEGIN
-    PERFORM public.create_invite('owner2@test.local', 'owner');
-    RAISE EXCEPTION 'FAIL: o invited an owner';
+    PERFORM public.create_invite('admin2@test.local', 'admin');
+    RAISE EXCEPTION 'FAIL: o invited an unknown role';
   EXCEPTION WHEN insufficient_privilege THEN
     GET STACKED DIAGNOSTICS v_text = MESSAGE_TEXT;
-    ASSERT v_text = 'You are not allowed to invite that role', format('o invite owner: got %s', v_text);
+    ASSERT v_text = 'You are not allowed to invite that role', format('o invite admin: got %s', v_text);
   END;
 
   BEGIN
@@ -309,7 +309,7 @@ BEGIN
 
   -- anon cannot use the other RPCs or read the table
   BEGIN
-    PERFORM public.accept_invite(inv_new->>'code', 'Anon Person');
+    PERFORM public.accept_invite(inv_new->>'code', 'Anon Person', true);
     RAISE EXCEPTION 'FAIL: anon called accept_invite';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
@@ -332,7 +332,7 @@ BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', oth, 'role','authenticated')::text, true);
   SET LOCAL ROLE authenticated;
   BEGIN
-    PERFORM public.accept_invite(inv_new2->>'code', 'Other Person');
+    PERFORM public.accept_invite(inv_new2->>'code', 'Other Person', true);
     RAISE EXCEPTION 'FAIL: other@ accepted new2@ invite';
   EXCEPTION WHEN raise_exception THEN
     GET STACKED DIAGNOSTICS v_text = MESSAGE_TEXT;
@@ -344,7 +344,7 @@ BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', a2, 'role','authenticated')::text, true);
   SET LOCAL ROLE authenticated;
   BEGIN
-    PERFORM public.accept_invite(inv_a2->>'code', 'Agent2 007');
+    PERFORM public.accept_invite(inv_a2->>'code', 'Agent2 007', true);
     RAISE EXCEPTION 'FAIL: a2 joined a second agency';
   EXCEPTION WHEN raise_exception THEN
     GET STACKED DIAGNOSTICS v_text = MESSAGE_TEXT;
@@ -356,28 +356,28 @@ BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', nu, 'role','authenticated')::text, true);
   SET LOCAL ROLE authenticated;
   BEGIN
-    PERFORM public.accept_invite(inv_new->>'code', ' x ');
+    PERFORM public.accept_invite(inv_new->>'code', ' x ', true);
     RAISE EXCEPTION 'FAIL: accepted with a 1-char name';
   EXCEPTION WHEN raise_exception THEN
     GET STACKED DIAGNOSTICS v_text = MESSAGE_TEXT;
     ASSERT v_text = 'Enter your full name', format('short name: got %s', v_text);
   END;
   BEGIN
-    PERFORM public.accept_invite('garbage', 'New Person');
+    PERFORM public.accept_invite('garbage', 'New Person', true);
     RAISE EXCEPTION 'FAIL: accepted a garbage code';
   EXCEPTION WHEN raise_exception THEN
     GET STACKED DIAGNOSTICS v_text = MESSAGE_TEXT;
     ASSERT v_text = 'Invalid or expired invite', format('accept garbage: got %s', v_text);
   END;
 
-  r := public.accept_invite(inv_new->>'code', '  New Person  ');
+  r := public.accept_invite(inv_new->>'code', '  New Person  ', true);
   ASSERT (r->>'agency_id')::uuid = ag, format('accept agency_id: got %s', r->>'agency_id');
   ASSERT r->>'role' = 'agent', format('accept role: got %s', r->>'role');
   ASSERT public.current_user_agency_id() = ag, 'new member: current_user_agency_id() should be ag';
   ASSERT public.current_user_role() = 'agent', 'new member: current_user_role() should be agent';
 
   BEGIN
-    PERFORM public.accept_invite(inv_new->>'code', 'New Person');
+    PERFORM public.accept_invite(inv_new->>'code', 'New Person', true);
     RAISE EXCEPTION 'FAIL: accepted the same code twice';
   EXCEPTION WHEN raise_exception THEN
     GET STACKED DIAGNOSTICS v_text = MESSAGE_TEXT;
@@ -428,7 +428,7 @@ BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', nu3, 'role','authenticated')::text, true);
   SET LOCAL ROLE authenticated;
   BEGIN
-    PERFORM public.accept_invite(inv_new3->>'code', 'New Three');
+    PERFORM public.accept_invite(inv_new3->>'code', 'New Three', true);
     RAISE EXCEPTION 'FAIL: accepted an expired invite';
   EXCEPTION WHEN raise_exception THEN
     GET STACKED DIAGNOSTICS v_text = MESSAGE_TEXT;
@@ -445,7 +445,7 @@ BEGIN
 
   PERFORM set_config('request.jwt.claims', json_build_object('sub', nu3, 'role','authenticated')::text, true);
   SET LOCAL ROLE authenticated;
-  r := public.accept_invite(inv_new3->>'code', 'New Three');
+  r := public.accept_invite(inv_new3->>'code', 'New Three', true);
   ASSERT r->>'role' = 'manager', format('re-invite accept role: got %s', r->>'role');
   RESET ROLE;
 END;

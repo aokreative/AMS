@@ -1,3 +1,4 @@
+import { getCurrency } from '@/lib/money';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
@@ -215,7 +216,7 @@ export default function ReceiptNew() {
                 <Input id="received-on" type="date" value={receivedOn} onChange={(e) => setReceivedOn(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="amount">Amount received (KES)</Label>
+                <Label htmlFor="amount">Amount received ({getCurrency()})</Label>
                 <Input id="amount" inputMode="decimal" value={amountText} onChange={(e) => setAmountText(e.target.value)} />
                 {amountText.trim() !== '' && (amountCents === null || amountCents <= 0) && (
                   <div className="text-xs text-destructive">Enter an amount greater than zero</div>

@@ -1,3 +1,4 @@
+import { getCurrency } from '@/lib/money';
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
@@ -170,7 +171,7 @@ function QuoteDialog({ row, onClose }: DialogProps) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="quote-premium">Premium (KES)</Label>
+            <Label htmlFor="quote-premium">Premium ({getCurrency()})</Label>
             <Input id="quote-premium" inputMode="decimal" value={premium} onChange={(e) => setPremium(e.target.value)} />
           </div>
           <div className="space-y-2">
@@ -405,7 +406,7 @@ function RenewDialog({ row, onClose }: DialogProps) {
                   name="premium_amount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Premium (KES)</FormLabel>
+                      <FormLabel>Premium ({getCurrency()})</FormLabel>
                       <FormControl><Input type="number" step="0.01" {...field} value={field.value as number | string ?? ''} /></FormControl>
                       <FormMessage />
                     </FormItem>

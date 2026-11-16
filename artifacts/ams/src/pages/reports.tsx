@@ -1,3 +1,4 @@
+import { getCurrency } from '@/lib/money';
 import React, { useState } from 'react';
 import { 
   BarChart2, 
@@ -97,7 +98,7 @@ export default function Reports() {
 
   // Formatting compact currency for charts
   const formatCompactKsh = (val: number) => {
-    return new Intl.NumberFormat('en-KE', { notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 1 }).format(val);
+    return new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 1 }).format(val);
   };
 
   const handleGenerate = async () => {
@@ -311,12 +312,12 @@ export default function Reports() {
                   <YAxis yAxisId="left" orientation="left" axisLine={false} tickLine={false} />
                   <YAxis yAxisId="right" orientation="right" tickFormatter={formatCompactKsh} axisLine={false} tickLine={false} />
                   <RechartsTooltip 
-                    formatter={(value: number, name: string) => name === 'KES (×10k)' ? formatCurrency(value * 10000) : value}
+                    formatter={(value: number, name: string) => name === `${getCurrency()} (×10k)` ? formatCurrency(value * 10000) : value}
                     cursor={{fill: '#f1f5f9'}}
                   />
                   <Legend wrapperStyle={{ paddingTop: '20px' }} />
                   <Bar yAxisId="left" dataKey="count" name="Policies" fill={COLORS.accent} radius={[4, 4, 0, 0]} />
-                  <Bar yAxisId="right" dataKey="premium10k" name="KES (×10k)" fill={COLORS.emerald} radius={[4, 4, 0, 0]} />
+                  <Bar yAxisId="right" dataKey="premium10k" name={`${getCurrency()} (×10k)`} fill={COLORS.emerald} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -368,7 +369,7 @@ export default function Reports() {
                 <TableRow>
                   <TableHead>Month/Year</TableHead>
                   <TableHead className="text-right">Policies Written</TableHead>
-                  <TableHead className="text-right">Premium (KES)</TableHead>
+                  <TableHead className="text-right">Premium ({getCurrency()})</TableHead>
                   <TableHead className="text-right">Commissions Received</TableHead>
                   <TableHead className="text-right">Collection Rate</TableHead>
                   <TableHead className="text-right">New Clients</TableHead>

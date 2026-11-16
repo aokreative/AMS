@@ -1,3 +1,4 @@
+import { getCurrency } from '@/lib/money';
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCommissions, useCreateCommission, usePolicies } from '@/hooks/queries';
@@ -174,7 +175,7 @@ export default function Commissions() {
     const insurerId = payingComm?.policy?.insurer?.id;
     if (!payingComm || !insurerId || cents === null || cents <= 0) return;
     if (cents > remainingCentsOf(payingComm)) {
-      toast({ title: 'Error', description: `Amount exceeds the remaining KES ${remainingOf(payingComm).toLocaleString('en-KE')}`, variant: 'destructive' });
+      toast({ title: 'Error', description: `Amount exceeds the remaining ${formatCurrency(remainingOf(payingComm))}`, variant: 'destructive' });
       return;
     }
     const amount = fromCents(cents);
@@ -277,7 +278,7 @@ export default function Commissions() {
                     name="amount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Amount (KES)</FormLabel>
+                        <FormLabel>Amount ({getCurrency()})</FormLabel>
                         <FormControl><Input type="number" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -427,7 +428,7 @@ export default function Commissions() {
               )}
               <TableHead>Policy & Client</TableHead>
               <TableHead>Insurer</TableHead>
-              <TableHead className="text-right">Amount (KES)</TableHead>
+              <TableHead className="text-right">Amount ({getCurrency()})</TableHead>
               <TableHead>Dates</TableHead>
               <TableHead>Status</TableHead>
               {!isAgent && <TableHead className="text-right">Action</TableHead>}
@@ -525,7 +526,7 @@ export default function Commissions() {
               <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Amount received (KES)</label>
+              <label className="text-sm font-medium">Amount received ({getCurrency()})</label>
               <Input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
             </div>
             <div className="space-y-2">

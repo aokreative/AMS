@@ -87,7 +87,7 @@ export default function ReceiptDetail() {
     if (!linkingLine) return;
     linkLine.mutate({ lineId: linkingLine.id, policyId }, {
       onSuccess: (res) => {
-        toast({ title: `Linked — KES ${Number(res.applied).toLocaleString('en-KE')} applied` });
+        toast({ title: `Linked — ${formatCurrency(Number(res.applied))} applied` });
         setLinkingLine(null);
         setPolicySearch('');
       },
@@ -124,7 +124,7 @@ export default function ReceiptDetail() {
       .map((a) => ({ commissionId: a.commissionId, amount: a.cents / 100 }));
     applyMoney.mutate({ receiptId: receipt.id, allocations }, {
       onSuccess: (res) => {
-        toast({ title: `Applied KES ${Number(res.applied).toLocaleString('en-KE')} — KES ${Number(res.unapplied).toLocaleString('en-KE')} still unapplied` });
+        toast({ title: `Applied ${formatCurrency(Number(res.applied))} — ${formatCurrency(Number(res.unapplied))} still unapplied` });
         setApplyOpen(false);
         setAllocState({});
       },

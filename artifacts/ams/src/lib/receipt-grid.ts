@@ -98,5 +98,5 @@ export function gridHasErrors(rows: GridRow[]): boolean {
 
 /** Amount for messages, e.g. 1,234.5 (no currency prefix). */
 export function formatKes(cents: number): string {
-  return (cents / 100).toLocaleString('en-KE', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  return (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
