@@ -10,7 +10,6 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { isEmailNotConfirmed } from '@/lib/auth';
 import { VerifyEmailCode } from '@/components/VerifyEmailCode';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -137,9 +136,6 @@ export default function Login() {
           </form>
           </>)}
         </Card>
-        <div className="mx-auto mt-4 w-48">
-          <LanguageSwitcher />
-        </div>
         <p className="mt-4 text-center text-xs text-muted-foreground">
           <a href="/privacy" className="hover:underline">{t('auth.privacyLink')}</a>
           <span className="mx-2">·</span>

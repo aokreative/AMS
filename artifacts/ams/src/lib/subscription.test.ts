@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { agencyAccess, daysLeft, formatKes, OWNERS, TIERS } from './subscription';
+import { agencyAccess, daysLeft, formatKes, ownerPlacesLeft, OWNERS, TIERS } from './subscription';
 
 const today = '2026-11-15';
 const ag = (paid_until: string | null, complimentary_until: string | null = null) => ({ paid_until, complimentary_until });
@@ -52,5 +52,17 @@ describe('daysLeft', () => {
 describe('formatKes', () => {
   it('formats whole shillings', () => {
     expect(formatKes(22750)).toBe('KES 22,750');
+  });
+});
+
+describe('ownerPlacesLeft', () => {
+  it('counts owners and pending owner invites against the plan', () => {
+    expect(ownerPlacesLeft('growth', false, 1, 0)).toBe(1);
+    expect(ownerPlacesLeft('growth', false, 1, 1)).toBe(0);
+    expect(ownerPlacesLeft('starter', false, 1, 0)).toBe(0);
+  });
+  it('unlimited on Enterprise Plus and for comped agencies', () => {
+    expect(ownerPlacesLeft('enterprise_plus', false, 9, 0)).toBeNull();
+    expect(ownerPlacesLeft('starter', true, 1, 0)).toBeNull();
   });
 });

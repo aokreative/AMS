@@ -47,3 +47,11 @@ export function formatKes(n: number): string {
 export function tierName(key: string | null | undefined): string {
   return TIERS.find((t) => t.key === key)?.name ?? (key ?? '');
 }
+
+/** Owner places still free on the plan (null = unlimited). Pending owner invites take a place. */
+export function ownerPlacesLeft(tier: string, comped: boolean, owners: number, pendingOwnerInvites: number): number | null {
+  if (comped) return null;
+  const max = OWNERS[tier];
+  if (max == null) return null;
+  return Math.max(0, max - owners - pendingOwnerInvites);
+}
