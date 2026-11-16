@@ -1,4 +1,5 @@
 import { Checkbox } from '@/components/ui/checkbox';
+import { useTranslation } from 'react-i18next';
 
 /** Required "I agree" checkbox for sign-up and invite acceptance. Links open in a new tab. */
 export function TermsConsent({
@@ -10,6 +11,7 @@ export function TermsConsent({
   onChange: (v: boolean) => void;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-start gap-2">
       <Checkbox
@@ -21,10 +23,10 @@ export function TermsConsent({
         aria-required
       />
       <label htmlFor="terms" className="text-sm leading-snug text-muted-foreground">
-        I agree to the{' '}
-        <a href="/terms" target="_blank" rel="noreferrer" className="text-primary hover:underline">Terms</a>
-        {' '}and the{' '}
-        <a href="/privacy" target="_blank" rel="noreferrer" className="text-primary hover:underline">Privacy Notice</a>
+        {t('auth.agree')}{' '}
+        <a href="/terms" target="_blank" rel="noreferrer" className="text-primary hover:underline">{t('auth.terms')}</a>
+        {' '}{t('auth.and')}{' '}
+        <a href="/privacy" target="_blank" rel="noreferrer" className="text-primary hover:underline">{t('auth.privacy')}</a>
       </label>
     </div>
   );

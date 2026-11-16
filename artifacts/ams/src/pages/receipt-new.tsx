@@ -1,3 +1,4 @@
+import { getCurrency } from '@/lib/money';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
@@ -175,7 +176,7 @@ export default function ReceiptNew() {
         throw err;
       }
       toast({
-        title: `Receipt recorded — KES ${formatKes(Math.round(Number(result.applied) * 100))} applied, KES ${formatKes(Math.round(Number(result.unapplied) * 100))} unapplied`,
+        title: `Receipt recorded — ${getCurrency()} ${formatKes(Math.round(Number(result.applied) * 100))} applied, ${getCurrency()} ${formatKes(Math.round(Number(result.unapplied) * 100))} unapplied`,
       });
       navigate(`/receipts/${result.receipt_id}`);
     } catch (err) {
@@ -215,7 +216,7 @@ export default function ReceiptNew() {
                 <Input id="received-on" type="date" value={receivedOn} onChange={(e) => setReceivedOn(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="amount">Amount received (KES)</Label>
+                <Label htmlFor="amount">Amount received ({getCurrency()})</Label>
                 <Input id="amount" inputMode="decimal" value={amountText} onChange={(e) => setAmountText(e.target.value)} />
                 {amountText.trim() !== '' && (amountCents === null || amountCents <= 0) && (
                   <div className="text-xs text-destructive">Enter an amount greater than zero</div>
@@ -258,7 +259,7 @@ export default function ReceiptNew() {
           <CardHeader><CardTitle>Match &amp; apply</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="text-sm text-muted-foreground">
-              {insurerName} — KES {amountCents !== null ? formatKes(amountCents) : '—'} received on {receivedOn}
+              {insurerName} — {getCurrency()} {amountCents !== null ? formatKes(amountCents) : '—'} received on {receivedOn}
             </div>
             {receivablesError ? (
               <div className="text-sm text-destructive">Couldn't load this insurer's policies — try again</div>
@@ -270,11 +271,11 @@ export default function ReceiptNew() {
               <AllocateOutstanding commissions={commissions} state={allocState} onChange={setAllocState} />
             )}
             <div className="text-sm">
-              Applied KES {formatKes(appliedCents)}
-              {amountCents !== null && !overApplied && <> — KES {formatKes(amountCents - appliedCents)} will stay unapplied</>}
+              Applied {getCurrency()} {formatKes(appliedCents)}
+              {amountCents !== null && !overApplied && <> — {getCurrency()} {formatKes(amountCents - appliedCents)} will stay unapplied</>}
             </div>
             {overApplied && (
-              <div className="text-sm text-destructive">Applied amount is KES {formatKes(overCents)} more than the amount received</div>
+              <div className="text-sm text-destructive">Applied amount is {getCurrency()} {formatKes(overCents)} more than the amount received</div>
             )}
             <div className="flex justify-between">
               <Button variant="outline" disabled={submitting} onClick={() => setStep(2)}>Back</Button>

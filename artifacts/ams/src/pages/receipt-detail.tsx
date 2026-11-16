@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
+import { getCurrency } from '@/lib/money';
 import { usePolicies } from '@/hooks/queries';
 import {
   useReceipt, useLinkStatementLine, useApplyReceiptAllocations, useInsurerReceivables, useUndoAllocation, useDeleteReceipt, getReceiptPdfUrl,
@@ -87,7 +88,7 @@ export default function ReceiptDetail() {
     if (!linkingLine) return;
     linkLine.mutate({ lineId: linkingLine.id, policyId }, {
       onSuccess: (res) => {
-        toast({ title: `Linked — KES ${Number(res.applied).toLocaleString('en-KE')} applied` });
+        toast({ title: `Linked — ${formatCurrency(Number(res.applied))} applied` });
         setLinkingLine(null);
         setPolicySearch('');
       },
@@ -124,7 +125,7 @@ export default function ReceiptDetail() {
       .map((a) => ({ commissionId: a.commissionId, amount: a.cents / 100 }));
     applyMoney.mutate({ receiptId: receipt.id, allocations }, {
       onSuccess: (res) => {
-        toast({ title: `Applied KES ${Number(res.applied).toLocaleString('en-KE')} — KES ${Number(res.unapplied).toLocaleString('en-KE')} still unapplied` });
+        toast({ title: `Applied ${formatCurrency(Number(res.applied))} — ${formatCurrency(Number(res.unapplied))} still unapplied` });
         setApplyOpen(false);
         setAllocState({});
       },
@@ -280,12 +281,12 @@ export default function ReceiptDetail() {
           <DialogHeader>
             <DialogTitle>Apply unapplied money</DialogTitle>
             <DialogDescription>
-              KES {formatKes(unappliedCents)} is unapplied on this receipt. Tick the {receipt.insurer?.name ?? 'insurer'} commissions it pays.
+              {getCurrency()} {formatKes(unappliedCents)} is unapplied on this receipt. Tick the {receipt.insurer?.name ?? 'insurer'} commissions it pays.
             </DialogDescription>
           </DialogHeader>
           <AllocateOutstanding commissions={applyCommissions} state={allocState} onChange={setAllocState} />
           {overCents > 0 && (
-            <div className="text-sm text-destructive">Applied amount is KES {formatKes(overCents)} more than the unapplied money</div>
+            <div className="text-sm text-destructive">Applied amount is {getCurrency()} {formatKes(overCents)} more than the unapplied money</div>
           )}
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setApplyOpen(false)}>Cancel</Button>

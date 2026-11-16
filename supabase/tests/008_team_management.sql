@@ -283,21 +283,21 @@ BEGIN
     RAISE EXCEPTION 'FAIL: o changed own role';
   EXCEPTION WHEN insufficient_privilege THEN
     GET STACKED DIAGNOSTICS v_text = MESSAGE_TEXT;
-    ASSERT v_text = 'The owner cannot be changed or removed', format('o change own role: got %s', v_text);
+    ASSERT v_text = 'The last owner cannot be changed or removed', format('o change own role: got %s', v_text);
   END;
   BEGIN
-    PERFORM public.change_member_role(a1, 'owner');
-    RAISE EXCEPTION 'FAIL: made a second owner';
+    PERFORM public.change_member_role(a1, 'admin');
+    RAISE EXCEPTION 'FAIL: changed to an unknown role';
   EXCEPTION WHEN invalid_parameter_value THEN
     GET STACKED DIAGNOSTICS v_text = MESSAGE_TEXT;
-    ASSERT v_text = 'Role must be manager or agent', format('change to owner: got %s', v_text);
+    ASSERT v_text = 'Role must be owner, manager or agent', format('change to admin: got %s', v_text);
   END;
   BEGIN
     PERFORM public.change_member_role(a1, NULL);
     RAISE EXCEPTION 'FAIL: changed role to NULL';
   EXCEPTION WHEN invalid_parameter_value THEN
     GET STACKED DIAGNOSTICS v_text = MESSAGE_TEXT;
-    ASSERT v_text = 'Role must be manager or agent', format('change to NULL: got %s', v_text);
+    ASSERT v_text = 'Role must be owner, manager or agent', format('change to NULL: got %s', v_text);
   END;
   BEGIN
     PERFORM public.change_member_role(d, 'manager');
@@ -345,7 +345,7 @@ BEGIN
     RAISE EXCEPTION 'FAIL: o removed themselves';
   EXCEPTION WHEN insufficient_privilege THEN
     GET STACKED DIAGNOSTICS v_text = MESSAGE_TEXT;
-    ASSERT v_text = 'The owner cannot be changed or removed', format('remove owner: got %s', v_text);
+    ASSERT v_text = 'You cannot remove yourself', format('remove owner: got %s', v_text);
   END;
   BEGIN
     PERFORM public.remove_member(a1, a1);

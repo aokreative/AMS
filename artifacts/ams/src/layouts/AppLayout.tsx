@@ -30,10 +30,13 @@ import {
 } from "@/components/ui/sheet";
 import { BrandMark } from '@/components/BrandLockup';
 import { SubscriptionBanner } from '@/components/SubscriptionBanner';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { agency, profile, signOut, session, isOwnerOrManager } = useAuth();
   const [location] = useLocation();
+  const { t } = useTranslation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   // Get count of upcoming renewals in 30 days
@@ -61,26 +64,26 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const showMyEarnings = !isOwnerOrManager || (myRates?.length ?? 0) > 0 || !!hasOwnEarnings;
 
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Clients', path: '/clients', icon: Users },
-    { name: 'Policies', path: '/policies', icon: FileText },
-    { name: 'Commissions', path: '/commissions', icon: DollarSign },
-    ...(isOwnerOrManager ? [{ name: 'Receipts', path: '/receipts', icon: Receipt }] : []),
-    ...(isOwnerOrManager ? [{ name: 'Payouts', path: '/payouts', icon: Wallet }] : []),
-    ...(showMyEarnings ? [{ name: 'My earnings', path: '/my-earnings', icon: Coins }] : []),
+    { name: t('nav.dashboard'), path: '/dashboard', icon: LayoutDashboard },
+    { name: t('nav.clients'), path: '/clients', icon: Users },
+    { name: t('nav.policies'), path: '/policies', icon: FileText },
+    { name: t('nav.commissions'), path: '/commissions', icon: DollarSign },
+    ...(isOwnerOrManager ? [{ name: t('nav.receipts'), path: '/receipts', icon: Receipt }] : []),
+    ...(isOwnerOrManager ? [{ name: t('nav.payouts'), path: '/payouts', icon: Wallet }] : []),
+    ...(showMyEarnings ? [{ name: t('nav.myEarnings'), path: '/my-earnings', icon: Coins }] : []),
     { 
-      name: 'Renewals', 
+      name: t('nav.renewals'),
       path: '/renewals', 
       icon: RefreshCcw,
       badge: renewalsCount > 0 ? renewalsCount : undefined
     },
     // Owner/manager-only items
     ...(isOwnerOrManager ? [
-      { name: 'Reports', path: '/reports', icon: BarChart2 },
-      { name: 'Insurers', path: '/insurers', icon: Building2 },
-      { name: 'Product Lines', path: '/product-lines', icon: Tag },
+      { name: t('nav.reports'), path: '/reports', icon: BarChart2 },
+      { name: t('nav.insurers'), path: '/insurers', icon: Building2 },
+      { name: t('nav.productLines'), path: '/product-lines', icon: Tag },
     ] : []),
-    { name: 'Settings', path: '/settings', icon: Settings },
+    { name: t('nav.settings'), path: '/settings', icon: Settings },
   ];
 
   const NavLinks = () => (
@@ -119,7 +122,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="h-14 flex items-center px-4 border-b border-sidebar-border/50 shrink-0">
           <div className="flex items-center gap-2 font-bold text-sidebar-foreground truncate">
             <BrandMark alt="AMS" className="h-7 w-7 shrink-0" />
-            <span className="truncate">{agency?.name || 'Agency Workspace'}</span>
+            <span className="truncate">{agency?.name || t('nav.workspace')}</span>
           </div>
         </div>
         
@@ -139,17 +142,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 {profile?.full_name}
               </span>
               <span className="text-xs text-sidebar-foreground/60 capitalize truncate">
-                {profile?.role}
+                {profile?.role ? t(`roles.${profile.role}`) : ''}
               </span>
             </div>
           </div>
+          <LanguageSwitcher signedIn className="mb-2 h-8 w-full" />
           <Button 
             variant="ghost" 
             className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground" 
             onClick={signOut}
           >
             <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
+            {t('common.signOut')}
           </Button>
         </div>
       </aside>
@@ -160,7 +164,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="md:hidden print:hidden h-14 border-b bg-card flex items-center justify-between px-4 shrink-0 sticky top-0 z-10">
           <div className="flex items-center gap-2 font-bold truncate">
             <BrandMark alt="AMS" className="h-7 w-7 shrink-0" />
-            <span className="truncate text-sm">{agency?.name || 'Agency Workspace'}</span>
+            <span className="truncate text-sm">{agency?.name || t('nav.workspace')}</span>
           </div>
           
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -172,7 +176,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <SheetContent side="left" className="w-64 p-0 bg-sidebar border-r-sidebar-border">
               <div className="flex flex-col h-full">
                 <div className="h-14 flex items-center px-4 border-b border-sidebar-border/50 shrink-0">
-                  <span className="font-bold text-sidebar-foreground">Menu</span>
+                  <span className="font-bold text-sidebar-foreground">{t('common.menu')}</span>
                 </div>
                 <div className="flex-1 overflow-y-auto p-3">
                   <NavLinks />
@@ -189,17 +193,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         {profile?.full_name}
                       </span>
                       <span className="text-xs text-sidebar-foreground/60 capitalize truncate">
-                        {profile?.role}
+                        {profile?.role ? t(`roles.${profile.role}`) : ''}
                       </span>
                     </div>
                   </div>
+                  <LanguageSwitcher signedIn className="mb-2 h-8 w-full" />
                   <Button 
                     variant="ghost" 
                     className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground" 
                     onClick={signOut}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
+                    {t('common.signOut')}
                   </Button>
                 </div>
               </div>

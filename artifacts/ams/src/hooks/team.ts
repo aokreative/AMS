@@ -106,7 +106,7 @@ export function useClientCountsByAgent() {
 export function useCreateInvite() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ email, role }: { email: string; role: 'manager' | 'agent' }) => {
+    mutationFn: async ({ email, role }: { email: string; role: UserRole }) => {
       const { data, error } = await supabase.rpc('create_invite', { p_email: email, p_role: role });
       if (error) throw error;
       return (Array.isArray(data) ? data[0] : data) as InviteResult;
@@ -160,7 +160,7 @@ function invalidateTeamData(queryClient: ReturnType<typeof useQueryClient>) {
 export function useChangeMemberRole() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: 'manager' | 'agent' }) => {
+    mutationFn: async ({ userId, role }: { userId: string; role: UserRole }) => {
       const { error } = await supabase.rpc('change_member_role', { p_user_id: userId, p_role: role });
       if (error) throw error;
     },

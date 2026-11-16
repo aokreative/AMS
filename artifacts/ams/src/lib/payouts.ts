@@ -1,3 +1,4 @@
+import { getCurrency } from './money';
 import { format, startOfMonth } from 'date-fns';
 import { toCents } from './reconcile';
 import type { PayoutMethod, EarningKind } from './types';
@@ -42,8 +43,8 @@ export function formatDay(d: string | null | undefined): string {
   return format(new Date(iso), 'dd MMM yyyy');
 }
 
-/** "KES 1,234.50" with cents (statements are exact). */
+/** "KES 1,234.50" with cents, in the agency currency (statements are exact). */
 export function kes(n: number | string | null | undefined): string {
   const v = Number(n ?? 0);
-  return `KES ${v.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${getCurrency()} ${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }

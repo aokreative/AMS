@@ -4,6 +4,8 @@ import { queryClient } from '@/lib/queryClient';
 import type { Agency, AgencyUser } from '@/lib/types';
 import { useLocation } from 'wouter';
 import { isPublicAuthPath } from '@/lib/auth';
+import { setCurrency } from '@/lib/money';
+import { setLanguage } from '@/i18n';
 
 interface AuthContextType {
   session: { id: string; email: string } | null;
@@ -17,6 +19,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   /** Call this after agency setup completes to reload profile+agency without a page refresh. */
   refreshProfile: () => Promise<void>;
+  /** User id whose profile fetch has finished (null while unknown). */
+  profileLoadedFor: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -44,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<AgencyUser | null>(null);
   const [agency, setAgency] = useState<Agency | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileLoadedFor, setProfileLoadedFor] = useState<string | null>(null);
   const [, setLocation] = useLocation();
   // Id of the user the cached data belongs to; used to detect a user switch.
   const lastUserIdRef = useRef<string | null>(null);
@@ -53,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { session: current } } = await supabase.auth.getSession();
     if (!current?.user) return;
     const { profile: p, agency: a } = await fetchProfileAndAgency(current.user.id);
+    setProfileLoadedFor(current.user.id);
     if (p) setProfile(p);
     if (a) setAgency(a);
   }, []);
@@ -70,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession({ id: authSession.user.id, email: authSession.user.email ?? '' });
         }
         const { profile: p, agency: a } = await fetchProfileAndAgency(authSession.user.id);
+        if (mounted) setProfileLoadedFor(authSession.user.id);
         if (mounted) {
           setProfile(p);
           setAgency(a);
@@ -118,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Fetch it; register.tsx calls refreshProfile() explicitly after setup.
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           const { profile: p, agency: a } = await fetchProfileAndAgency(currentSession.user.id);
+          if (mounted) setProfileLoadedFor(currentSession.user.id);
           if (mounted) {
             // A different user just signed in: take the fetch result as-is, even
             // null, so the previous user's profile/agency can never linger. For
@@ -160,12 +168,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLocation('/login');
   };
 
+  // Show amounts in the agency's currency, and use the person's chosen language.
+  useEffect(() => {
+    setCurrency(agency?.currency);
+  }, [agency?.currency]);
+  useEffect(() => {
+    if (profile?.language) setLanguage(profile.language);
+  }, [profile?.language]);
+
   const isOwner = profile?.role === 'owner';
   const isOwnerOrManager = profile?.role === 'owner' || profile?.role === 'manager';
   const isDeactivated = !!profile?.deactivated_at;
 
   return (
-    <AuthContext.Provider value={{ session, profile, agency, isOwner, isOwnerOrManager, isDeactivated, isLoading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ session, profile, agency, isOwner, isOwnerOrManager, isDeactivated, isLoading, signOut, refreshProfile, profileLoadedFor }}>
       {children}
     </AuthContext.Provider>
   );

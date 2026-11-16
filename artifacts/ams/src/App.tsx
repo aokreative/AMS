@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AppLayout } from '@/layouts/AppLayout';
+import { needsAgencySetup } from '@/lib/auth';
 import NotFound from '@/pages/not-found';
 
 import Login from '@/pages/login';
@@ -32,13 +33,20 @@ import ForgotPassword from '@/pages/forgot-password';
 import ResetPassword from '@/pages/reset-password';
 import Legal from '@/pages/legal';
 import BillingReturn from '@/pages/billing-return';
+import Onboarding from '@/pages/onboarding';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ component: Component }: { component: React.ComponentType }) => {
-  const { session, isLoading, isDeactivated, signOut } = useAuth();
+  const { session, profile, agency, isLoading, isDeactivated, signOut, profileLoadedFor } = useAuth();
   
   if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading workspace...</div>;
   if (!session) return <Redirect to="/login" />;
+  // Signed in (e.g. just verified the email code) but no agency yet: finish sign-up.
+  if (needsAgencySetup(session.id, profileLoadedFor, !!profile)) return <Redirect to="/register" />;
+  // Owners finish the setup wizard (language, currency, plan) first.
+  if (profile?.role === 'owner' && !profile.deactivated_at && agency && !agency.setup_completed_at) {
+    return <Redirect to="/onboarding" />;
+  }
   if (isDeactivated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -69,6 +77,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/join" component={Join} />
+      <Route path="/onboarding" component={Onboarding} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/privacy" component={() => <Legal kind="privacy" />} />

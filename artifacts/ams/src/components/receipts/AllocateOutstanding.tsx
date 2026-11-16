@@ -1,3 +1,4 @@
+import { getCurrency } from '@/lib/money';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -41,7 +42,7 @@ export function AllocateOutstanding({
               <TableHead>Policy</TableHead>
               <TableHead>Expected</TableHead>
               <TableHead className="text-right">Remaining</TableHead>
-              <TableHead className="w-36">Apply (KES)</TableHead>
+              <TableHead className="w-36">Apply ({getCurrency()})</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

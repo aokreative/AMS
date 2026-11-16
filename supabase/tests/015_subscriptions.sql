@@ -228,7 +228,7 @@ BEGIN
   SELECT string_agg(p.proname, ',' ORDER BY p.proname) INTO v_bad
     FROM pg_proc p JOIN pg_namespace ns ON ns.oid = p.pronamespace
    WHERE ns.nspname = 'public' AND p.prosrc LIKE '%ams.system_write%'
-     AND p.proname NOT IN ('create_agency_with_owner', 'accept_invite', 'enforce_subscription', 'remove_member', 'revoke_invite');
+     AND p.proname NOT IN ('create_agency_with_owner', 'accept_invite', 'enforce_subscription', 'remove_member', 'revoke_invite', 'change_member_role');
   ASSERT v_bad IS NULL, format('unexpected functions set ams.system_write: %s', v_bad);
 
   -- ---------------------------------------------------------

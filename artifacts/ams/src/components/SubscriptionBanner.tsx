@@ -2,10 +2,12 @@ import { Link } from 'wouter';
 import { AlertTriangle, Lock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { agencyAccess, daysLeft, todayNairobi } from '@/lib/subscription';
+import { useTranslation } from 'react-i18next';
 
 /** Shown to everyone while the agency is in grace or read-only. Hidden while active or comped. */
 export function SubscriptionBanner() {
   const { agency, isOwner } = useAuth();
+  const { t } = useTranslation();
   if (!agency) return null;
   const today = todayNairobi();
   const access = agencyAccess(agency, today);
@@ -14,9 +16,9 @@ export function SubscriptionBanner() {
   const graceLeft = 3 + (daysLeft(agency, today) ?? 0) + 1;
   const readOnly = access === 'read_only';
   const action = isOwner ? (
-    <Link href="/settings/billing" className="font-semibold underline underline-offset-2">Pay now</Link>
+    <Link href="/settings/billing" className="font-semibold underline underline-offset-2">{t('banner.payNow')}</Link>
   ) : (
-    <span className="font-medium">Ask your agency owner to renew.</span>
+    <span className="font-medium">{t('banner.askOwner')}</span>
   );
 
   return (
@@ -32,9 +34,9 @@ export function SubscriptionBanner() {
       <span>
         {readOnly
           ? agency.paid_until
-            ? "Read-only: the agency's subscription has lapsed. You can view everything, but changes are paused. "
-            : 'Read-only until the first payment. '
-          : `The subscription has expired. ${graceLeft} day${graceLeft === 1 ? '' : 's'} left before the agency becomes read-only. `}
+            ? `${t('banner.readOnlyLapsed')} `
+            : `${t('banner.readOnlyNew')} `
+          : `${t('banner.grace', { count: graceLeft })} `}
         {action}
       </span>
     </div>

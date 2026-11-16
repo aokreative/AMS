@@ -1,3 +1,4 @@
+import { getCurrency } from '@/lib/money';
 import React, { useState } from 'react';
 import { usePolicies, useInsurers, useProductLines, useClients, useCreatePolicy, useUpdatePolicy, useDeletePolicy } from '@/hooks/queries';
 import { Button } from '@/components/ui/button';
@@ -241,8 +242,8 @@ export default function Policies() {
                     name="premium_amount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Premium (KES)</FormLabel>
-                        <FormControl><Input type="number" {...field} /></FormControl>
+                        <FormLabel>Premium ({getCurrency()})</FormLabel>
+                        <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

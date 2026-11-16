@@ -9,6 +9,9 @@ export const TIERS: Tier[] = [
   { key: 'enterprise_plus', name: 'Enterprise Plus', price_kes: 30000, max_members: null, max_active_policies: null, sort_order: 4 },
 ];
 
+/** Owners allowed per plan (mirror of subscription_tiers.max_owners; null = unlimited). */
+export const OWNERS: Record<string, number | null> = { starter: 1, growth: 2, enterprise: 3, enterprise_plus: null };
+
 export type AccessState = 'active' | 'grace' | 'read_only';
 
 interface SubscriptionDates {

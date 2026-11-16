@@ -1,18 +1,14 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { formatMoney } from './money';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Amount in the signed-in agency's currency (see lib/money). */
 export function formatCurrency(amount: number | null | undefined): string {
-  if (amount === null || amount === undefined) return 'KES 0';
-  return new Intl.NumberFormat('en-KE', {
-    style: 'currency',
-    currency: 'KES',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return formatMoney(amount);
 }
 
 export function formatDate(dateString: string | null | undefined): string {

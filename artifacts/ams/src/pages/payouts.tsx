@@ -1,3 +1,4 @@
+import { getCurrency } from '@/lib/money';
 import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
@@ -236,7 +237,7 @@ function AddAdjustmentDialog({ open, onOpenChange }: { open: boolean; onOpenChan
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="adj-amount">Amount (KES, negative to deduct)</Label>
+            <Label htmlFor="adj-amount">Amount ({getCurrency()}, negative to deduct)</Label>
             <Input id="adj-amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g. 2500 or -500" />
           </div>
           <div className="space-y-2">
