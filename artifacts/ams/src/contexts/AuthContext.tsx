@@ -173,8 +173,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCurrency(agency?.currency);
   }, [agency?.currency]);
   useEffect(() => {
-    if (profile?.language) setLanguage(profile.language);
-  }, [profile?.language]);
+    if (agency?.language) setLanguage(agency.language);
+  }, [agency?.language]);
 
   const isOwner = profile?.role === 'owner';
   const isOwnerOrManager = profile?.role === 'owner' || profile?.role === 'manager';

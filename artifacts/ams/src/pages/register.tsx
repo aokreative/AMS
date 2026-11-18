@@ -12,7 +12,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2, AlertCircle } from 'lucide-react';
 import { TermsConsent } from '@/components/TermsConsent';
 import { VerifyEmailCode } from '@/components/VerifyEmailCode';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 type Step = 'form' | 'code' | 'finish';
 
@@ -213,9 +212,6 @@ export default function Register() {
             </form>
           )}
         </Card>
-        <div className="mx-auto mt-4 w-48">
-          <LanguageSwitcher />
-        </div>
       </div>
     </div>
   );

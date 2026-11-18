@@ -20,7 +20,8 @@ import { useSetAgentsManageRenewals } from '@/hooks/renewals';
 import { usePendingInvites, useRevokeInvite, useChangeMemberRole, useClientCountsByAgent } from '@/hooks/team';
 import { useForm } from 'react-hook-form';
 import { BillingTab } from '@/components/billing/BillingTab';
-import { tierName } from '@/lib/subscription';
+import { ownerPlacesLeft, tierName, todayNairobi } from '@/lib/subscription';
+import { LanguageCurrencyCard } from '@/components/settings/LanguageCurrencyCard';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 export default function Settings({ tab }: { tab?: string } = {}) {
@@ -38,6 +39,12 @@ export default function Settings({ tab }: { tab?: string } = {}) {
   const [ratesFor, setRatesFor] = useState<{ id: string; full_name: string } | null>(null);
   const activeUsers = users?.filter(u => !u.deactivated_at) ?? [];
   const removedUsers = users?.filter(u => u.deactivated_at) ?? [];
+  const ownerFull = ownerPlacesLeft(
+    agency?.subscription_tier ?? 'starter',
+    !!agency?.complimentary_until && agency.complimentary_until >= todayNairobi(),
+    activeUsers.filter(u => u.role === 'owner').length,
+    (invites ?? []).filter(i => i.role === 'owner').length,
+  ) === 0;
 
   const form = useForm({
     defaultValues: {
@@ -196,6 +203,7 @@ export default function Settings({ tab }: { tab?: string } = {}) {
               </div>
             </CardContent>
           </Card>
+          <LanguageCurrencyCard />
         </TabsContent>
 
         {isOwnerOrManager && (
@@ -257,7 +265,7 @@ export default function Settings({ tab }: { tab?: string } = {}) {
                                     >
                                       <SelectTrigger className="w-28 h-8"><SelectValue /></SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="owner">Owner</SelectItem>
+                                        <SelectItem value="owner" disabled={ownerFull && user.role !== 'owner'}>Owner{ownerFull && user.role !== 'owner' ? ' (no places left)' : ''}</SelectItem>
                                         <SelectItem value="manager">Manager</SelectItem>
                                         <SelectItem value="agent">Agent</SelectItem>
                                       </SelectContent>

@@ -1,3 +1,5 @@
+import { getCurrency } from './money';
+
 /**
  * Flattens a record so nested objects become dot-notation keys.
  * e.g. { client: { name: "Jane" } } → { "client.name": "Jane" }
@@ -41,6 +43,23 @@ export function exportToCsv(
 ): void {
   if (!rows || rows.length === 0) return;
 
+  const blob = new Blob([buildCsv(rows, columns, getCurrency())], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `${filename}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+/** CSV text; the first line names the currency every amount is in. */
+export function buildCsv(
+  rows: Record<string, unknown>[],
+  columns: { key: string; label?: string }[] | undefined,
+  currency: string,
+): string {
   const flat = rows.map(r => flattenRow(r));
 
   // Determine headers
@@ -53,19 +72,11 @@ export function exportToCsv(
     : allKeys;
 
   const csvLines = [
+    escapeCell(`Currency: ${currency}`),
     headers.map(escapeCell).join(','),
     ...flat.map(row =>
       allKeys.map(k => escapeCell(row[k] ?? '')).join(',')
     ),
   ];
-
-  const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', `${filename}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  return csvLines.join('\n');
 }

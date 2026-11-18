@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/sheet";
 import { BrandMark } from '@/components/BrandLockup';
 import { SubscriptionBanner } from '@/components/SubscriptionBanner';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -146,7 +145,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </span>
             </div>
           </div>
-          <LanguageSwitcher signedIn className="mb-2 h-8 w-full" />
           <Button 
             variant="ghost" 
             className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground" 
@@ -197,8 +195,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                       </span>
                     </div>
                   </div>
-                  <LanguageSwitcher signedIn className="mb-2 h-8 w-full" />
-                  <Button 
+                          <Button 
                     variant="ghost" 
                     className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground" 
                     onClick={signOut}
