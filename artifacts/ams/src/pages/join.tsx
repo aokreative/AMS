@@ -9,6 +9,8 @@ import { BrandLockup } from '@/components/BrandLockup';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { TermsConsent, TERMS_REQUIRED_MESSAGE } from '@/components/TermsConsent';
+import { VerifyEmailCode } from '@/components/VerifyEmailCode';
+import { joinNextStep, signUpOutcome } from '@/lib/auth';
 
 interface InvitePreview {
   agency_name: string;
@@ -60,6 +62,8 @@ export default function Join() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [agreed, setAgreed] = useState(false);
+  // Email confirmation is on: after sign-up the person types the code we emailed.
+  const [codeStep, setCodeStep] = useState<null | { resend: boolean }>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -142,30 +146,33 @@ export default function Join() {
     setSubmitting(true);
     const email = preview.email;
     try {
+      let step: ReturnType<typeof joinNextStep>;
       if (mode === 'signin') {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-        if (signInError) throw new Error(signInError.message);
+        step = joinNextStep({ signInError: signInError?.message ?? null });
+        if (step === 'error') throw new Error(signInError!.message);
       } else {
-        const { data: authData, error: signUpError } = await supabase.auth.signUp({ email, password });
+        const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
         if (signUpError) {
           const msg = signUpError.message.toLowerCase();
-          if (msg.includes('already registered') || msg.includes('user already registered')) {
-            const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-            if (signInError) {
-              throw new Error('An account with this email already exists. Sign in instead with your existing password.');
-            }
-          } else {
-            throw new Error(signUpError.message);
-          }
-        } else if (!authData.session) {
+          if (!msg.includes('already registered')) throw new Error(signUpError.message);
+          step = 'signin';
+        } else {
+          step = joinNextStep({ outcome: signUpOutcome(data) });
+        }
+        if (step === 'signin') {
+          // The email already has an account: try the password they typed.
           const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-          if (signInError) {
-            throw new Error(
-              'Account created but could not sign in automatically. ' +
-                'Disable "Confirm email" in your Supabase Auth settings, then try again.'
-            );
+          step = joinNextStep({ signInError: signInError?.message ?? null });
+          if (step === 'error') {
+            throw new Error('An account with this email already exists. Sign in instead with your existing password.');
           }
         }
+      }
+      if (step === 'code') {
+        // From sign-in an unconfirmed account needs a fresh code; sign-up has just sent one.
+        setCodeStep({ resend: mode === 'signin' });
+        return;
       }
       await accept();
     } catch (err: any) {
@@ -218,6 +225,35 @@ export default function Join() {
       <CardDescription className="text-center">You've been invited as {roleLabel}</CardDescription>
     </CardHeader>
   );
+
+  // Email-code step: once the code is right the person is signed in and joins straight away.
+  if (codeStep) {
+    return (
+      <Shell>
+        {error && (
+          <CardContent className="pt-6">
+            <ErrorBox message={error} />
+          </CardContent>
+        )}
+        <VerifyEmailCode
+          email={preview.email}
+          sendOnMount={codeStep.resend}
+          onVerified={async () => {
+            setError(null);
+            setSubmitting(true);
+            try {
+              await accept();
+            } catch (err: any) {
+              setError(err.message || 'Something went wrong. Please try again.');
+              setCodeStep(null);
+            } finally {
+              setSubmitting(false);
+            }
+          }}
+        />
+      </Shell>
+    );
+  }
 
   // Keep the form on screen while a submit is in flight, even though the session appears mid-way.
   if (session && !submitting) {
