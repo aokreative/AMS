@@ -31,6 +31,9 @@ DECLARE
   a     UUID := gen_random_uuid();   -- superadmin, no agency yet
   a2    UUID := gen_random_uuid();   -- superadmin who belongs to a real agency
   o     UUID := gen_random_uuid();   -- ordinary owner
+  nm    UUID := gen_random_uuid();   -- someone who joins the demo during a session
+  n_earn INTEGER;
+  n_tx   INTEGER;
   ag    UUID := gen_random_uuid();
   n_clients   INTEGER;
   n_policies  INTEGER;
@@ -39,11 +42,13 @@ DECLARE
   demo_owner  UUID;
   n INTEGER;
 BEGIN
-  ASSERT demo IS NOT NULL, 'one agency is marked as the demo';
+  ASSERT demo = '00ca4ec4-7ca5-4f84-a9ef-ef8b6e3b006c', 'the demo is marked by its id';
   ASSERT (SELECT count(*) FROM agencies WHERE is_demo) = 1, 'exactly one demo agency';
   SELECT count(*) INTO n_clients  FROM clients  WHERE agency_id = demo;
   SELECT count(*) INTO n_policies FROM policies WHERE agency_id = demo;
-  SELECT count(*) INTO n_users    FROM users    WHERE agency_id = demo;
+  SELECT count(*) INTO n_users    FROM users    WHERE agency_id = demo AND id NOT IN (SELECT user_id FROM platform_admins);
+  SELECT count(*) INTO n_earn     FROM agent_earnings WHERE agency_id = demo;
+  SELECT count(*) INTO n_tx       FROM commission_transactions WHERE agency_id = demo;
   SELECT name INTO demo_name FROM agencies WHERE id = demo;
   SELECT id INTO demo_owner FROM users WHERE agency_id = demo AND role = 'owner' ORDER BY created_at LIMIT 1;
 
@@ -51,7 +56,8 @@ BEGIN
   INSERT INTO auth.users (id, email, aud, role, instance_id) VALUES
     (a,  'a-019@test.local',  'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000'),
     (a2, 'a2-019@test.local', 'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000'),
-    (o,  'o-019@test.local',  'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000');
+    (o,  'o-019@test.local',  'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000'),
+    (nm, 'nm-019@test.local', 'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000');
   INSERT INTO agencies (id, name, paid_until, setup_completed_at) VALUES (ag, 'Real Agency 019', current_date + 30, now());
   INSERT INTO users (id, agency_id, role, full_name, email) VALUES
     (o,  ag, 'owner', 'Owner 019', 'o-019@test.local'),
@@ -85,9 +91,18 @@ BEGIN
     PERFORM set_agency_currency('USD');
     SELECT count(*) INTO n FROM clients WHERE agency_id = demo AND name = 'Demo session client 019';
     ASSERT n = 1, 'client added in demo';
+    -- someone joins the demo (as if an invite were accepted)
+    RESET ROLE;
+    PERFORM set_config('request.jwt.claims', '{}', true);
+    INSERT INTO users (id, agency_id, role, full_name, email) VALUES (nm, demo, 'agent', 'Joined 019', 'nm-019@test.local');
+    PERFORM _t019_as(a);
+    SET LOCAL ROLE authenticated;
 
     -- leave: everything is back as it was saved
     PERFORM admin_leave_demo();
+    -- check as the database owner: the superadmin's seat is switched off now
+    RESET ROLE;
+    PERFORM set_config('request.jwt.claims', '{}', true);
     SELECT count(*) INTO n FROM clients WHERE agency_id = demo;
     ASSERT n = n_clients, format('clients restored: %s vs %s', n, n_clients);
     ASSERT NOT EXISTS (SELECT 1 FROM clients WHERE agency_id = demo AND name = 'Demo session client 019'), 'demo client gone';
@@ -100,14 +115,22 @@ BEGIN
     ASSERT NOT EXISTS (SELECT 1 FROM policies WHERE agency_id = demo AND commission_expected IS NULL AND premium_amount IS NOT NULL
                          AND commission_rate IS NOT NULL), 'commission_expected present';
     -- demo members untouched, superadmin keeps its seat
-    SELECT count(*) INTO n FROM users WHERE agency_id = demo AND id <> a;
+    SELECT count(*) INTO n FROM users WHERE agency_id = demo AND id NOT IN (a, nm) AND id NOT IN (SELECT user_id FROM platform_admins);
     ASSERT n = n_users, 'demo members restored';
-    ASSERT EXISTS (SELECT 1 FROM users WHERE id = a AND agency_id = demo), 'admin seat kept';
+    ASSERT EXISTS (SELECT 1 FROM users WHERE id = a AND agency_id = demo AND deactivated_at IS NOT NULL), 'admin seat switched off after leaving';
+    ASSERT (SELECT deactivated_at IS NOT NULL FROM users WHERE id = nm), 'people who joined during the demo are removed';
+    SELECT count(*) INTO n FROM agent_earnings WHERE agency_id = demo;
+    ASSERT n = n_earn, format('earnings restored, not regenerated: %s vs %s', n, n_earn);
+    SELECT count(*) INTO n FROM commission_transactions WHERE agency_id = demo;
+    ASSERT n = n_tx, 'commissions restored';
 
     -- opening again also starts from the saved copy
-    INSERT INTO clients (agency_id, type, name) VALUES (demo, 'individual', 'Leftover 019');
+    INSERT INTO clients (agency_id, type, name, assigned_agent_id) VALUES (demo, 'individual', 'Leftover 019', demo_owner);
+    PERFORM _t019_as(a);
+    SET LOCAL ROLE authenticated;
     PERFORM admin_open_demo();
     ASSERT NOT EXISTS (SELECT 1 FROM clients WHERE agency_id = demo AND name = 'Leftover 019'), 'open resets leftovers';
+    ASSERT (SELECT deactivated_at IS NULL AND role = 'owner' FROM users WHERE id = a), 'seat back on when reopening';
 
     -- other agencies are never touched
     PERFORM _t019_as(o);
@@ -122,6 +145,11 @@ BEGIN
   ASSERT NOT EXISTS (SELECT 1 FROM pg_trigger tg JOIN pg_class c ON c.oid = tg.tgrelid JOIN pg_namespace ns ON ns.oid = c.relnamespace
                      WHERE ns.nspname = 'public' AND NOT tg.tgisinternal AND tg.tgenabled = 'D'), 'triggers back on after restore';
   ASSERT NOT has_function_privilege('authenticated', 'public._demo_table_order()', 'EXECUTE'), 'order is internal';
+  -- every table trigger steps aside during a demo reset (no table-wide DDL needed)
+  ASSERT NOT EXISTS (SELECT 1 FROM pg_trigger tg JOIN pg_class c ON c.oid = tg.tgrelid JOIN pg_namespace ns ON ns.oid = c.relnamespace
+                      WHERE ns.nspname = 'public' AND NOT tg.tgisinternal
+                        AND pg_get_triggerdef(tg.oid) NOT LIKE '%ams.demo_restore%'), 'all triggers have the demo-reset guard';
+  ASSERT pg_get_functiondef('public._demo_restore()'::regprocedure) NOT LIKE '%DISABLE TRIGGER%', 'no DDL in the reset';
   ASSERT NOT has_function_privilege('anon', 'public.admin_open_demo()', 'EXECUTE'), 'grant: anon';
   ASSERT NOT has_function_privilege('authenticated', 'public._demo_restore()', 'EXECUTE'), 'restore is internal';
 END;

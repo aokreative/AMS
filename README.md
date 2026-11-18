@@ -101,7 +101,8 @@ New migrations go in `supabase/migrations/` and should be applied in order.
 | 016 | Onboarding: agency currency and language, setup_completed_at, user language, owners per plan, multiple owners |
 | 018 | Superadmin: platform_admins, admin_actions log, agency suspension / custom price columns, admin_* RPCs gated by is_platform_admin(), suspended agencies refused every write |
 | 018a | Superadmin review fixes: a plan change clears the custom price; suspension also blocks agency profile/settings, member records, settings history and receipt file uploads/deletes |
-| 019 / 019b | Resettable demo: agencies.is_demo, private demo_snapshot copy, admin_open_demo / admin_leave_demo reset the demo agency (table triggers off for the swap, FK order kept) |
+| 019 / 019b | Resettable demo: agencies.is_demo, private demo_snapshot copy, admin_open_demo / admin_leave_demo reset the demo agency |
+| 019c | Demo review fixes: demo marked by id; every table trigger steps aside while ams.demo_restore is on (no DDL, only demo rows locked); table list from the catalog; people who joined during a session and the superadmin seat are switched off on leaving |
 
 ### Running the database tests
 

@@ -45,8 +45,12 @@ import Demo from '@/pages/demo';
 
 /** /admin: superadmins only; everyone else gets Not found (signed-out visitors go to sign in). */
 const AdminRoute = () => {
-  const { session, isLoading, profileLoadedFor, isPlatformAdmin } = useAuth();
-  if (isLoading || (session && profileLoadedFor !== session.id)) {
+  const { session, isLoading, profileLoadedFor, isPlatformAdmin, inDemo, leaveDemo } = useAuth();
+  // Coming back to /admin from inside the demo leaves it: its changes are thrown away.
+  useEffect(() => {
+    if (isPlatformAdmin && inDemo) void leaveDemo().catch(() => undefined);
+  }, [isPlatformAdmin, inDemo, leaveDemo]);
+  if (isLoading || (session && profileLoadedFor !== session.id) || (isPlatformAdmin && inDemo)) {
     return <div className="min-h-screen flex items-center justify-center">Loading…</div>;
   }
   if (!session) return <Redirect to="/login" />;

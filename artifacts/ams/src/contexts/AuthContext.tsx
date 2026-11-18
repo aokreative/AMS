@@ -158,6 +158,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setSession(null);
         setIsPlatformAdmin(false);
+        // Session gone (sign-out or expiry): the next sign-in starts outside the demo.
+        writeDemoFlag(false);
+        setInDemo(false);
         setProfile(null);
         setAgency(null);
         const path = window.location.pathname;
@@ -175,6 +178,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [setLocation]);
 
   const signOut = async () => {
+    // Signing out from inside the demo throws its changes away too (best effort).
+    if (readDemoFlag()) await supabase.rpc('admin_leave_demo').then(() => undefined, () => undefined);
     await supabase.auth.signOut();
     queryClient.clear();
     lastUserIdRef.current = null;
