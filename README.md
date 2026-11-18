@@ -101,6 +101,7 @@ New migrations go in `supabase/migrations/` and should be applied in order.
 | 016 | Onboarding: agency currency and language, setup_completed_at, user language, owners per plan, multiple owners |
 | 018 | Superadmin: platform_admins, admin_actions log, agency suspension / custom price columns, admin_* RPCs gated by is_platform_admin(), suspended agencies refused every write |
 | 018a | Superadmin review fixes: a plan change clears the custom price; suspension also blocks agency profile/settings, member records, settings history and receipt file uploads/deletes |
+| 019 / 019b | Resettable demo: agencies.is_demo, private demo_snapshot copy, admin_open_demo / admin_leave_demo reset the demo agency (table triggers off for the swap, FK order kept) |
 
 ### Running the database tests
 
@@ -169,6 +170,7 @@ Every active policy expiring within 90 days (or already expired) is in the pipel
 - A suspended agency's members all see "This account is suspended" with the reason; the database refuses every write and `paystack-initialize` refuses payment.
 - **Add a superadmin:** create the user in Supabase → Authentication → Add user (auto-confirm, an email not used by any agency), then run
   `insert into platform_admins (user_id) select id from auth.users where email = '<that email>';`
+- **Demo agency:** "Open demo agency" (superadmin header) resets Demo Insurance Agency to its saved copy and opens the full app as its Owner (the superadmin gets an Owner seat there). Everything works; "Leave demo" (banner) resets it again, and the next open also resets. Paystack refuses demo payments. The demo@/manager@/agent@ logins share this agency, so a reset wipes their changes too. To change the saved copy, run `select public._demo_save_snapshot();` as postgres after editing the demo.
 - Referral partner commission is not tracked here (it lives in the CRM).
 
 ## Deploying (Vercel)

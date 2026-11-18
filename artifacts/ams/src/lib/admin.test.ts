@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adminStatus, matchesSearch } from './admin';
+import { adminBelongsOnAdminPage, adminStatus, matchesSearch } from './admin';
 
 const today = '2026-11-18';
 const a = (o: Partial<{ paid_until: string | null; complimentary_until: string | null; suspended_at: string | null }>) => ({
@@ -38,5 +38,18 @@ describe('matchesSearch', () => {
   });
   it('an empty search matches everything', () => {
     expect(matchesSearch(row, '  ')).toBe(true);
+  });
+});
+
+describe('adminBelongsOnAdminPage', () => {
+  it('a superadmin outside the demo always goes to /admin', () => {
+    expect(adminBelongsOnAdminPage(true, false)).toBe(true);
+  });
+  it('inside the demo the superadmin uses the app', () => {
+    expect(adminBelongsOnAdminPage(true, true)).toBe(false);
+  });
+  it('never for agency users', () => {
+    expect(adminBelongsOnAdminPage(false, false)).toBe(false);
+    expect(adminBelongsOnAdminPage(false, true)).toBe(false);
   });
 });

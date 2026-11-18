@@ -90,3 +90,28 @@ export type AdminRpc =
   | 'admin_set_comp'
   | 'admin_set_paid_until'
   | 'admin_set_tier';
+
+/** A superadmin uses /admin, except while inside the resettable demo agency. */
+export function adminBelongsOnAdminPage(isPlatformAdmin: boolean, inDemo: boolean): boolean {
+  return isPlatformAdmin && !inDemo;
+}
+
+const DEMO_KEY = 'ams.inDemo';
+
+/** Whether this browser tab is inside the demo (kept across reloads, cleared on leave/sign-out). */
+export function readDemoFlag(): boolean {
+  try {
+    return sessionStorage.getItem(DEMO_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function writeDemoFlag(on: boolean): void {
+  try {
+    if (on) sessionStorage.setItem(DEMO_KEY, '1');
+    else sessionStorage.removeItem(DEMO_KEY);
+  } catch {
+    // ignore
+  }
+}
