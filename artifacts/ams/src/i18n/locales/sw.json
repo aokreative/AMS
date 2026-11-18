@@ -11,7 +11,8 @@
     "email": "Barua pepe",
     "password": "Nenosiri",
     "fullName": "Jina lako kamili",
-    "or": "au"
+    "or": "au",
+    "close": "Funga"
   },
   "roles": {
     "owner": "Mmiliki",
@@ -53,7 +54,9 @@
     "privacy": "Taarifa ya Faragha",
     "termsRequired": "Kubali Masharti na Taarifa ya Faragha ili kuendelea",
     "privacyLink": "Taarifa ya Faragha",
-    "termsLink": "Masharti ya Huduma"
+    "termsLink": "Masharti ya Huduma",
+    "tryDemo": "Jaribu demo",
+    "tryDemoHint": "Ona jinsi ya kuandaa wakala kwa data ya mfano. Huhitaji akaunti."
   },
   "verify": {
     "title": "Angalia barua pepe yako",
@@ -77,10 +80,9 @@
     "currencyHint": "Malipo yote ya bima, kamisheni na ripoti zitaonyeshwa kwa sarafu hii. Mmiliki anaweza kuibadilisha baadaye kwenye Mipangilio; kiasi hakibadilishwi, ni jina la sarafu tu.",
     "planTitle": "Chagua mpango wako",
     "planHint": "Mipango hulipwa kila mwezi kwa KES kupitia Paystack (M-Pesa au kadi). Malipo ya kadi kwa sarafu nyingine hubadilishwa na benki yako.",
-    "payLater": "Nitalipa baadaye",
-    "payLaterHint": "Wakala wako utakuwa wa kusoma tu hadi malipo ya kwanza.",
     "finish": "Maliza maandalizi",
-    "saving": "Inahifadhi…"
+    "saving": "Inahifadhi…",
+    "payRequired": "Lipia kipindi chako cha kwanza ili kufungua wakala wako. Unaweza kubadili mpango baadaye."
   },
   "plans": {
     "perMonth": "kwa mwezi",
@@ -96,14 +98,60 @@
     "month_other": "Miezi {{count}}",
     "total": "Jumla",
     "pay": "Lipa {{amount}} kwa Paystack",
-    "current": "wa sasa"
+    "current": "wa sasa",
+    "details": "Unachopata",
+    "bestFor": "Inafaa kwa",
+    "limits": "Vikomo",
+    "gains": "Zaidi ya {{plan}}",
+    "included": "Vimo katika kila mpango",
+    "choose": "Chagua {{plan}}",
+    "selected": "Umechaguliwa",
+    "for_starter": "Wakala mmoja au ofisi ndogo inayoanza.",
+    "for_growth": "Wakala unaokua wenye timu ya mawakala.",
+    "for_enterprise": "Wakala imara wenye matawi au timu kadhaa.",
+    "for_enterprise_plus": "Wakala mkubwa au dalali asiyetaka vikomo.",
+    "f_clients": "Wateja na sera mahali pamoja",
+    "f_commissions": "Ufuatiliaji wa kamisheni na kulinganisha taarifa za kampuni za bima",
+    "f_receipts": "Stakabadhi kwa M-Pesa, benki au hundi",
+    "f_payouts": "Viwango vya kamisheni vya mawakala, mapato na malipo",
+    "f_renewals": "Upyaji: amewasiliana, amepewa bei, amerudi au amepotea",
+    "f_reports": "Ripoti za kila mwezi na CSV",
+    "f_team": "Majukumu ya Mmiliki, Meneja na Wakala kwa mialiko",
+    "f_languages": "Lugha 6 na sarafu 4 (KES, TZS, UGX, USD)"
   },
   "banner": {
-    "readOnlyLapsed": "Kusoma tu: usajili wa wakala umeisha. Unaweza kuona kila kitu, lakini mabadiliko yamesitishwa.",
-    "readOnlyNew": "Kusoma tu hadi malipo ya kwanza.",
-    "grace_one": "Usajili umeisha. Imebaki siku {{count}} kabla wakala kuwa wa kusoma tu.",
-    "grace_other": "Usajili umeisha. Zimebaki siku {{count}} kabla wakala kuwa wa kusoma tu.",
     "payNow": "Lipa sasa",
-    "askOwner": "Mwombe mmiliki wa wakala alipe upya."
+    "askOwner": "Mwombe mmiliki wa wakala alipe upya.",
+    "grace_one": "Usajili umeisha. Imebaki siku {{count}} kabla ufikiaji haujasimama.",
+    "grace_other": "Usajili umeisha. Zimebaki siku {{count}} kabla ufikiaji haujasimama."
+  },
+  "legal": {
+    "contents": "Yaliyomo",
+    "back": "Rudi"
+  },
+  "paywall": {
+    "titleNew": "Chagua mpango ili kufungua wakala wako",
+    "titleLapsed": "Usajili wako umeisha",
+    "bodyOwner": "Lipa ili kuendelea. Kila kitu ulichoweka kiko salama na kitarudi mara malipo yakipita.",
+    "bodyMember": "Mwombe Mmiliki wa wakala wako alipe upya. Kazi yako iko salama.",
+    "download": "Pakua data yako",
+    "downloadHint": "Wateja na sera zako kama faili za CSV, hata kabla ya kulipa.",
+    "clients": "Wateja (CSV)",
+    "policies": "Sera (CSV)",
+    "nothing": "Bado hakuna cha kupakua."
+  },
+  "demo": {
+    "badge": "Demo",
+    "title": "Jaribu kuandaa wakala",
+    "subtitle": "Mazoezi kwa data ya mfano. Hakuna kinachohifadhiwa wala akaunti kuundwa.",
+    "agency": "Wakala wa Bima wa Mfano",
+    "doneTitle": "Hayo ndiyo maandalizi yote",
+    "doneBody": "Katika wakala wako ungelipia {{plan}} kwa M-Pesa au kadi, kisha uanze kuongeza wateja na sera.",
+    "create": "Unda wakala wako",
+    "restart": "Anza tena",
+    "signIn": "Rudi kuingia",
+    "payNote": "Katika demo hakuna malipo.",
+    "currency": "Sarafu",
+    "plan": "Mpango"
   }
 }

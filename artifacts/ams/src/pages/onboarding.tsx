@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { PlanPicker } from '@/components/billing/PlanPicker';
 import { cn } from '@/lib/utils';
 
-function Choice({ selected, onClick, title, hint }: { selected: boolean; onClick: () => void; title: string; hint?: string }) {
+export function Choice({ selected, onClick, title, hint }: { selected: boolean; onClick: () => void; title: string; hint?: string }) {
   return (
     <button
       type="button"
@@ -147,15 +147,9 @@ export default function Onboarding() {
                 {comped ? (
                   <Button className="w-full" onClick={() => setLocation('/dashboard')}>{t('onboarding.finish')}</Button>
                 ) : (
-                  <PlanPicker
-                    footer={
-                      <Button variant="outline" onClick={() => setLocation('/dashboard')} title={t('onboarding.payLaterHint')}>
-                        {t('onboarding.payLater')}
-                      </Button>
-                    }
-                  />
+                  <PlanPicker />
                 )}
-                {!comped && <p className="mt-3 text-xs text-muted-foreground">{t('onboarding.payLaterHint')}</p>}
+                {!comped && <p className="mt-3 text-xs text-muted-foreground">{t('onboarding.payRequired')}</p>}
               </CardContent>
             </>
           )}

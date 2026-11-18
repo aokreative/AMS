@@ -11,7 +11,8 @@
     "email": "Adresse e-mail",
     "password": "Mot de passe",
     "fullName": "Votre nom complet",
-    "or": "ou"
+    "or": "ou",
+    "close": "Fermer"
   },
   "roles": {
     "owner": "Propriétaire",
@@ -53,7 +54,9 @@
     "privacy": "Politique de confidentialité",
     "termsRequired": "Acceptez les Conditions et la Politique de confidentialité pour continuer",
     "privacyLink": "Politique de confidentialité",
-    "termsLink": "Conditions d'utilisation"
+    "termsLink": "Conditions d'utilisation",
+    "tryDemo": "Essayer la démo",
+    "tryDemoHint": "Découvrez la configuration d'une agence avec des données d'exemple. Aucun compte requis."
   },
   "verify": {
     "title": "Vérifiez votre e-mail",
@@ -77,10 +80,9 @@
     "currencyHint": "Les primes, commissions et rapports s'afficheront dans cette devise. Un propriétaire peut la changer plus tard dans les Paramètres ; les montants ne sont jamais convertis, seule l'étiquette change.",
     "planTitle": "Choisissez votre formule",
     "planHint": "Les formules sont facturées chaque mois en KES via Paystack (M-Pesa ou carte). Les paiements par carte dans une autre devise sont convertis par votre banque.",
-    "payLater": "Je paierai plus tard",
-    "payLaterHint": "Votre agence reste en lecture seule jusqu'au premier paiement.",
     "finish": "Terminer la configuration",
-    "saving": "Enregistrement…"
+    "saving": "Enregistrement…",
+    "payRequired": "Payez votre première période pour ouvrir votre agence. Vous pourrez changer de formule plus tard."
   },
   "plans": {
     "perMonth": "par mois",
@@ -96,14 +98,60 @@
     "month_other": "{{count}} mois",
     "total": "Total",
     "pay": "Payer {{amount}} avec Paystack",
-    "current": "actuelle"
+    "current": "actuelle",
+    "details": "Ce qui est inclus",
+    "bestFor": "Idéal pour",
+    "limits": "Limites",
+    "gains": "En plus de {{plan}}",
+    "included": "Inclus dans toutes les formules",
+    "choose": "Choisir {{plan}}",
+    "selected": "Sélectionnée",
+    "for_starter": "Un agent indépendant ou un petit bureau qui démarre.",
+    "for_growth": "Une agence en croissance avec une équipe d'agents.",
+    "for_enterprise": "Une agence établie avec plusieurs agences ou équipes.",
+    "for_enterprise_plus": "Une grande agence ou un courtier sans limites.",
+    "f_clients": "Clients et polices au même endroit",
+    "f_commissions": "Suivi des commissions et rapprochement des relevés d'assureurs",
+    "f_receipts": "Encaissements par M-Pesa, banque ou chèque",
+    "f_payouts": "Taux de commission des agents, gains et versements",
+    "f_renewals": "Suivi des renouvellements : contacté, devis, renouvelé ou perdu",
+    "f_reports": "Rapports mensuels et exports CSV",
+    "f_team": "Rôles Propriétaire, Responsable et Agent avec invitations",
+    "f_languages": "6 langues et 4 devises (KES, TZS, UGX, USD)"
   },
   "banner": {
-    "readOnlyLapsed": "Lecture seule : l'abonnement de l'agence a expiré. Vous pouvez tout consulter, mais les modifications sont suspendues.",
-    "readOnlyNew": "Lecture seule jusqu'au premier paiement.",
-    "grace_one": "L'abonnement a expiré. Il reste {{count}} jour avant le passage en lecture seule.",
-    "grace_other": "L'abonnement a expiré. Il reste {{count}} jours avant le passage en lecture seule.",
     "payNow": "Payer maintenant",
-    "askOwner": "Demandez au propriétaire de l'agence de renouveler."
+    "askOwner": "Demandez au propriétaire de l'agence de renouveler.",
+    "grace_one": "L'abonnement a expiré. Il reste {{count}} jour avant la coupure de l'accès.",
+    "grace_other": "L'abonnement a expiré. Il reste {{count}} jours avant la coupure de l'accès."
+  },
+  "legal": {
+    "contents": "Sommaire",
+    "back": "Retour"
+  },
+  "paywall": {
+    "titleNew": "Choisissez une formule pour ouvrir votre agence",
+    "titleLapsed": "Votre abonnement a pris fin",
+    "bodyOwner": "Payez pour continuer. Toutes les données de votre agence sont conservées et reviennent dès que le paiement passe.",
+    "bodyMember": "Demandez à un propriétaire de l'agence de renouveler. Votre travail est conservé en attendant.",
+    "download": "Télécharger vos données",
+    "downloadHint": "Vos clients et polices en fichiers CSV, même avant de payer.",
+    "clients": "Clients (CSV)",
+    "policies": "Polices (CSV)",
+    "nothing": "Rien à télécharger pour l'instant."
+  },
+  "demo": {
+    "badge": "Démo",
+    "title": "Essayez de configurer une agence",
+    "subtitle": "Un essai avec des données d'exemple. Rien n'est enregistré et aucun compte n'est créé.",
+    "agency": "Agence d'assurance exemple",
+    "doneTitle": "La configuration est terminée",
+    "doneBody": "Dans votre agence, vous paieriez maintenant {{plan}} par M-Pesa ou carte, puis vous ajouteriez clients et polices.",
+    "create": "Créer votre agence",
+    "restart": "Recommencer",
+    "signIn": "Retour à la connexion",
+    "payNote": "Dans la démo, rien n'est facturé.",
+    "currency": "Devise",
+    "plan": "Formule"
   }
 }

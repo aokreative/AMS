@@ -9,11 +9,27 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useInitializePayment, tierFitError } from '@/hooks/subscription';
 import { ALLOWED_MONTHS, formatKes, OWNERS, paymentAmountKes, TIERS, todayNairobi } from '@/lib/subscription';
 import { cn } from '@/lib/utils';
+import { PlanDetails } from './PlanDetails';
 
-/** Plan cards + months + total + "Pay with Paystack". Used by the setup wizard and the Billing tab. */
-export function PlanPicker({ active = true, footer }: { active?: boolean; footer?: React.ReactNode }) {
+/**
+ * Plan cards (the selected one opens to show what it includes) + months + total + "Pay with Paystack".
+ * Used by the setup wizard, the Billing tab and the pay screen. In demo mode nothing is charged:
+ * the button calls onDemoChoose instead.
+ */
+export function PlanPicker({
+  active = true,
+  footer,
+  demo,
+  onDemoChoose,
+}: {
+  active?: boolean;
+  footer?: React.ReactNode;
+  demo?: boolean;
+  onDemoChoose?: (tier: string, months: number) => void;
+}) {
   const { t } = useTranslation();
-  const { agency } = useAuth();
+  const { agency: realAgency } = useAuth();
+  const agency = demo ? null : realAgency;
   const init = useInitializePayment();
   const today = todayNairobi();
   const current = agency?.subscription_tier ?? 'starter';
@@ -22,7 +38,7 @@ export function PlanPicker({ active = true, footer }: { active?: boolean; footer
   const [unfit, setUnfit] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
-    if (!active || !agency?.id) return;
+    if (demo || !active || !agency?.id) return;
     setTier(current);
     setMonths(1);
     init.reset();
@@ -86,6 +102,11 @@ export function PlanPicker({ active = true, footer }: { active?: boolean; footer
               </span>
               <span className="block text-xs text-muted-foreground">{limits(x)}</span>
               {unfit[x.key] && <span className="block text-xs text-destructive">{unfit[x.key]}</span>}
+              {tier === x.key ? (
+                <PlanDetails tier={x.key} />
+              ) : (
+                <span className="mt-1 block text-xs font-medium text-primary">{t('plans.details')} →</span>
+              )}
             </span>
           </Label>
         ))}
@@ -129,13 +150,19 @@ export function PlanPicker({ active = true, footer }: { active?: boolean; footer
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         {footer}
-        <Button
-          onClick={() => init.mutate({ tier, months: effectiveMonths })}
-          disabled={!amount || !!unfit[tier] || init.isPending || init.isSuccess}
-        >
-          {(init.isPending || init.isSuccess) && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-          {amount ? t('plans.pay', { amount: formatKes(amount.total) }) : 'Paystack'}
-        </Button>
+        {demo ? (
+          <Button onClick={() => onDemoChoose?.(tier, effectiveMonths)} disabled={!amount}>
+            {t('plans.choose', { plan: TIERS.find((x) => x.key === tier)?.name })}
+          </Button>
+        ) : (
+          <Button
+            onClick={() => init.mutate({ tier, months: effectiveMonths })}
+            disabled={!amount || !!unfit[tier] || init.isPending || init.isSuccess}
+          >
+            {(init.isPending || init.isSuccess) && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+            {amount ? t('plans.pay', { amount: formatKes(amount.total) }) : 'Paystack'}
+          </Button>
+        )}
       </div>
     </div>
   );

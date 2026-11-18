@@ -22,6 +22,7 @@ describe('isPublicAuthPath', () => {
   it('the privacy notice and terms are public', () => {
     expect(isPublicAuthPath('/privacy')).toBe(true);
     expect(isPublicAuthPath('/terms')).toBe(true);
+    expect(isPublicAuthPath('/demo')).toBe(true);
   });
   it('app pages are not', () => {
     expect(isPublicAuthPath('/dashboard')).toBe(false);

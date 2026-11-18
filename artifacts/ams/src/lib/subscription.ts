@@ -12,14 +12,15 @@ export const TIERS: Tier[] = [
 /** Owners allowed per plan (mirror of subscription_tiers.max_owners; null = unlimited). */
 export const OWNERS: Record<string, number | null> = { starter: 1, growth: 2, enterprise: 3, enterprise_plus: null };
 
-export type AccessState = 'active' | 'grace' | 'read_only';
+/** active / grace (3 days, full access) / locked: pay to access. */
+export type AccessState = 'active' | 'grace' | 'locked';
 
 interface SubscriptionDates {
   paid_until: string | null;
   complimentary_until: string | null;
 }
 
-const GRACE_DAYS = 3;
+export const GRACE_DAYS = 3;
 
 function dayDiff(from: string, to: string): number {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
@@ -30,7 +31,7 @@ export function agencyAccess(a: SubscriptionDates, today: string): AccessState {
   if (a.complimentary_until && a.complimentary_until >= today) return 'active';
   if (a.paid_until && a.paid_until >= today) return 'active';
   if (a.paid_until && dayDiff(a.paid_until, today) <= GRACE_DAYS) return 'grace';
-  return 'read_only';
+  return 'locked';
 }
 
 /** Days from today to paid_until (negative once past); null when comped or never paid. */
@@ -54,4 +55,19 @@ export function ownerPlacesLeft(tier: string, comped: boolean, owners: number, p
   const max = OWNERS[tier];
   if (max == null) return null;
   return Math.max(0, max - owners - pendingOwnerInvites);
+}
+
+export type PlanGain = { kind: 'members' | 'owners' | 'policies'; value: number | null };
+
+/** What a plan adds over the plan below it (null value = unlimited). Empty for the first plan. */
+export function planGains(tier: string): PlanGain[] {
+  const i = TIERS.findIndex((x) => x.key === tier);
+  if (i <= 0) return [];
+  const cur = TIERS[i];
+  const prev = TIERS[i - 1];
+  const out: PlanGain[] = [];
+  if (cur.max_members !== prev.max_members) out.push({ kind: 'members', value: cur.max_members });
+  if (OWNERS[cur.key] !== OWNERS[prev.key]) out.push({ kind: 'owners', value: OWNERS[cur.key] });
+  if (cur.max_active_policies !== prev.max_active_policies) out.push({ kind: 'policies', value: cur.max_active_policies });
+  return out;
 }

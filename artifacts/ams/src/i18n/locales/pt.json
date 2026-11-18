@@ -11,7 +11,8 @@
     "email": "Endereço de e-mail",
     "password": "Palavra-passe",
     "fullName": "O seu nome completo",
-    "or": "ou"
+    "or": "ou",
+    "close": "Fechar"
   },
   "roles": {
     "owner": "Proprietário",
@@ -53,7 +54,9 @@
     "privacy": "Aviso de Privacidade",
     "termsRequired": "Aceite os Termos e o Aviso de Privacidade para continuar",
     "privacyLink": "Aviso de Privacidade",
-    "termsLink": "Termos de Serviço"
+    "termsLink": "Termos de Serviço",
+    "tryDemo": "Experimentar a demo",
+    "tryDemoHint": "Veja como se configura uma agência, com dados de exemplo. Não precisa de conta."
   },
   "verify": {
     "title": "Verifique o seu e-mail",
@@ -77,10 +80,9 @@
     "currencyHint": "Prémios, comissões e relatórios serão apresentados nesta moeda. Um proprietário pode alterá-la mais tarde nas Definições; os valores nunca são convertidos, só a etiqueta muda.",
     "planTitle": "Escolha o seu plano",
     "planHint": "Os planos são cobrados mensalmente em KES através do Paystack (M-Pesa ou cartão). Pagamentos com cartão noutra moeda são convertidos pelo seu banco.",
-    "payLater": "Pago mais tarde",
-    "payLaterHint": "A sua agência fica só de leitura até ao primeiro pagamento.",
     "finish": "Concluir configuração",
-    "saving": "A guardar…"
+    "saving": "A guardar…",
+    "payRequired": "Pague o primeiro período para abrir a sua agência. Pode mudar de plano mais tarde."
   },
   "plans": {
     "perMonth": "por mês",
@@ -96,14 +98,60 @@
     "month_other": "{{count}} meses",
     "total": "Total",
     "pay": "Pagar {{amount}} com Paystack",
-    "current": "atual"
+    "current": "atual",
+    "details": "O que inclui",
+    "bestFor": "Ideal para",
+    "limits": "Limites",
+    "gains": "Mais do que {{plan}}",
+    "included": "Incluído em todos os planos",
+    "choose": "Escolher {{plan}}",
+    "selected": "Selecionado",
+    "for_starter": "Um agente individual ou um pequeno escritório a começar.",
+    "for_growth": "Uma agência em crescimento com uma equipa de agentes.",
+    "for_enterprise": "Uma agência estabelecida com várias filiais ou equipas.",
+    "for_enterprise_plus": "Uma grande agência ou corretor sem limites.",
+    "f_clients": "Clientes e apólices num só lugar",
+    "f_commissions": "Controlo de comissões e conciliação de extratos das seguradoras",
+    "f_receipts": "Recebimentos por M-Pesa, banco ou cheque",
+    "f_payouts": "Taxas de comissão dos agentes, ganhos e pagamentos",
+    "f_renewals": "Renovações: contactado, cotado, renovado ou perdido",
+    "f_reports": "Relatórios mensais e exportações CSV",
+    "f_team": "Funções de Proprietário, Gestor e Agente com convites",
+    "f_languages": "6 idiomas e 4 moedas (KES, TZS, UGX, USD)"
   },
   "banner": {
-    "readOnlyLapsed": "Só de leitura: a subscrição da agência expirou. Pode ver tudo, mas as alterações estão suspensas.",
-    "readOnlyNew": "Só de leitura até ao primeiro pagamento.",
-    "grace_one": "A subscrição expirou. Falta {{count}} dia para a agência passar a só de leitura.",
-    "grace_other": "A subscrição expirou. Faltam {{count}} dias para a agência passar a só de leitura.",
     "payNow": "Pagar agora",
-    "askOwner": "Peça ao proprietário da agência para renovar."
+    "askOwner": "Peça ao proprietário da agência para renovar.",
+    "grace_one": "A subscrição expirou. Falta {{count}} dia para o acesso parar.",
+    "grace_other": "A subscrição expirou. Faltam {{count}} dias para o acesso parar."
+  },
+  "legal": {
+    "contents": "Índice",
+    "back": "Voltar"
+  },
+  "paywall": {
+    "titleNew": "Escolha um plano para abrir a sua agência",
+    "titleLapsed": "A sua subscrição terminou",
+    "bodyOwner": "Pague para continuar. Tudo o que a agência registou fica guardado e volta assim que o pagamento passar.",
+    "bodyMember": "Peça a um proprietário da agência para renovar. O seu trabalho fica guardado entretanto.",
+    "download": "Transferir os seus dados",
+    "downloadHint": "Os seus clientes e apólices em ficheiros CSV, mesmo antes de pagar.",
+    "clients": "Clientes (CSV)",
+    "policies": "Apólices (CSV)",
+    "nothing": "Ainda não há nada para transferir."
+  },
+  "demo": {
+    "badge": "Demo",
+    "title": "Experimente configurar uma agência",
+    "subtitle": "Um ensaio com dados de exemplo. Nada é guardado e nenhuma conta é criada.",
+    "agency": "Agência de Seguros Exemplo",
+    "doneTitle": "A configuração está concluída",
+    "doneBody": "Na sua agência pagaria agora o {{plan}} por M-Pesa ou cartão e começaria a adicionar clientes e apólices.",
+    "create": "Criar a sua agência",
+    "restart": "Recomeçar",
+    "signIn": "Voltar ao início de sessão",
+    "payNote": "Na demo nada é cobrado.",
+    "currency": "Moeda",
+    "plan": "Plano"
   }
 }

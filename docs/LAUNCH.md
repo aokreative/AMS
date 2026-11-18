@@ -47,4 +47,4 @@ Without this, the in-app banner still warns everyone when a plan is about to lap
 ## 5. Smoke test
 
 - [ ] Sign in as Owner, Manager and Agent; click through each main page.
-- [ ] As a new agency before paying: confirm you can browse but adding a client is refused with the read-only message.
+- [ ] As a new agency before paying: confirm you see only the pay screen (Owners: plans + data download; others: "ask an Owner"), and that paying opens the app.

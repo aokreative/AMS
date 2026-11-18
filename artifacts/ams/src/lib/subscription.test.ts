@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { agencyAccess, daysLeft, formatKes, ownerPlacesLeft, OWNERS, TIERS } from './subscription';
+import { agencyAccess, daysLeft, formatKes, ownerPlacesLeft, OWNERS, planGains, TIERS } from './subscription';
 
 const today = '2026-11-15';
 const ag = (paid_until: string | null, complimentary_until: string | null = null) => ({ paid_until, complimentary_until });
@@ -29,9 +29,9 @@ describe('agencyAccess', () => {
   it('grace for 3 days after', () => {
     expect(agencyAccess(ag('2026-11-12'), today)).toBe('grace');
   });
-  it('read-only from day 4, and before any payment', () => {
-    expect(agencyAccess(ag('2026-11-11'), today)).toBe('read_only');
-    expect(agencyAccess(ag(null), today)).toBe('read_only');
+  it('locked (pay to access) from day 4, and before any payment', () => {
+    expect(agencyAccess(ag('2026-11-11'), today)).toBe('locked');
+    expect(agencyAccess(ag(null), today)).toBe('locked');
   });
   it('comped agencies are active', () => {
     expect(agencyAccess(ag(null, today), today)).toBe('active');
@@ -64,5 +64,30 @@ describe('ownerPlacesLeft', () => {
   it('unlimited on Enterprise Plus and for comped agencies', () => {
     expect(ownerPlacesLeft('enterprise_plus', false, 9, 0)).toBeNull();
     expect(ownerPlacesLeft('starter', true, 1, 0)).toBeNull();
+  });
+});
+
+describe('planGains', () => {
+  it('Starter is the base plan: nothing to compare', () => {
+    expect(planGains('starter')).toEqual([]);
+  });
+  it('Growth adds members, an owner and unlimited policies over Starter', () => {
+    expect(planGains('growth')).toEqual([
+      { kind: 'members', value: 10 },
+      { kind: 'owners', value: 2 },
+      { kind: 'policies', value: null },
+    ]);
+  });
+  it('Enterprise adds members and an owner over Growth (policies already unlimited)', () => {
+    expect(planGains('enterprise')).toEqual([
+      { kind: 'members', value: 25 },
+      { kind: 'owners', value: 3 },
+    ]);
+  });
+  it('Enterprise Plus makes members and owners unlimited', () => {
+    expect(planGains('enterprise_plus')).toEqual([
+      { kind: 'members', value: null },
+      { kind: 'owners', value: null },
+    ]);
   });
 });

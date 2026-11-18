@@ -32,6 +32,18 @@ import { BrandMark } from '@/components/BrandLockup';
 import { SubscriptionBanner } from '@/components/SubscriptionBanner';
 import { useTranslation } from 'react-i18next';
 
+/** Terms and Privacy links at the foot of the menu. */
+function LegalLinks() {
+  const { t } = useTranslation();
+  return (
+    <p className="mt-2 px-2 text-xs text-sidebar-foreground/60">
+      <Link href="/terms" className="hover:underline">{t('auth.termsLink')}</Link>
+      <span className="mx-1.5">·</span>
+      <Link href="/privacy" className="hover:underline">{t('auth.privacyLink')}</Link>
+    </p>
+  );
+}
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { agency, profile, signOut, session, isOwnerOrManager } = useAuth();
   const [location] = useLocation();
@@ -153,6 +165,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <LogOut className="mr-2 h-4 w-4" />
             {t('common.signOut')}
           </Button>
+          <LegalLinks />
         </div>
       </aside>
 
@@ -203,6 +216,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     <LogOut className="mr-2 h-4 w-4" />
                     {t('common.signOut')}
                   </Button>
+                  <LegalLinks />
                 </div>
               </div>
             </SheetContent>

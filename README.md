@@ -145,16 +145,16 @@ Every active policy expiring within 90 days (or already expired) is in the pipel
 | Enterprise | 15,000 | 25 | unlimited |
 | Enterprise Plus | 30,000 | unlimited | unlimited |
 
-- No free trial. A new agency is read-only until the Owner pays (Settings → Billing, or the sign-up redirect).
+- No free trial and no read-only mode: **pay to access**. A new agency sees only the pay screen until the Owner's first payment goes through. A public `/demo` page (linked from sign-in and sign-up) lets anyone try the setup steps with sample data.
 - Pay-to-renew: the Owner pays 1, 3, 6 or 12 months through Paystack (M-Pesa or card); time adds on to the current paid period. Upgrading mid-period charges the pro-rated difference for the days left, optionally plus more months.
-- 3 days of grace after `paid_until`, then **read-only**: everyone can sign in and view/export, but every write is refused by a database trigger. Agency settings stay editable. Never a lock-out.
+- 3 days of grace after `paid_until` (full access, warning banner), then **access stops**: everyone sees the pay screen instead of the app (Owners can pay there and download clients and policies as CSV; others are asked to get an Owner to renew). The database trigger still refuses every write while unpaid, as a backstop.
 - Limits are enforced in the database: invites count pending invites; adding or re-activating a policy counts active/pending policies; renewing a term doesn't add one.
 - Comp an agency (partner, pilot): `update agencies set complimentary_until = '2027-06-30' where id = '…';` Comped agencies have no limits. The demo agency is comped to 2099.
 - Paystack and the reminder emails run as Supabase Edge Functions; see `supabase/functions/README.md` for secrets and setup, and `docs/LAUNCH.md` for the go-live checklist.
 
 ## Sign-up, setup, languages and currencies
 
-- **Sign-up:** details → 6-digit email code (Supabase "Confirm signup" template must contain `{{ .Token }}`; see `docs/LAUNCH.md`) → agency created → **setup wizard** at `/onboarding`: language → currency → plan (pay with Paystack or "pay later", read-only). Owners of an agency whose setup isn't finished are sent back to the wizard. Signing in with an unconfirmed email asks for a code too.
+- **Sign-up:** details → 6-digit email code (Supabase "Confirm signup" template must contain `{{ .Token }}`; see `docs/LAUNCH.md`) → agency created → **setup wizard** at `/onboarding`: language → currency → plan (pay with Paystack; payment is required to open the agency; clicking a plan shows who it suits, its limits and what it adds). Owners of an agency whose setup isn't finished are sent back to the wizard. Signing in with an unconfirmed email asks for a code too.
 - **Currencies:** each agency works in KES, TZS, UGX or USD (`agencies.currency`, chosen once in setup). Every amount in the app shows in it (`formatCurrency` → `lib/money.ts`). Plans are still billed in KES.
 - **Languages:** English, Kiswahili, French, Portuguese, Spanish, Arabic (right-to-left). Per person (`users.language`, switcher in the sidebar and on sign-in pages). Translations live in `artifacts/ams/src/i18n/locales/*.json`; a test checks every language has every key. Sign-in, sign-up, code, setup, menus, plans and the banner are translated; other pages fall back to English for now.
 - **Owners per plan:** Starter 1, Growth 2, Enterprise 3, Enterprise Plus unlimited. Owners can invite an Owner or promote a member; the last Owner can't be demoted, and nobody can remove themselves. Reminder emails go to every Owner.
@@ -175,7 +175,7 @@ Required env vars: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
 - ✅ Statement reconciliation: insurer receipts, statement lines, applied/unapplied money, part-paid commissions
 - ✅ Agent commission & payouts: agent rates, earnings ledger, payouts, statements, My earnings
 - ✅ Renewal pipeline: contacted → quoted → renewed/lost, one-step renew, lost reasons, renewal rate
-- ✅ Subscriptions & launch: Paystack plans, read-only on lapse, plan limits, privacy notice and terms with consent
+- ✅ Subscriptions & launch: Paystack plans, pay to access (3-day grace), plan limits, privacy notice and terms with consent
 - 🔲 Phase 6: Polish (mobile-first, onboarding flow)
 
 ## Gotchas

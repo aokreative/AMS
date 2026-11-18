@@ -42,7 +42,7 @@ export function BillingTab({ welcome }: { welcome?: boolean }) {
   if (comped) status = <>Complimentary until {fmt(agency.complimentary_until!)}</>;
   else if (access === 'active') status = <>Active until {fmt(agency.paid_until!)}</>;
   else if (access === 'grace') status = <>Expired {fmt(agency.paid_until!)}: {3 + (left ?? 0) + 1} day{3 + (left ?? 0) + 1 === 1 ? '' : 's'} of grace left</>;
-  else status = agency.paid_until ? <>Read-only since {fmt(agency.paid_until)}. Pay to keep working.</> : <>No plan yet. Pick a plan to start.</>;
+  else status = agency.paid_until ? <>Access stopped on {fmt(agency.paid_until)}. Pay to keep working.</> : <>No plan yet. Pick a plan to start.</>;
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -53,7 +53,7 @@ export function BillingTab({ welcome }: { welcome?: boolean }) {
               <Sparkles className="mt-0.5 h-5 w-5 text-primary" />
               <div>
                 <p className="font-semibold">Welcome! Pick a plan to start</p>
-                <p className="text-sm text-muted-foreground">Your agency is read-only until the first payment. Pay with M-Pesa or card.</p>
+                <p className="text-sm text-muted-foreground">Your agency opens once the first payment goes through. Pay with M-Pesa or card.</p>
               </div>
             </div>
             <Button onClick={() => setPayOpen(true)}>Choose a plan</Button>
@@ -69,7 +69,7 @@ export function BillingTab({ welcome }: { welcome?: boolean }) {
           </div>
           <div className="flex flex-col items-end gap-2">
             <Badge variant={access === 'active' ? 'secondary' : 'destructive'}>
-              {comped ? 'Complimentary' : access === 'active' ? 'Active' : access === 'grace' ? 'Grace period' : 'Read-only'}
+              {comped ? 'Complimentary' : access === 'active' ? 'Active' : access === 'grace' ? 'Grace period' : 'Unpaid'}
             </Badge>
             {!comped && <Button size="sm" onClick={() => setPayOpen(true)}>{access === 'active' ? 'Renew or upgrade' : 'Pay now'}</Button>}
           </div>
