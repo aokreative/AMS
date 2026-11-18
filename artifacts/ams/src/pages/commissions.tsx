@@ -364,9 +364,9 @@ export default function Commissions() {
       )}
 
       {selectedIds.size > 0 && !isAgent && (
-        <div className="sticky top-4 z-10 flex items-center justify-between bg-primary text-primary-foreground px-4 py-3 rounded-md shadow-md">
+        <div className="sticky top-4 z-10 flex flex-wrap items-center justify-between gap-2 bg-primary text-primary-foreground px-4 py-3 rounded-md shadow-md">
           <div className="text-sm font-medium">{selectedIds.size} selected</div>
-          <div className="space-x-2">
+          <div className="flex flex-wrap gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>

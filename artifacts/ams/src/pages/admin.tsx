@@ -71,14 +71,14 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b bg-background/95 px-4 py-3 backdrop-blur">
+        <div className="flex min-w-0 items-center gap-3">
           <BrandMark className="h-8 w-8" />
           <div>
             <div className="flex items-center gap-1.5 font-semibold">
               <ShieldCheck className="h-4 w-4 text-primary" /> Superadmin
             </div>
-            <div className="text-xs text-muted-foreground">{session?.email}</div>
+            <div className="max-w-[60vw] truncate text-xs text-muted-foreground sm:max-w-none">{session?.email}</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -98,52 +98,53 @@ export default function Admin() {
             }}
           >
             {opening ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <FlaskConical className="me-1 h-4 w-4" />}
-            Open demo agency
+            <span className="sm:hidden">Demo</span>
+            <span className="hidden sm:inline">Open demo agency</span>
           </Button>
           <Button variant="ghost" size="sm" onClick={() => void signOut()}>
-            <LogOut className="me-1 h-4 w-4" /> Sign out
+            <LogOut className="h-4 w-4 sm:me-1" /> <span className="hidden sm:inline">Sign out</span>
           </Button>
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Card>
-            <CardHeader className="pb-1"><CardTitle className="text-sm font-medium text-muted-foreground">Agencies</CardTitle></CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{counts?.total ?? '—'}</div>
+            <CardHeader className="p-4 pb-1 sm:p-6 sm:pb-1"><CardTitle className="text-xs font-medium text-muted-foreground sm:text-sm">Agencies</CardTitle></CardHeader>
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-xl font-bold sm:text-2xl">{counts?.total ?? '—'}</div>
               <div className="text-xs text-muted-foreground">
                 {counts ? `${counts.active} active · ${counts.grace} grace · ${counts.comped} free` : ''}
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-1"><CardTitle className="text-sm font-medium text-muted-foreground">Unpaid / suspended</CardTitle></CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{counts ? `${counts.unpaid} / ${counts.suspended}` : '—'}</div>
+            <CardHeader className="p-4 pb-1 sm:p-6 sm:pb-1"><CardTitle className="text-xs font-medium text-muted-foreground sm:text-sm">Unpaid / suspended</CardTitle></CardHeader>
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-xl font-bold sm:text-2xl">{counts ? `${counts.unpaid} / ${counts.suspended}` : '—'}</div>
               <div className="text-xs text-muted-foreground">Can't use the app</div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-1"><CardTitle className="text-sm font-medium text-muted-foreground">Expected monthly revenue</CardTitle></CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.data ? formatKes(overview.data.expected_mrr_kes) : '—'}</div>
+            <CardHeader className="p-4 pb-1 sm:p-6 sm:pb-1"><CardTitle className="text-xs font-medium text-muted-foreground sm:text-sm">Expected monthly revenue</CardTitle></CardHeader>
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-xl font-bold sm:text-2xl">{overview.data ? formatKes(overview.data.expected_mrr_kes) : '—'}</div>
               <div className="text-xs text-muted-foreground">Active and grace agencies, at their price</div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="pb-1"><CardTitle className="text-sm font-medium text-muted-foreground">Paid this month</CardTitle></CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overview.data ? formatKes(overview.data.revenue_this_month_kes) : '—'}</div>
+            <CardHeader className="p-4 pb-1 sm:p-6 sm:pb-1"><CardTitle className="text-xs font-medium text-muted-foreground sm:text-sm">Paid this month</CardTitle></CardHeader>
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-xl font-bold sm:text-2xl">{overview.data ? formatKes(overview.data.revenue_this_month_kes) : '—'}</div>
               <div className="text-xs text-muted-foreground">Paystack payments received</div>
             </CardContent>
           </Card>
         </div>
 
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-wrap gap-1.5">
+          <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0 md:pb-0">
             {(['all', ...ADMIN_STATUSES] as const).map((s) => (
-              <Button key={s} size="sm" variant={filter === s ? 'default' : 'outline'} onClick={() => setFilter(s)}>
+              <Button key={s} size="sm" className="shrink-0" variant={filter === s ? 'default' : 'outline'} onClick={() => setFilter(s)}>
                 {s === 'all' ? 'All' : STATUS_LABEL[s]}
                 {counts && <span className="ms-1.5 text-xs opacity-70">{s === 'all' ? counts.total : counts[s]}</span>}
               </Button>
@@ -162,7 +163,35 @@ export default function Admin() {
           <p className="flex items-center gap-2 text-sm text-destructive"><AlertCircle className="h-4 w-4" />{(agencies.error as Error).message}</p>
         )}
 
-        <Card>
+        <div className="space-y-2 md:hidden">
+          {agencies.isLoading && <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />}
+          {!agencies.isLoading && rows.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">No agencies match.</p>}
+          {rows.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => setOpenId(r.id)}
+              className="w-full rounded-lg border bg-card p-3 text-start shadow-sm active:bg-muted"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <span className="min-w-0 truncate font-medium">{r.name}</span>
+                <StatusBadge status={r.status} />
+              </div>
+              <div className="mt-1 text-sm">
+                {tierName(r.tier)} · {formatKes(r.price_kes)}{r.custom_price_kes != null && ' (custom)'} / month
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                Paid until {d(r.paid_until)} · {r.members} members · {r.active_policies} policies
+              </div>
+              <div className="truncate text-xs text-muted-foreground">
+                {r.owners[0]?.full_name ?? 'No owner'}{r.owners.length > 1 && ` +${r.owners.length - 1}`}
+                {r.last_paid_at && ` · last paid ${formatKes(r.last_paid_kes ?? 0)} on ${d(r.last_paid_at)}`}
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <Card className="hidden md:block">
           <Table>
             <TableHeader>
               <TableRow>
