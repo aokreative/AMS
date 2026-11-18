@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { AlertCircle, Loader2, LogOut, Search, ShieldCheck } from 'lucide-react';
+import { AlertCircle, FlaskConical, Loader2, LogOut, Search, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminAction, useAdminAgencies, useAdminAgencyDetail, useAdminOverview } from '@/hooks/admin';
 import { ADMIN_STATUSES, matchesSearch, type AdminAgencyRow, type AdminRpc, type AdminStatus } from '@/lib/admin';
@@ -53,7 +53,9 @@ function StatusBadge({ status }: { status: AdminStatus }) {
 
 /** Superadmin: every agency, its status and money, and the actions on it. */
 export default function Admin() {
-  const { session, signOut } = useAuth();
+  const { session, signOut, openDemo } = useAuth();
+  const [opening, setOpening] = useState(false);
+  const [demoError, setDemoError] = useState<string | null>(null);
   const overview = useAdminOverview();
   const agencies = useAdminAgencies();
   const [filter, setFilter] = useState<AdminStatus | 'all'>('all');
@@ -79,9 +81,29 @@ export default function Admin() {
             <div className="text-xs text-muted-foreground">{session?.email}</div>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => void signOut()}>
-          <LogOut className="me-1 h-4 w-4" /> Sign out
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            disabled={opening}
+            title="Opens Demo Insurance Agency as its Owner. Everything works; all changes are thrown away when you leave."
+            onClick={async () => {
+              setOpening(true);
+              setDemoError(null);
+              try {
+                await openDemo();
+              } catch (e) {
+                setDemoError((e as Error).message);
+                setOpening(false);
+              }
+            }}
+          >
+            {opening ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <FlaskConical className="me-1 h-4 w-4" />}
+            Open demo agency
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => void signOut()}>
+            <LogOut className="me-1 h-4 w-4" /> Sign out
+          </Button>
+        </div>
       </header>
 
       <main className="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
@@ -133,6 +155,9 @@ export default function Admin() {
           </div>
         </div>
 
+        {demoError && (
+          <p className="flex items-center gap-2 text-sm text-destructive"><AlertCircle className="h-4 w-4" />{demoError}</p>
+        )}
         {agencies.error && (
           <p className="flex items-center gap-2 text-sm text-destructive"><AlertCircle className="h-4 w-4" />{(agencies.error as Error).message}</p>
         )}

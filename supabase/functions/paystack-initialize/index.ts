@@ -22,10 +22,11 @@ Deno.serve(async (req) => {
   const svc = serviceClient();
   const [{ data: tiers }, { data: agency }] = await Promise.all([
     svc.from('subscription_tiers').select('*').order('sort_order'),
-    svc.from('agencies').select('subscription_tier, paid_until, custom_price_kes, suspended_at').eq('id', owner.agencyId).single(),
+    svc.from('agencies').select('subscription_tier, paid_until, custom_price_kes, suspended_at, is_demo').eq('id', owner.agencyId).single(),
   ]);
   if (!tiers || !agency) return json({ error: 'Could not load your plan. Try again.' }, 500);
   if (agency.suspended_at) return json({ error: 'This account is suspended' }, 403);
+  if (agency.is_demo) return json({ error: 'Payments are off in the demo' }, 403);
 
   let amount;
   try {

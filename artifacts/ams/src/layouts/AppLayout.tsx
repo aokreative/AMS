@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/sheet";
 import { BrandMark } from '@/components/BrandLockup';
 import { SubscriptionBanner } from '@/components/SubscriptionBanner';
+import { DemoBanner } from '@/components/DemoBanner';
 import { useTranslation } from 'react-i18next';
 
 /** Terms and Privacy links at the foot of the menu. */
@@ -225,6 +226,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Page Content */}
         <main className="flex-1 overflow-auto print:overflow-visible bg-background/50">
+          <DemoBanner />
           <SubscriptionBanner />
           <div className="container mx-auto p-4 md:p-6 max-w-7xl">
             {children}

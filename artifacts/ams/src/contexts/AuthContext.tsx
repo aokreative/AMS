@@ -6,6 +6,7 @@ import { useLocation } from 'wouter';
 import { isPublicAuthPath } from '@/lib/auth';
 import { setCurrency } from '@/lib/money';
 import { setLanguage } from '@/i18n';
+import { readDemoFlag, writeDemoFlag } from '@/lib/admin';
 
 interface AuthContextType {
   session: { id: string; email: string } | null;
@@ -23,6 +24,12 @@ interface AuthContextType {
   profileLoadedFor: string | null;
   /** Signed in as a platform superadmin (listed in platform_admins). */
   isPlatformAdmin: boolean;
+  /** A superadmin inside the resettable demo agency (this browser tab). */
+  inDemo: boolean;
+  /** Superadmin: reset the demo agency and enter it as its Owner. */
+  openDemo: () => Promise<void>;
+  /** Superadmin: throw away every change made in the demo and go back to /admin. */
+  leaveDemo: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -51,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [profileLoadedFor, setProfileLoadedFor] = useState<string | null>(null);
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
+  const [inDemo, setInDemo] = useState<boolean>(() => readDemoFlag());
   const [, setLocation] = useLocation();
   // Id of the user the cached data belongs to; used to detect a user switch.
   const lastUserIdRef = useRef<string | null>(null);
@@ -83,8 +91,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setProfile(p);
           setAgency(a);
           setIsPlatformAdmin(isAdmin);
-          // An admin-only account (no agency) belongs on the superadmin page.
-          if (!p && isAdmin) {
+          // A superadmin belongs on the superadmin page unless inside the demo.
+          if (isAdmin && !readDemoFlag()) {
             if (window.location.pathname !== '/admin' && window.location.pathname !== '/reset-password') setLocation('/admin');
           // User authenticated but no agency profile yet — send to registration to create one
           // (not while setting a new password from a reset link)
@@ -150,6 +158,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setSession(null);
         setIsPlatformAdmin(false);
+        // Session gone (sign-out or expiry): the next sign-in starts outside the demo.
+        writeDemoFlag(false);
+        setInDemo(false);
         setProfile(null);
         setAgency(null);
         const path = window.location.pathname;
@@ -167,6 +178,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [setLocation]);
 
   const signOut = async () => {
+    // Signing out from inside the demo throws its changes away too (best effort).
+    if (readDemoFlag()) await supabase.rpc('admin_leave_demo').then(() => undefined, () => undefined);
     await supabase.auth.signOut();
     queryClient.clear();
     lastUserIdRef.current = null;
@@ -174,8 +187,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAgency(null);
     setSession(null);
     setIsPlatformAdmin(false);
+    writeDemoFlag(false);
+    setInDemo(false);
     setLocation('/login');
   };
+
+  const openDemo = useCallback(async () => {
+    const { error } = await supabase.rpc('admin_open_demo');
+    if (error) throw error;
+    writeDemoFlag(true);
+    queryClient.clear();
+    await refreshProfile();
+    setInDemo(true);
+    setLocation('/dashboard');
+  }, [refreshProfile, setLocation]);
+
+  const leaveDemo = useCallback(async () => {
+    const { error } = await supabase.rpc('admin_leave_demo');
+    if (error) throw error;
+    writeDemoFlag(false);
+    setInDemo(false);
+    queryClient.clear();
+    setLocation('/admin');
+  }, [setLocation]);
 
   // Show amounts in the agency's currency, and use the person's chosen language.
   useEffect(() => {
@@ -190,7 +224,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isDeactivated = !!profile?.deactivated_at;
 
   return (
-    <AuthContext.Provider value={{ session, profile, agency, isOwner, isOwnerOrManager, isDeactivated, isLoading, signOut, refreshProfile, profileLoadedFor, isPlatformAdmin }}>
+    <AuthContext.Provider value={{ session, profile, agency, isOwner, isOwnerOrManager, isDeactivated, isLoading, signOut, refreshProfile, profileLoadedFor, isPlatformAdmin, inDemo, openDemo, leaveDemo }}>
       {children}
     </AuthContext.Provider>
   );

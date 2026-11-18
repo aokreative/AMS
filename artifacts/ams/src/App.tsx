@@ -13,6 +13,7 @@ import { needsAgencySetup } from '@/lib/auth';
 import { agencyAccess, todayNairobi } from '@/lib/subscription';
 import { Paywall } from '@/components/billing/Paywall';
 import { SuspendedScreen } from '@/components/SuspendedScreen';
+import { adminBelongsOnAdminPage } from '@/lib/admin';
 import Admin from '@/pages/admin';
 import NotFound from '@/pages/not-found';
 
@@ -44,8 +45,12 @@ import Demo from '@/pages/demo';
 
 /** /admin: superadmins only; everyone else gets Not found (signed-out visitors go to sign in). */
 const AdminRoute = () => {
-  const { session, isLoading, profileLoadedFor, isPlatformAdmin } = useAuth();
-  if (isLoading || (session && profileLoadedFor !== session.id)) {
+  const { session, isLoading, profileLoadedFor, isPlatformAdmin, inDemo, leaveDemo } = useAuth();
+  // Coming back to /admin from inside the demo leaves it: its changes are thrown away.
+  useEffect(() => {
+    if (isPlatformAdmin && inDemo) void leaveDemo().catch(() => undefined);
+  }, [isPlatformAdmin, inDemo, leaveDemo]);
+  if (isLoading || (session && profileLoadedFor !== session.id) || (isPlatformAdmin && inDemo)) {
     return <div className="min-h-screen flex items-center justify-center">Loading…</div>;
   }
   if (!session) return <Redirect to="/login" />;
@@ -55,12 +60,12 @@ const AdminRoute = () => {
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ component: Component }: { component: React.ComponentType }) => {
-  const { session, profile, agency, isLoading, isDeactivated, signOut, profileLoadedFor, isPlatformAdmin } = useAuth();
+  const { session, profile, agency, isLoading, isDeactivated, signOut, profileLoadedFor, isPlatformAdmin, inDemo } = useAuth();
   
   if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading workspace...</div>;
   if (!session) return <Redirect to="/login" />;
-  // An admin-only account (no agency) belongs on the superadmin page.
-  if (!profile && isPlatformAdmin) return <Redirect to="/admin" />;
+  // A superadmin belongs on the superadmin page, except inside the demo.
+  if (adminBelongsOnAdminPage(isPlatformAdmin, inDemo)) return <Redirect to="/admin" />;
   // Signed in (e.g. just verified the email code) but no agency yet: finish sign-up.
   if (needsAgencySetup(session.id, profileLoadedFor, !!profile)) return <Redirect to="/register" />;
   // A suspended agency sees only the suspended screen, before setup or payment.
