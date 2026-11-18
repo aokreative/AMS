@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInitializePayment, tierFitError } from '@/hooks/subscription';
-import { ALLOWED_MONTHS, formatKes, OWNERS, paymentAmountKes, TIERS, todayNairobi } from '@/lib/subscription';
+import { ALLOWED_MONTHS, formatKes, OWNERS, paymentAmountKes, TIERS as STANDARD_TIERS, todayNairobi, withCustomPrice } from '@/lib/subscription';
 import { cn } from '@/lib/utils';
 import { PlanDetails } from './PlanDetails';
 
@@ -33,6 +33,9 @@ export function PlanPicker({
   const init = useInitializePayment();
   const today = todayNairobi();
   const current = agency?.subscription_tier ?? 'starter';
+  // A superadmin may have set a special monthly price on the current plan; the server charges the same.
+  const customPrice = agency?.custom_price_kes ?? null;
+  const TIERS = useMemo(() => withCustomPrice(STANDARD_TIERS, current, customPrice), [current, customPrice]);
   const [tier, setTier] = useState<string>(current);
   const [months, setMonths] = useState<number>(1);
   const [unfit, setUnfit] = useState<Record<string, string | null>>({});
@@ -56,7 +59,7 @@ export function PlanPicker({
     const cur = TIERS.find((x) => x.key === current);
     const next = TIERS.find((x) => x.key === tier);
     return !!cur && !!next && next.price_kes > cur.price_kes && !!agency?.paid_until && agency.paid_until >= today;
-  }, [current, tier, agency?.paid_until, today]);
+  }, [TIERS, current, tier, agency?.paid_until, today]);
 
   const monthChoices = isUpgrade ? [0, ...ALLOWED_MONTHS] : [...ALLOWED_MONTHS];
   const effectiveMonths = monthChoices.includes(months) ? months : 1;
@@ -67,7 +70,7 @@ export function PlanPicker({
     } catch {
       return null;
     }
-  }, [current, tier, effectiveMonths, agency?.paid_until, today]);
+  }, [TIERS, current, tier, effectiveMonths, agency?.paid_until, today]);
 
   const limits = (x: (typeof TIERS)[number]) => {
     const owners = OWNERS[x.key];
@@ -97,6 +100,11 @@ export function PlanPicker({
                   )}
                 </span>
                 <span className="text-sm font-medium whitespace-nowrap">
+                  {customPrice != null && x.key === current && (
+                    <span className="me-1 text-xs text-muted-foreground line-through">
+                      {formatKes(STANDARD_TIERS.find((s) => s.key === x.key)?.price_kes ?? 0)}
+                    </span>
+                  )}
                   {formatKes(x.price_kes)} <span className="text-xs text-muted-foreground">{t('plans.perMonth')}</span>
                 </span>
               </span>

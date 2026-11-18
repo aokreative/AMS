@@ -26,6 +26,11 @@ export interface Agency {
   language: string;
   /** Set when the Owner finishes the setup wizard; null sends Owners to /onboarding. */
   setup_completed_at: string | null;
+  /** Set by a superadmin: everyone sees the suspended screen and nothing can change. */
+  suspended_at: string | null;
+  suspended_reason: string | null;
+  /** Superadmin-set monthly price (KES) for the agency's current plan; null = standard. */
+  custom_price_kes: number | null;
   created_at: string;
 }
 

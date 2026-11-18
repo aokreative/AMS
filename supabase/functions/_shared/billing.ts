@@ -10,6 +10,15 @@ export interface Tier {
   sort_order: number;
 }
 
+/**
+ * The tier list as one agency is charged: a superadmin-set custom monthly
+ * price replaces the price of the agency's current plan only.
+ */
+export function withCustomPrice(tiers: Tier[], currentTier: string, customPriceKes: number | null | undefined): Tier[] {
+  if (customPriceKes == null) return tiers;
+  return tiers.map((t) => (t.key === currentTier ? { ...t, price_kes: customPriceKes } : t));
+}
+
 /** Months an Owner may pay for at once. (0 is allowed only as an upgrade-only payment.) */
 export const ALLOWED_MONTHS = [1, 3, 6, 12] as const;
 

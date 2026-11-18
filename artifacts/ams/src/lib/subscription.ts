@@ -1,5 +1,5 @@
 import type { Tier } from '../../../../supabase/functions/_shared/billing';
-export { paymentAmountKes, todayNairobi, ALLOWED_MONTHS, type Tier } from '../../../../supabase/functions/_shared/billing';
+export { paymentAmountKes, todayNairobi, withCustomPrice, ALLOWED_MONTHS, type Tier } from '../../../../supabase/functions/_shared/billing';
 
 /** Display copy of subscription_tiers (the database is the authority; the test pins both). */
 export const TIERS: Tier[] = [

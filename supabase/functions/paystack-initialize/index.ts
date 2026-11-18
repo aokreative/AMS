@@ -1,5 +1,5 @@
 // POST {tier, months} with the Owner's JWT → {authorization_url, reference}
-import { paymentAmountKes, todayNairobi, type Tier } from '../_shared/billing.ts';
+import { paymentAmountKes, todayNairobi, withCustomPrice, type Tier } from '../_shared/billing.ts';
 import { cors, json, paystack, requireOwner, serviceClient } from '../_shared/http.ts';
 
 Deno.serve(async (req) => {
@@ -22,13 +22,14 @@ Deno.serve(async (req) => {
   const svc = serviceClient();
   const [{ data: tiers }, { data: agency }] = await Promise.all([
     svc.from('subscription_tiers').select('*').order('sort_order'),
-    svc.from('agencies').select('subscription_tier, paid_until').eq('id', owner.agencyId).single(),
+    svc.from('agencies').select('subscription_tier, paid_until, custom_price_kes, suspended_at').eq('id', owner.agencyId).single(),
   ]);
   if (!tiers || !agency) return json({ error: 'Could not load your plan. Try again.' }, 500);
+  if (agency.suspended_at) return json({ error: 'This account is suspended' }, 403);
 
   let amount;
   try {
-    amount = paymentAmountKes(tiers as Tier[], agency.subscription_tier, tier, months, agency.paid_until, todayNairobi());
+    amount = paymentAmountKes(withCustomPrice(tiers as Tier[], agency.subscription_tier, agency.custom_price_kes), agency.subscription_tier, tier, months, agency.paid_until, todayNairobi());
   } catch (e) {
     return json({ error: (e as Error).message }, 400);
   }

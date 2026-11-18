@@ -21,18 +21,19 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
   /** User id whose profile fetch has finished (null while unknown). */
   profileLoadedFor: string | null;
+  /** Signed in as a platform superadmin (listed in platform_admins). */
+  isPlatformAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 async function fetchProfileAndAgency(userId: string) {
-  const { data: profileData } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', userId)
-    .single();
+  const [{ data: profileData }, { data: isAdmin }] = await Promise.all([
+    supabase.from('users').select('*').eq('id', userId).maybeSingle(),
+    supabase.rpc('is_platform_admin'),
+  ]);
 
-  if (!profileData) return { profile: null, agency: null };
+  if (!profileData) return { profile: null, agency: null, isAdmin: isAdmin === true };
 
   const { data: agencyData } = await supabase
     .from('agencies')
@@ -40,7 +41,7 @@ async function fetchProfileAndAgency(userId: string) {
     .eq('id', profileData.agency_id)
     .single();
 
-  return { profile: profileData as AgencyUser, agency: agencyData as Agency | null };
+  return { profile: profileData as AgencyUser, agency: agencyData as Agency | null, isAdmin: isAdmin === true };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -49,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [agency, setAgency] = useState<Agency | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [profileLoadedFor, setProfileLoadedFor] = useState<string | null>(null);
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [, setLocation] = useLocation();
   // Id of the user the cached data belongs to; used to detect a user switch.
   const lastUserIdRef = useRef<string | null>(null);
@@ -75,14 +77,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           lastUserIdRef.current = authSession.user.id;
           setSession({ id: authSession.user.id, email: authSession.user.email ?? '' });
         }
-        const { profile: p, agency: a } = await fetchProfileAndAgency(authSession.user.id);
+        const { profile: p, agency: a, isAdmin } = await fetchProfileAndAgency(authSession.user.id);
         if (mounted) setProfileLoadedFor(authSession.user.id);
         if (mounted) {
           setProfile(p);
           setAgency(a);
+          setIsPlatformAdmin(isAdmin);
+          // An admin-only account (no agency) belongs on the superadmin page.
+          if (!p && isAdmin) {
+            if (window.location.pathname !== '/admin' && window.location.pathname !== '/reset-password') setLocation('/admin');
           // User authenticated but no agency profile yet — send to registration to create one
           // (not while setting a new password from a reset link)
-          if (!p && window.location.pathname !== '/register' && window.location.pathname !== '/join' && window.location.pathname !== '/reset-password') {
+          } else if (!p && window.location.pathname !== '/register' && window.location.pathname !== '/join' && window.location.pathname !== '/reset-password') {
             setLocation('/register');
           }
         }
@@ -124,9 +130,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // On SIGNED_IN we may not yet have profile (e.g. first login, or token refresh).
         // Fetch it; register.tsx calls refreshProfile() explicitly after setup.
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          const { profile: p, agency: a } = await fetchProfileAndAgency(currentSession.user.id);
+          const { profile: p, agency: a, isAdmin } = await fetchProfileAndAgency(currentSession.user.id);
           if (mounted) setProfileLoadedFor(currentSession.user.id);
           if (mounted) {
+            if (userChanged || isAdmin) setIsPlatformAdmin(isAdmin);
             // A different user just signed in: take the fetch result as-is, even
             // null, so the previous user's profile/agency can never linger. For
             // the same user (e.g. TOKEN_REFRESHED) keep the existing values if
@@ -142,6 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         setSession(null);
+        setIsPlatformAdmin(false);
         setProfile(null);
         setAgency(null);
         const path = window.location.pathname;
@@ -165,6 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
     setAgency(null);
     setSession(null);
+    setIsPlatformAdmin(false);
     setLocation('/login');
   };
 
@@ -181,7 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isDeactivated = !!profile?.deactivated_at;
 
   return (
-    <AuthContext.Provider value={{ session, profile, agency, isOwner, isOwnerOrManager, isDeactivated, isLoading, signOut, refreshProfile, profileLoadedFor }}>
+    <AuthContext.Provider value={{ session, profile, agency, isOwner, isOwnerOrManager, isDeactivated, isLoading, signOut, refreshProfile, profileLoadedFor, isPlatformAdmin }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { agencyAccess, daysLeft, formatKes, ownerPlacesLeft, OWNERS, planGains, TIERS } from './subscription';
+import { agencyAccess, daysLeft, formatKes, ownerPlacesLeft, OWNERS, paymentAmountKes, planGains, TIERS, withCustomPrice } from './subscription';
 
 const today = '2026-11-15';
 const ag = (paid_until: string | null, complimentary_until: string | null = null) => ({ paid_until, complimentary_until });
@@ -89,5 +89,23 @@ describe('planGains', () => {
       { kind: 'members', value: null },
       { kind: 'owners', value: null },
     ]);
+  });
+});
+
+describe('withCustomPrice', () => {
+  it('no custom price: prices unchanged', () => {
+    expect(withCustomPrice(TIERS, 'starter', null).map((x) => x.price_kes)).toEqual([3500, 7000, 15000, 30000]);
+  });
+  it('replaces only the current plan price', () => {
+    expect(withCustomPrice(TIERS, 'starter', 2500).map((x) => x.price_kes)).toEqual([2500, 7000, 15000, 30000]);
+    expect(TIERS[0].price_kes).toBe(3500);
+  });
+  it('is what a renewal charges', () => {
+    expect(paymentAmountKes(withCustomPrice(TIERS, 'starter', 2500), 'starter', 'starter', 3, null, '2026-11-18').total).toBe(7500);
+  });
+  it('an upgrade while paid up is measured from the custom price', () => {
+    // 30 days left (inclusive): (7000 - 2500) * 30 / 30 = 4500 difference + 1 month of Growth
+    const a = paymentAmountKes(withCustomPrice(TIERS, 'starter', 2500), 'starter', 'growth', 1, '2026-12-17', '2026-11-18');
+    expect(a).toEqual({ difference: 4500, months: 7000, total: 11500 });
   });
 });

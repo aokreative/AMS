@@ -99,6 +99,7 @@ New migrations go in `supabase/migrations/` and should be applied in order.
 | 015 | Subscriptions: tiers, paid-until / comp dates, read-only trigger on every agency table, member and policy limits, Paystack payment RPCs, consent recorded at sign-up and join, daily reminder cron job (off until set up) |
 | 015a | Subscription review fixes: billing columns locked, stale payments held for review, lapsed agencies can reduce usage |
 | 016 | Onboarding: agency currency and language, setup_completed_at, user language, owners per plan, multiple owners |
+| 018 | Superadmin: platform_admins, admin_actions log, agency suspension / custom price columns, admin_* RPCs gated by is_platform_admin(), suspended agencies refused every write |
 
 ### Running the database tests
 
@@ -158,6 +159,16 @@ Every active policy expiring within 90 days (or already expired) is in the pipel
 - **Currencies:** each agency works in KES, TZS, UGX or USD (`agencies.currency`, chosen once in setup). Every amount in the app shows in it (`formatCurrency` → `lib/money.ts`). Plans are still billed in KES.
 - **Languages:** English, Kiswahili, French, Portuguese, Spanish, Arabic (right-to-left). Per person (`users.language`, switcher in the sidebar and on sign-in pages). Translations live in `artifacts/ams/src/i18n/locales/*.json`; a test checks every language has every key. Sign-in, sign-up, code, setup, menus, plans and the banner are translated; other pages fall back to English for now.
 - **Owners per plan:** Starter 1, Growth 2, Enterprise 3, Enterprise Plus unlimited. Owners can invite an Owner or promote a member; the last Owner can't be demoted, and nobody can remove themselves. Reminder emails go to every Owner.
+
+## Superadmin
+
+- `/admin` is for platform superadmins only (everyone else gets Not found). A superadmin is an **admin-only account** that belongs to no agency; after sign-in it lands on `/admin`.
+- Shows every agency with status (active / grace / unpaid / free / suspended), plan, price, paid-until, members, active policies, Owners and last payment, plus totals: expected monthly revenue and money paid this month.
+- Actions (each needs a note and is logged in `admin_actions` with before/after): **suspend / reactivate**, **custom monthly price** (replaces the price of the agency's current plan; Paystack charges it), **free time** (`complimentary_until`), **set paid-until** (cash/bank payments), **change plan** (no payment).
+- A suspended agency's members all see "This account is suspended" with the reason; the database refuses every write and `paystack-initialize` refuses payment.
+- **Add a superadmin:** create the user in Supabase → Authentication → Add user (auto-confirm, an email not used by any agency), then run
+  `insert into platform_admins (user_id) select id from auth.users where email = '<that email>';`
+- Referral partner commission is not tracked here (it lives in the CRM).
 
 ## Deploying (Vercel)
 
