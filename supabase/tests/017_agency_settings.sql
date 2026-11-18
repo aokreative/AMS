@@ -77,9 +77,10 @@ BEGIN
     PERFORM set_agency_currency('KES');
     SELECT count(*) INTO n FROM agency_setting_changes WHERE agency_id = ag;
     ASSERT n = 3, format('3 changes logged, got %s', n);
-    ASSERT (SELECT (old_value, new_value, changed_by) FROM agency_setting_changes
-             WHERE agency_id = ag AND setting = 'currency' ORDER BY changed_at, id LIMIT 1)
-           = ('KES'::text, 'USD'::text, o), 'first currency change recorded';
+    -- (all rows share now() inside this transaction, so don't rely on order)
+    ASSERT EXISTS (SELECT 1 FROM agency_setting_changes
+                    WHERE agency_id = ag AND setting = 'currency'
+                      AND old_value = 'KES' AND new_value = 'USD' AND changed_by = o), 'first currency change recorded';
     -- other agency sees nothing; no direct writes
     PERFORM _t017_as(ob);
     SELECT count(*) INTO n FROM agency_setting_changes WHERE agency_id = ag;

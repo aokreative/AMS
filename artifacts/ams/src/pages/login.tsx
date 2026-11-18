@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
+import { AuthLegalLinks, DemoPromo } from '@/components/DemoPromo';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -136,11 +137,8 @@ export default function Login() {
           </form>
           </>)}
         </Card>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          <a href="/privacy" className="hover:underline">{t('auth.privacyLink')}</a>
-          <span className="mx-2">·</span>
-          <a href="/terms" className="hover:underline">{t('auth.termsLink')}</a>
-        </p>
+        <DemoPromo />
+        <AuthLegalLinks />
       </div>
     </div>
   );

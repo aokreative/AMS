@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { agencyAccess, daysLeft, formatKes, ownerPlacesLeft, OWNERS, TIERS } from './subscription';
+import { agencyAccess, daysLeft, formatKes, ownerPlacesLeft, OWNERS, paymentAmountKes, planGains, TIERS, withCustomPrice } from './subscription';
 
 const today = '2026-11-15';
 const ag = (paid_until: string | null, complimentary_until: string | null = null) => ({ paid_until, complimentary_until });
@@ -29,9 +29,9 @@ describe('agencyAccess', () => {
   it('grace for 3 days after', () => {
     expect(agencyAccess(ag('2026-11-12'), today)).toBe('grace');
   });
-  it('read-only from day 4, and before any payment', () => {
-    expect(agencyAccess(ag('2026-11-11'), today)).toBe('read_only');
-    expect(agencyAccess(ag(null), today)).toBe('read_only');
+  it('locked (pay to access) from day 4, and before any payment', () => {
+    expect(agencyAccess(ag('2026-11-11'), today)).toBe('locked');
+    expect(agencyAccess(ag(null), today)).toBe('locked');
   });
   it('comped agencies are active', () => {
     expect(agencyAccess(ag(null, today), today)).toBe('active');
@@ -64,5 +64,48 @@ describe('ownerPlacesLeft', () => {
   it('unlimited on Enterprise Plus and for comped agencies', () => {
     expect(ownerPlacesLeft('enterprise_plus', false, 9, 0)).toBeNull();
     expect(ownerPlacesLeft('starter', true, 1, 0)).toBeNull();
+  });
+});
+
+describe('planGains', () => {
+  it('Starter is the base plan: nothing to compare', () => {
+    expect(planGains('starter')).toEqual([]);
+  });
+  it('Growth adds members, an owner and unlimited policies over Starter', () => {
+    expect(planGains('growth')).toEqual([
+      { kind: 'members', value: 10 },
+      { kind: 'owners', value: 2 },
+      { kind: 'policies', value: null },
+    ]);
+  });
+  it('Enterprise adds members and an owner over Growth (policies already unlimited)', () => {
+    expect(planGains('enterprise')).toEqual([
+      { kind: 'members', value: 25 },
+      { kind: 'owners', value: 3 },
+    ]);
+  });
+  it('Enterprise Plus makes members and owners unlimited', () => {
+    expect(planGains('enterprise_plus')).toEqual([
+      { kind: 'members', value: null },
+      { kind: 'owners', value: null },
+    ]);
+  });
+});
+
+describe('withCustomPrice', () => {
+  it('no custom price: prices unchanged', () => {
+    expect(withCustomPrice(TIERS, 'starter', null).map((x) => x.price_kes)).toEqual([3500, 7000, 15000, 30000]);
+  });
+  it('replaces only the current plan price', () => {
+    expect(withCustomPrice(TIERS, 'starter', 2500).map((x) => x.price_kes)).toEqual([2500, 7000, 15000, 30000]);
+    expect(TIERS[0].price_kes).toBe(3500);
+  });
+  it('is what a renewal charges', () => {
+    expect(paymentAmountKes(withCustomPrice(TIERS, 'starter', 2500), 'starter', 'starter', 3, null, '2026-11-18').total).toBe(7500);
+  });
+  it('an upgrade while paid up is measured from the custom price', () => {
+    // 30 days left (inclusive): (7000 - 2500) * 30 / 30 = 4500 difference + 1 month of Growth
+    const a = paymentAmountKes(withCustomPrice(TIERS, 'starter', 2500), 'starter', 'growth', 1, '2026-12-17', '2026-11-18');
+    expect(a).toEqual({ difference: 4500, months: 7000, total: 11500 });
   });
 });

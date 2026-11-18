@@ -7,22 +7,41 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInitializePayment, tierFitError } from '@/hooks/subscription';
-import { ALLOWED_MONTHS, formatKes, OWNERS, paymentAmountKes, TIERS, todayNairobi } from '@/lib/subscription';
+import { ALLOWED_MONTHS, formatKes, OWNERS, paymentAmountKes, TIERS as STANDARD_TIERS, todayNairobi, withCustomPrice } from '@/lib/subscription';
 import { cn } from '@/lib/utils';
+import { PlanDetails } from './PlanDetails';
 
-/** Plan cards + months + total + "Pay with Paystack". Used by the setup wizard and the Billing tab. */
-export function PlanPicker({ active = true, footer }: { active?: boolean; footer?: React.ReactNode }) {
+/**
+ * Plan cards (the selected one opens to show what it includes) + months + total + "Pay with Paystack".
+ * Used by the setup wizard, the Billing tab and the pay screen. In demo mode nothing is charged:
+ * the button calls onDemoChoose instead.
+ */
+export function PlanPicker({
+  active = true,
+  footer,
+  demo,
+  onDemoChoose,
+}: {
+  active?: boolean;
+  footer?: React.ReactNode;
+  demo?: boolean;
+  onDemoChoose?: (tier: string, months: number) => void;
+}) {
   const { t } = useTranslation();
-  const { agency } = useAuth();
+  const { agency: realAgency } = useAuth();
+  const agency = demo ? null : realAgency;
   const init = useInitializePayment();
   const today = todayNairobi();
   const current = agency?.subscription_tier ?? 'starter';
+  // A superadmin may have set a special monthly price on the current plan; the server charges the same.
+  const customPrice = agency?.custom_price_kes ?? null;
+  const TIERS = useMemo(() => withCustomPrice(STANDARD_TIERS, current, customPrice), [current, customPrice]);
   const [tier, setTier] = useState<string>(current);
   const [months, setMonths] = useState<number>(1);
   const [unfit, setUnfit] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
-    if (!active || !agency?.id) return;
+    if (demo || !active || !agency?.id) return;
     setTier(current);
     setMonths(1);
     init.reset();
@@ -40,7 +59,7 @@ export function PlanPicker({ active = true, footer }: { active?: boolean; footer
     const cur = TIERS.find((x) => x.key === current);
     const next = TIERS.find((x) => x.key === tier);
     return !!cur && !!next && next.price_kes > cur.price_kes && !!agency?.paid_until && agency.paid_until >= today;
-  }, [current, tier, agency?.paid_until, today]);
+  }, [TIERS, current, tier, agency?.paid_until, today]);
 
   const monthChoices = isUpgrade ? [0, ...ALLOWED_MONTHS] : [...ALLOWED_MONTHS];
   const effectiveMonths = monthChoices.includes(months) ? months : 1;
@@ -51,7 +70,7 @@ export function PlanPicker({ active = true, footer }: { active?: boolean; footer
     } catch {
       return null;
     }
-  }, [current, tier, effectiveMonths, agency?.paid_until, today]);
+  }, [TIERS, current, tier, effectiveMonths, agency?.paid_until, today]);
 
   const limits = (x: (typeof TIERS)[number]) => {
     const owners = OWNERS[x.key];
@@ -81,11 +100,21 @@ export function PlanPicker({ active = true, footer }: { active?: boolean; footer
                   )}
                 </span>
                 <span className="text-sm font-medium whitespace-nowrap">
+                  {customPrice != null && x.key === current && (
+                    <span className="me-1 text-xs text-muted-foreground line-through">
+                      {formatKes(STANDARD_TIERS.find((s) => s.key === x.key)?.price_kes ?? 0)}
+                    </span>
+                  )}
                   {formatKes(x.price_kes)} <span className="text-xs text-muted-foreground">{t('plans.perMonth')}</span>
                 </span>
               </span>
               <span className="block text-xs text-muted-foreground">{limits(x)}</span>
               {unfit[x.key] && <span className="block text-xs text-destructive">{unfit[x.key]}</span>}
+              {tier === x.key ? (
+                <PlanDetails tier={x.key} />
+              ) : (
+                <span className="mt-1 block text-xs font-medium text-primary">{t('plans.details')} →</span>
+              )}
             </span>
           </Label>
         ))}
@@ -129,13 +158,19 @@ export function PlanPicker({ active = true, footer }: { active?: boolean; footer
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         {footer}
-        <Button
-          onClick={() => init.mutate({ tier, months: effectiveMonths })}
-          disabled={!amount || !!unfit[tier] || init.isPending || init.isSuccess}
-        >
-          {(init.isPending || init.isSuccess) && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-          {amount ? t('plans.pay', { amount: formatKes(amount.total) }) : 'Paystack'}
-        </Button>
+        {demo ? (
+          <Button onClick={() => onDemoChoose?.(tier, effectiveMonths)} disabled={!amount}>
+            {t('plans.choose', { plan: TIERS.find((x) => x.key === tier)?.name })}
+          </Button>
+        ) : (
+          <Button
+            onClick={() => init.mutate({ tier, months: effectiveMonths })}
+            disabled={!amount || !!unfit[tier] || init.isPending || init.isSuccess}
+          >
+            {(init.isPending || init.isSuccess) && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+            {amount ? t('plans.pay', { amount: formatKes(amount.total) }) : 'Paystack'}
+          </Button>
+        )}
       </div>
     </div>
   );

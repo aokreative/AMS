@@ -11,7 +11,8 @@
     "email": "Correo electrónico",
     "password": "Contraseña",
     "fullName": "Tu nombre completo",
-    "or": "o"
+    "or": "o",
+    "close": "Cerrar"
   },
   "roles": {
     "owner": "Propietario",
@@ -53,7 +54,9 @@
     "privacy": "Aviso de Privacidad",
     "termsRequired": "Acepta los Términos y el Aviso de Privacidad para continuar",
     "privacyLink": "Aviso de Privacidad",
-    "termsLink": "Términos del Servicio"
+    "termsLink": "Términos del Servicio",
+    "tryDemo": "Probar la demo",
+    "tryDemoHint": "Mira cómo se configura una agencia con datos de ejemplo. Sin necesidad de cuenta."
   },
   "verify": {
     "title": "Revisa tu correo",
@@ -77,10 +80,9 @@
     "currencyHint": "Primas, comisiones e informes se mostrarán en esta moneda. Un propietario puede cambiarla más tarde en Configuración; los importes nunca se convierten, solo cambia la etiqueta.",
     "planTitle": "Elige tu plan",
     "planHint": "Los planes se cobran cada mes en KES a través de Paystack (M-Pesa o tarjeta). Los pagos con tarjeta en otra moneda los convierte tu banco.",
-    "payLater": "Pagaré más tarde",
-    "payLaterHint": "Tu agencia queda en solo lectura hasta el primer pago.",
     "finish": "Terminar configuración",
-    "saving": "Guardando…"
+    "saving": "Guardando…",
+    "payRequired": "Paga tu primer periodo para abrir tu agencia. Puedes cambiar de plan más tarde."
   },
   "plans": {
     "perMonth": "al mes",
@@ -96,14 +98,60 @@
     "month_other": "{{count}} meses",
     "total": "Total",
     "pay": "Pagar {{amount}} con Paystack",
-    "current": "actual"
+    "current": "actual",
+    "details": "Qué incluye",
+    "bestFor": "Ideal para",
+    "limits": "Límites",
+    "gains": "Más que {{plan}}",
+    "included": "Incluido en todos los planes",
+    "choose": "Elegir {{plan}}",
+    "selected": "Seleccionado",
+    "for_starter": "Un agente independiente o una oficina pequeña que empieza.",
+    "for_growth": "Una agencia en crecimiento con un equipo de agentes.",
+    "for_enterprise": "Una agencia consolidada con varias sucursales o equipos.",
+    "for_enterprise_plus": "Una agencia grande o un corredor sin límites.",
+    "f_clients": "Clientes y pólizas en un solo lugar",
+    "f_commissions": "Seguimiento de comisiones y conciliación de estados de aseguradoras",
+    "f_receipts": "Cobros por M-Pesa, banco o cheque",
+    "f_payouts": "Tasas de comisión de agentes, ganancias y pagos",
+    "f_renewals": "Renovaciones: contactado, cotizado, renovado o perdido",
+    "f_reports": "Informes mensuales y exportaciones CSV",
+    "f_team": "Roles de Propietario, Gerente y Agente con invitaciones",
+    "f_languages": "6 idiomas y 4 monedas (KES, TZS, UGX, USD)"
   },
   "banner": {
-    "readOnlyLapsed": "Solo lectura: la suscripción de la agencia ha vencido. Puedes verlo todo, pero los cambios están en pausa.",
-    "readOnlyNew": "Solo lectura hasta el primer pago.",
-    "grace_one": "La suscripción ha vencido. Queda {{count}} día antes de que la agencia pase a solo lectura.",
-    "grace_other": "La suscripción ha vencido. Quedan {{count}} días antes de que la agencia pase a solo lectura.",
     "payNow": "Pagar ahora",
-    "askOwner": "Pide al propietario de la agencia que renueve."
+    "askOwner": "Pide al propietario de la agencia que renueve.",
+    "grace_one": "La suscripción ha vencido. Queda {{count}} día antes de que se corte el acceso.",
+    "grace_other": "La suscripción ha vencido. Quedan {{count}} días antes de que se corte el acceso."
+  },
+  "legal": {
+    "contents": "Contenido",
+    "back": "Atrás"
+  },
+  "paywall": {
+    "titleNew": "Elige un plan para abrir tu agencia",
+    "titleLapsed": "Tu suscripción ha terminado",
+    "bodyOwner": "Paga para continuar. Todo lo que tu agencia registró se conserva y vuelve en cuanto se complete el pago.",
+    "bodyMember": "Pide a un propietario de tu agencia que renueve. Tu trabajo se conserva mientras tanto.",
+    "download": "Descargar tus datos",
+    "downloadHint": "Tus clientes y pólizas en archivos CSV, incluso antes de pagar.",
+    "clients": "Clientes (CSV)",
+    "policies": "Pólizas (CSV)",
+    "nothing": "Aún no hay nada que descargar."
+  },
+  "demo": {
+    "badge": "Demo",
+    "title": "Prueba a configurar una agencia",
+    "subtitle": "Un ensayo con datos de ejemplo. No se guarda nada ni se crea ninguna cuenta.",
+    "agency": "Agencia de Seguros de Ejemplo",
+    "doneTitle": "Esa es toda la configuración",
+    "doneBody": "En tu agencia pagarías ahora {{plan}} con M-Pesa o tarjeta y empezarías a añadir clientes y pólizas.",
+    "create": "Crea tu agencia",
+    "restart": "Empezar de nuevo",
+    "signIn": "Volver a iniciar sesión",
+    "payNote": "En la demo no se cobra nada.",
+    "currency": "Moneda",
+    "plan": "Plan"
   }
 }

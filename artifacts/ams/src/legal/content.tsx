@@ -136,9 +136,10 @@ export const TERMS: { title: string; intro: ReactNode; sections: LegalSection[] 
       heading: 'If payment lapses',
       body: (
         <>
-          There are 3 days of grace after the paid period ends. After that the agency becomes read-only: everyone
-          can still sign in and see their data, but nothing can be added or changed until the Owner pays again. We
-          do not delete data because payment lapsed.
+          The service is available only while the agency's plan is paid. A new agency gets access once its first
+          payment goes through. After a paid period ends there are 3 days of grace with full access; after that,
+          access stops until an Owner pays again. While access is stopped, Owners can still download the agency's
+          clients and policies. We do not delete data because payment lapsed.
         </>
       ),
     },

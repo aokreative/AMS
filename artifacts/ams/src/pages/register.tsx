@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'wouter';
+import { AuthLegalLinks, DemoPromo } from '@/components/DemoPromo';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -212,6 +213,8 @@ export default function Register() {
             </form>
           )}
         </Card>
+        {step === 'form' && <DemoPromo />}
+        <AuthLegalLinks />
       </div>
     </div>
   );

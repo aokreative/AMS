@@ -11,7 +11,8 @@
     "email": "Email address",
     "password": "Password",
     "fullName": "Your full name",
-    "or": "or"
+    "or": "or",
+    "close": "Close"
   },
   "roles": {
     "owner": "Owner",
@@ -53,7 +54,9 @@
     "privacy": "Privacy Notice",
     "termsRequired": "Accept the Terms and Privacy Notice to continue",
     "privacyLink": "Privacy Notice",
-    "termsLink": "Terms of Service"
+    "termsLink": "Terms of Service",
+    "tryDemo": "Try the demo",
+    "tryDemoHint": "See how setting up an agency works, with sample data. No account needed."
   },
   "verify": {
     "title": "Check your email",
@@ -77,10 +80,9 @@
     "currencyHint": "All premiums, commissions and reports will show in this currency. An Owner can change it later in Settings; amounts are never converted, only relabelled.",
     "planTitle": "Choose your plan",
     "planHint": "Plans are billed monthly in KES through Paystack (M-Pesa or card). Card payments in other currencies are converted by your bank.",
-    "payLater": "I'll pay later",
-    "payLaterHint": "Your agency stays read-only until the first payment.",
     "finish": "Finish setup",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "payRequired": "Pay for your first period to open your agency. You can change plans later."
   },
   "plans": {
     "perMonth": "per month",
@@ -96,14 +98,60 @@
     "month_other": "{{count}} months",
     "total": "Total",
     "pay": "Pay {{amount}} with Paystack",
-    "current": "current"
+    "current": "current",
+    "details": "What you get",
+    "bestFor": "Best for",
+    "limits": "Limits",
+    "gains": "More than {{plan}}",
+    "included": "Included in every plan",
+    "choose": "Choose {{plan}}",
+    "selected": "Selected",
+    "for_starter": "A solo agent or a small office getting started.",
+    "for_growth": "A growing agency with a team of agents.",
+    "for_enterprise": "An established agency with several branches or teams.",
+    "for_enterprise_plus": "A large agency or broker that needs no limits.",
+    "f_clients": "Clients and policies in one place",
+    "f_commissions": "Commission tracking and insurer statement matching",
+    "f_receipts": "Receipts by M-Pesa, bank or cheque",
+    "f_payouts": "Agent commission rates, earnings and payouts",
+    "f_renewals": "Renewal pipeline: contacted, quoted, renewed or lost",
+    "f_reports": "Monthly reports and CSV exports",
+    "f_team": "Owner, Manager and Agent roles with invites",
+    "f_languages": "6 languages and 4 currencies (KES, TZS, UGX, USD)"
   },
   "banner": {
-    "readOnlyLapsed": "Read-only: the agency's subscription has lapsed. You can view everything, but changes are paused.",
-    "readOnlyNew": "Read-only until the first payment.",
-    "grace_one": "The subscription has expired. {{count}} day left before the agency becomes read-only.",
-    "grace_other": "The subscription has expired. {{count}} days left before the agency becomes read-only.",
     "payNow": "Pay now",
-    "askOwner": "Ask your agency owner to renew."
+    "askOwner": "Ask your agency owner to renew.",
+    "grace_one": "The subscription has ended. {{count}} day left before access stops.",
+    "grace_other": "The subscription has ended. {{count}} days left before access stops."
+  },
+  "legal": {
+    "contents": "Contents",
+    "back": "Back"
+  },
+  "paywall": {
+    "titleNew": "Choose a plan to open your agency",
+    "titleLapsed": "Your subscription has ended",
+    "bodyOwner": "Pay to continue. Everything your agency entered is kept safe and is back as soon as the payment goes through.",
+    "bodyMember": "Ask an Owner of your agency to renew. Your work is kept safe in the meantime.",
+    "download": "Download your data",
+    "downloadHint": "Your clients and policies as CSV files, even before you pay.",
+    "clients": "Clients (CSV)",
+    "policies": "Policies (CSV)",
+    "nothing": "Nothing to download yet."
+  },
+  "demo": {
+    "badge": "Demo",
+    "title": "Try setting up an agency",
+    "subtitle": "A practice run with sample data. Nothing is saved and no account is created.",
+    "agency": "Sample Insurance Agency",
+    "doneTitle": "That's the whole setup",
+    "doneBody": "In your own agency you would now pay for {{plan}} with M-Pesa or card, then start adding clients and policies.",
+    "create": "Create your agency",
+    "restart": "Start again",
+    "signIn": "Back to sign in",
+    "payNote": "In the demo nothing is charged.",
+    "currency": "Currency",
+    "plan": "Plan"
   }
 }

@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
   const plan: Record<string, string> = {
     [addDays(today, 7)]: 'Your AMS subscription expires in 7 days',
     [addDays(today, 1)]: 'Your AMS subscription expires tomorrow',
-    [addDays(today, -4)]: 'Your AMS agency is now read-only',
+    [addDays(today, -4)]: 'Your AMS access has stopped',
   };
 
   const svc = serviceClient();
@@ -47,8 +47,8 @@ Deno.serve(async (req) => {
     if (!owner.email) continue;
     const text =
       `Hi ${owner.full_name ?? ''},\n\n` +
-      (subject.includes('read-only')
-        ? `${a.name}'s subscription has lapsed, so the agency is now read-only. Everyone can still sign in and see their data, but nothing can be added or changed until you pay.\n\n`
+      (subject.includes('stopped')
+        ? `${a.name}'s subscription has lapsed, so access to the agency has stopped until you pay. Your data is kept safe, and you can still download your clients and policies.\n\n`
         : `${a.name}'s subscription is paid until ${a.paid_until}. Renew to keep working without interruption.\n\n`) +
       `Pay with M-Pesa or card: ${appUrl}/settings/billing\n\n— AMS`;
 

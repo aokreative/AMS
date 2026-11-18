@@ -2,12 +2,18 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Route, Switch, Router as WouterRouter, Redirect } from 'wouter';
+import { Route, Switch, Router as WouterRouter, Redirect, useLocation } from 'wouter';
+import { useEffect } from 'react';
+import { notePage } from '@/lib/last-page';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AppLayout } from '@/layouts/AppLayout';
 import { needsAgencySetup } from '@/lib/auth';
+import { agencyAccess, todayNairobi } from '@/lib/subscription';
+import { Paywall } from '@/components/billing/Paywall';
+import { SuspendedScreen } from '@/components/SuspendedScreen';
+import Admin from '@/pages/admin';
 import NotFound from '@/pages/not-found';
 
 import Login from '@/pages/login';
@@ -34,15 +40,31 @@ import ResetPassword from '@/pages/reset-password';
 import Legal from '@/pages/legal';
 import BillingReturn from '@/pages/billing-return';
 import Onboarding from '@/pages/onboarding';
+import Demo from '@/pages/demo';
+
+/** /admin: superadmins only; everyone else gets Not found (signed-out visitors go to sign in). */
+const AdminRoute = () => {
+  const { session, isLoading, profileLoadedFor, isPlatformAdmin } = useAuth();
+  if (isLoading || (session && profileLoadedFor !== session.id)) {
+    return <div className="min-h-screen flex items-center justify-center">Loading…</div>;
+  }
+  if (!session) return <Redirect to="/login" />;
+  if (!isPlatformAdmin) return <NotFound />;
+  return <Admin />;
+};
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ component: Component }: { component: React.ComponentType }) => {
-  const { session, profile, agency, isLoading, isDeactivated, signOut, profileLoadedFor } = useAuth();
+  const { session, profile, agency, isLoading, isDeactivated, signOut, profileLoadedFor, isPlatformAdmin } = useAuth();
   
   if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading workspace...</div>;
   if (!session) return <Redirect to="/login" />;
+  // An admin-only account (no agency) belongs on the superadmin page.
+  if (!profile && isPlatformAdmin) return <Redirect to="/admin" />;
   // Signed in (e.g. just verified the email code) but no agency yet: finish sign-up.
   if (needsAgencySetup(session.id, profileLoadedFor, !!profile)) return <Redirect to="/register" />;
+  // A suspended agency sees only the suspended screen, before setup or payment.
+  if (agency?.suspended_at) return <SuspendedScreen />;
   // Owners finish the setup wizard (language, currency, plan) first.
   if (profile?.role === 'owner' && !profile.deactivated_at && agency && !agency.setup_completed_at) {
     return <Redirect to="/onboarding" />;
@@ -63,6 +85,12 @@ const ProtectedRoute = ({ component: Component }: { component: React.ComponentTy
     );
   }
   
+  // Pay to access: an unpaid agency sees only the pay screen. The Paystack return page stays
+  // reachable so a payment can be confirmed.
+  if (agency && agencyAccess(agency, todayNairobi()) === 'locked' && window.location.pathname !== '/billing/return') {
+    return <Paywall />;
+  }
+
   return (
     <AppLayout>
       <Component />
@@ -71,6 +99,8 @@ const ProtectedRoute = ({ component: Component }: { component: React.ComponentTy
 };
 
 function Router() {
+  const [location] = useLocation();
+  useEffect(() => notePage(location), [location]);
   return (
     <Switch>
       <Route path="~^/$" component={() => <Redirect to="/dashboard" />} />
@@ -78,6 +108,8 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/join" component={Join} />
       <Route path="/onboarding" component={Onboarding} />
+      <Route path="/demo" component={Demo} />
+      <Route path="/admin" component={AdminRoute} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/privacy" component={() => <Legal kind="privacy" />} />
