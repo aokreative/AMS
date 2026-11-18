@@ -171,7 +171,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col md:pl-64 print:pl-0 w-full overflow-hidden print:overflow-visible">
+      <div className="flex-1 flex flex-col md:pl-64 print:pl-0 w-full min-w-0 overflow-hidden print:overflow-visible">
         {/* Mobile Header */}
         <header className="md:hidden print:hidden h-14 border-b bg-card flex items-center justify-between px-4 shrink-0 sticky top-0 z-10">
           <div className="flex items-center gap-2 font-bold truncate">

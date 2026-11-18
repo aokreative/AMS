@@ -332,10 +332,10 @@ export default function Payouts() {
       </Card>
 
       <div className="space-y-3">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
           <h2 className="text-lg font-semibold tracking-tight">Payouts</h2>
           <Select value={agentFilter} onValueChange={setAgentFilter}>
-            <SelectTrigger className="w-[220px] bg-card"><SelectValue placeholder="Agent" /></SelectTrigger>
+            <SelectTrigger className="w-full bg-card sm:w-[220px]"><SelectValue placeholder="Agent" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All agents</SelectItem>
               {members.map((m) => <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>)}

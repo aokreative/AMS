@@ -22,7 +22,7 @@ export default function PayoutDetail() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center justify-between gap-4 print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4 print:hidden">
         <Button variant="ghost" asChild>
           <Link href={backHref}><ArrowLeft className="w-4 h-4 mr-2" /> Back</Link>
         </Button>
