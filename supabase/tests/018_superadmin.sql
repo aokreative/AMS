@@ -103,6 +103,18 @@ BEGIN
     PERFORM _t018_as(o);
     PERFORM _t018_expect(format('INSERT INTO clients (agency_id, type, name) VALUES (%L, %L, %L)', ag, 'individual', 'X'), 'This account is suspended');
     PERFORM _t018_expect(format('UPDATE policies SET status = %L WHERE id = %L', 'cancelled', p1), 'This account is suspended');
+    -- ...nor the agency profile, settings, member records or receipt files
+    PERFORM _t018_expect(format('UPDATE agencies SET name = %L WHERE id = %L', 'Renamed', ag), 'This account is suspended');
+    PERFORM _t018_expect('SELECT set_agency_language(''fr'')', 'This account is suspended');
+    PERFORM _t018_expect('SELECT set_my_language(''fr'')', 'This account is suspended');
+    -- members can't update users rows directly at all (no UPDATE policy): nothing changes
+    UPDATE users SET full_name = 'X' WHERE id = o;
+    GET DIAGNOSTICS n = ROW_COUNT;
+    ASSERT n = 0, 'no direct users update';
+    PERFORM _t018_expect(format('INSERT INTO storage.objects (bucket_id, name) VALUES (%L, %L)', 'receipts', ag::text || '/t018.pdf'), NULL, '42501');
+    -- a superadmin can still change a suspended agency (e.g. record a cash payment)
+    PERFORM _t018_as(a);
+    PERFORM admin_set_paid_until(ag, today + 45, 'Cash while suspended');
 
     -- (d) reactivate
     PERFORM _t018_as(a);
@@ -118,6 +130,7 @@ BEGIN
     SELECT x INTO j FROM admin_list_agencies() x WHERE x->>'id' = ag::text;
     ASSERT (j->>'price_kes')::int = 2500 AND (j->>'custom_price_kes')::int = 2500, 'custom price listed';
     PERFORM admin_set_custom_price(ag, NULL, 'Back to standard');
+    PERFORM admin_set_custom_price(ag, 3000, 'Discount on Starter');
 
     -- (g) comp
     PERFORM _t018_expect(format('SELECT admin_set_comp(%L, %L, %L)', ag, today - 1, 'x'), 'Pick today or a later date');
@@ -131,14 +144,17 @@ BEGIN
     -- (h) plan
     PERFORM _t018_expect(format('SELECT admin_set_tier(%L, %L, %L)', ag, 'gold', 'x'), 'Pick a plan');
     PERFORM admin_set_tier(ag, 'growth', 'Upgrade by phone');
+    -- a custom price belongs to the plan it was given for: a plan change drops it
+    ASSERT (SELECT custom_price_kes FROM agencies WHERE id = ag) IS NULL, 'plan change clears the custom price';
 
     -- (i) one log row per successful action, with before/after
     j := admin_agency_detail(ag);
     n := jsonb_array_length(j->'actions');
-    ASSERT n = 8, format('8 actions logged, got %s', n);
+    ASSERT n = 10, format('10 actions logged, got %s', n);
     ASSERT EXISTS (SELECT 1 FROM jsonb_array_elements(j->'actions') e
                     WHERE e->>'action' = 'set_tier' AND e->'before'->>'subscription_tier' = 'starter'
-                      AND e->'after'->>'subscription_tier' = 'growth' AND e->>'admin_email' = 'a-018@test.local'),
+                      AND e->'after'->>'subscription_tier' = 'growth' AND e->>'admin_email' = 'a-018@test.local'
+                      AND (e->'before'->>'custom_price_kes')::int = 3000 AND e->'after'->>'custom_price_kes' IS NULL),
            'set_tier logged with before/after';
     RESET ROLE;
   END;

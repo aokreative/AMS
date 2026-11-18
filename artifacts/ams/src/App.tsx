@@ -63,6 +63,8 @@ const ProtectedRoute = ({ component: Component }: { component: React.ComponentTy
   if (!profile && isPlatformAdmin) return <Redirect to="/admin" />;
   // Signed in (e.g. just verified the email code) but no agency yet: finish sign-up.
   if (needsAgencySetup(session.id, profileLoadedFor, !!profile)) return <Redirect to="/register" />;
+  // A suspended agency sees only the suspended screen, before setup or payment.
+  if (agency?.suspended_at) return <SuspendedScreen />;
   // Owners finish the setup wizard (language, currency, plan) first.
   if (profile?.role === 'owner' && !profile.deactivated_at && agency && !agency.setup_completed_at) {
     return <Redirect to="/onboarding" />;
@@ -83,8 +85,6 @@ const ProtectedRoute = ({ component: Component }: { component: React.ComponentTy
     );
   }
   
-  if (agency?.suspended_at) return <SuspendedScreen />;
-
   // Pay to access: an unpaid agency sees only the pay screen. The Paystack return page stays
   // reachable so a payment can be confirmed.
   if (agency && agencyAccess(agency, todayNairobi()) === 'locked' && window.location.pathname !== '/billing/return') {

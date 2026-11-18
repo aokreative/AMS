@@ -100,6 +100,7 @@ New migrations go in `supabase/migrations/` and should be applied in order.
 | 015a | Subscription review fixes: billing columns locked, stale payments held for review, lapsed agencies can reduce usage |
 | 016 | Onboarding: agency currency and language, setup_completed_at, user language, owners per plan, multiple owners |
 | 018 | Superadmin: platform_admins, admin_actions log, agency suspension / custom price columns, admin_* RPCs gated by is_platform_admin(), suspended agencies refused every write |
+| 018a | Superadmin review fixes: a plan change clears the custom price; suspension also blocks agency profile/settings, member records, settings history and receipt file uploads/deletes |
 
 ### Running the database tests
 

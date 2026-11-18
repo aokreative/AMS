@@ -238,7 +238,7 @@ function AgencyPanel({ row }: { row: AdminAgencyRow }) {
       case 'price':
         return (
           <div className="space-y-1.5">
-            <Label htmlFor="adm-price">Monthly price for the {tierName(row.tier)} plan (KES). Leave empty to go back to the standard price.</Label>
+            <Label htmlFor="adm-price">Monthly price for the {tierName(row.tier)} plan (KES). Leave empty to go back to the standard price. It is removed automatically if the agency changes plan.</Label>
             <Input id="adm-price" type="number" min={1} step={1} value={value} onChange={(e) => setValue(e.target.value)} placeholder={String(TIERS.find((x) => x.key === row.tier)?.price_kes ?? '')} />
           </div>
         );
