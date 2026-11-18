@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cleanCode, isCompleteCode, isEmailNotConfirmed, isPublicAuthPath, needsAgencySetup, newPasswordError, registerNextStep, signUpOutcome } from './auth';
+import { cleanCode, isCompleteCode, isEmailNotConfirmed, isPublicAuthPath, joinNextStep, needsAgencySetup, newPasswordError, registerNextStep, signUpOutcome } from './auth';
 
 describe('newPasswordError', () => {
   it('needs at least 8 characters', () => {
@@ -86,5 +86,26 @@ describe('needsAgencySetup', () => {
   });
   it('has a profile: fine', () => {
     expect(needsAgencySetup('u1', 'u1', true)).toBe(false);
+  });
+});
+
+describe('joinNextStep', () => {
+  it('signed in straight away: accept the invite', () => {
+    expect(joinNextStep({ outcome: 'signed_in' })).toBe('accept');
+  });
+  it('email needs confirming: ask for the code', () => {
+    expect(joinNextStep({ outcome: 'verify' })).toBe('code');
+  });
+  it('email already registered: try their password', () => {
+    expect(joinNextStep({ outcome: 'exists' })).toBe('signin');
+  });
+  it('sign-in refused because the email is unconfirmed: ask for the code', () => {
+    expect(joinNextStep({ signInError: 'Email not confirmed' })).toBe('code');
+  });
+  it('any other sign-in error is shown', () => {
+    expect(joinNextStep({ signInError: 'Invalid login credentials' })).toBe('error');
+  });
+  it('signed in without error: accept', () => {
+    expect(joinNextStep({ signInError: null })).toBe('accept');
   });
 });

@@ -53,3 +53,19 @@ export function registerNextStep(s: {
 export function needsAgencySetup(sessionUserId: string | null, profileLoadedFor: string | null, hasProfile: boolean): boolean {
   return !!sessionUserId && profileLoadedFor === sessionUserId && !hasProfile;
 }
+
+/**
+ * Joining from an invite: what to do after sign-up (`outcome`) or after a
+ * sign-in attempt (`signInError`). An unconfirmed email goes to the code step.
+ */
+export function joinNextStep(
+  r: { outcome: 'signed_in' | 'verify' | 'exists' } | { signInError: string | null },
+): 'accept' | 'code' | 'signin' | 'error' {
+  if ('outcome' in r) {
+    if (r.outcome === 'signed_in') return 'accept';
+    if (r.outcome === 'verify') return 'code';
+    return 'signin';
+  }
+  if (!r.signInError) return 'accept';
+  return isEmailNotConfirmed(r.signInError) ? 'code' : 'error';
+}
