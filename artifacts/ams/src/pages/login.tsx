@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PasswordInput } from '@/components/PasswordInput';
 import { useLocation } from 'wouter';
 import { AuthLegalLinks, DemoPromo } from '@/components/DemoPromo';
 import { supabase } from '@/lib/supabase';
@@ -110,9 +111,8 @@ export default function Login() {
                     {t('auth.forgotPassword')}
                   </a>
                 </div>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
                   value={password}
                   onChange={e => { setPassword(e.target.value); setError(null); }}
                   required

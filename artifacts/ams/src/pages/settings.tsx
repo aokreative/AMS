@@ -67,7 +67,7 @@ export default function Settings({ tab }: { tab?: string } = {}) {
   return (
     <div className="space-y-8 max-w-5xl">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Agency Settings</h1>
+        <h1 className="sr-only">Agency Settings</h1>
         <p className="text-muted-foreground">Manage your workspace configuration and team.</p>
       </div>
 

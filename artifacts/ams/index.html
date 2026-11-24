@@ -24,7 +24,7 @@
       // Apply the saved light/dark choice before first paint (no flash).
       (function () {
         try {
-          var pref = localStorage.getItem('ams.theme') || 'system';
+          var pref = localStorage.getItem('ams.theme') || 'light';
           var dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
           if (dark) document.documentElement.classList.add('dark');
         } catch (e) {}

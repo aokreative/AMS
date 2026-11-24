@@ -158,7 +158,7 @@ export default function Renewals() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{isAgent ? 'My Renewals' : 'Renewals'}</h1>
+          <h1 className="sr-only">{isAgent ? 'My Renewals' : 'Renewals'}</h1>
           <p className="text-muted-foreground">Follow every expiring policy through to renewed or lost.</p>
         </div>
         <Button variant="secondary" onClick={handleExportCsv}>

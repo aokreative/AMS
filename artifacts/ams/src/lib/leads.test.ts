@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LEAD_STAGES, OPEN_STAGES, followUpState, nextStages, pipelineSummary, stageLabel } from './leads';
+import { LEAD_STAGES, OPEN_STAGES, followUpState, nextStages, pipelineSummary, quickFollowUps, stageLabel } from './leads';
 
 describe('lead stages', () => {
   it('runs new → contacted → quoted → won → paid, with lost aside', () => {
@@ -30,6 +30,20 @@ describe('followUpState', () => {
     expect(followUpState({ next_follow_up: null, stage: 'new' }, today)).toBe('none');
     expect(followUpState({ next_follow_up: '2026-11-20', stage: 'paid' }, today)).toBe('none');
     expect(followUpState({ next_follow_up: '2026-11-20', stage: 'lost' }, today)).toBe('none');
+  });
+});
+
+describe('quickFollowUps', () => {
+  it('today, tomorrow, in 3 days and next week from today', () => {
+    expect(quickFollowUps('2026-11-24')).toEqual([
+      { label: 'Today', date: '2026-11-24' },
+      { label: 'Tomorrow', date: '2026-11-25' },
+      { label: 'In 3 days', date: '2026-11-27' },
+      { label: 'Next week', date: '2026-12-01' },
+    ]);
+  });
+  it('rolls over month and year ends', () => {
+    expect(quickFollowUps('2026-12-30').map((q) => q.date)).toEqual(['2026-12-30', '2026-12-31', '2027-01-02', '2027-01-06']);
   });
 });
 

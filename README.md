@@ -105,6 +105,7 @@ New migrations go in `supabase/migrations/` and should be applied in order.
 | 019c | Demo review fixes: demo marked by id; every table trigger steps aside while ams.demo_restore is on (no DDL, only demo rows locked); table list from the catalog; people who joined during a session and the superadmin seat are switched off on leaving |
 | 020 | Leads pipeline: leads + lead_activities (contacts with channel, figure discussed, follow-up), stage moves new→contacted→quoted→won→paid / lost, convert a paid lead to client + pending policy, lead_pipeline view; RPC-only writes; covered by the demo reset |
 | 020a | Leads review fixes: convert_lead only uses the lead agent's clients for agents, clear errors for bad numbers/dates/NaN and duplicate policy numbers, remove_member hands leads over, sample demo leads (only the lead tables re-saved into the demo copy) |
+| 020b | set_lead_follow_up: set or clear a lead's next follow-up without logging a contact |
 
 ### Running the database tests
 
@@ -174,7 +175,9 @@ Every active policy expiring within 90 days (or already expired) is in the pipel
 ## Look and feel
 
 - Palette from the logo violet, Bricolage Grotesque headings + Figtree body; tokens in `src/index.css` (`--money`, `--due`, `--overdue` for status colours).
-- Light/dark toggle (top bar on phones, sidebar footer on desktop); stored as `ams.theme`, applied before first paint by an inline script in `index.html`; follows the device until chosen.
+- Appearance menu (Light / Dark / System) in the top bar; Light by default; stored as `ams.theme` and applied before first paint by an inline script in `index.html`.
+- Top bar on every page: page title, notification bell (follow-ups and renewals within 30 days, nearest first; the badge counts overdue, today and within 3 days), appearance menu.
+- Light sidebar grouped into Workspace / Money / Agency; the dashboard hero uses the indigo-to-teal gradient (`--hero-from/via/to`).
 - The desktop sidebar collapses to an icon rail (stored as `ams.sidebar`).
 
 ## Superadmin

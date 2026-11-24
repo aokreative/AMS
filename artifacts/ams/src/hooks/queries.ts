@@ -349,6 +349,7 @@ export function useCreatePolicy() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['policies'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['commissions'] });
     },
   });
@@ -375,6 +376,7 @@ export function useUpdatePolicy() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['policies'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['policy', data.id] });
     },
   });
@@ -400,6 +402,7 @@ export function useDeletePolicy() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['policies'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['commissions'] });
     },
   });
@@ -484,6 +487,7 @@ export function useCreateCommission() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['commissions'] });
       queryClient.invalidateQueries({ queryKey: ['policies'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
 }

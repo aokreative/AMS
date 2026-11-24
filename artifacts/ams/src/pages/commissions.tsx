@@ -235,7 +235,7 @@ export default function Commissions() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Commissions</h1>
+          <h1 className="sr-only">Commissions</h1>
           <p className="text-muted-foreground">{isAgent ? 'Your expected and received commissions.' : 'Track expected and received commissions.'}</p>
         </div>
 
@@ -364,7 +364,7 @@ export default function Commissions() {
       )}
 
       {selectedIds.size > 0 && !isAgent && (
-        <div className="sticky top-4 z-10 flex flex-wrap items-center justify-between gap-2 bg-primary text-primary-foreground px-4 py-3 rounded-md shadow-md">
+        <div className="sticky top-20 z-10 flex flex-wrap items-center justify-between gap-2 bg-primary text-primary-foreground px-4 py-3 rounded-md shadow-md">
           <div className="text-sm font-medium">{selectedIds.size} selected</div>
           <div className="flex flex-wrap gap-2">
             <Tooltip>
