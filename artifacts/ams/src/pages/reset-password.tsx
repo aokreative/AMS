@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { PasswordInput } from '@/components/PasswordInput';
 import { useLocation } from 'wouter';
 import { supabase } from '@/lib/supabase';
 import { newPasswordError, MIN_PASSWORD_LENGTH } from '@/lib/auth';
@@ -131,9 +132,8 @@ export default function ResetPassword() {
                 )}
                 <div className="space-y-2">
                   <Label htmlFor="new-password">New password</Label>
-                  <Input
+                  <PasswordInput
                     id="new-password"
-                    type="password"
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setError(null); }}
                     required
@@ -144,9 +144,8 @@ export default function ResetPassword() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirm-password">Confirm new password</Label>
-                  <Input
+                  <PasswordInput
                     id="confirm-password"
-                    type="password"
                     value={confirm}
                     onChange={(e) => { setConfirm(e.target.value); setError(null); }}
                     required

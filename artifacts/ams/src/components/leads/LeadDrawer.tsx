@@ -17,6 +17,7 @@ import { todayNairobi } from '@/lib/subscription';
 import { cn } from '@/lib/utils';
 import { LeadForm } from './LeadForm';
 import { StagePill } from './StagePill';
+import { FollowUpPicker } from './FollowUpPicker';
 
 function waLink(phone: string) {
   const digits = phone.replace(/\D/g, '');
@@ -134,6 +135,12 @@ export function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () =
                 </div>
               )}
             </dl>
+
+            {open && (
+              <div className="mt-4">
+                <FollowUpPicker lead={lead} />
+              </div>
+            )}
 
             {/* Moves */}
             <section className="mt-5 space-y-2">

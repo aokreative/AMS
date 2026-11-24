@@ -18,9 +18,9 @@ export function nextTheme(current: Theme): Theme {
 export function readTheme(): ThemePref {
   try {
     const v = localStorage.getItem(THEME_KEY);
-    return v === 'light' || v === 'dark' || v === 'system' ? v : 'system';
+    return v === 'light' || v === 'dark' || v === 'system' ? v : 'light';
   } catch {
-    return 'system';
+    return 'light';
   }
 }
 

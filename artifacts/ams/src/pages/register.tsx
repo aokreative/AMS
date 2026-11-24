@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { PasswordInput } from '@/components/PasswordInput';
 import { Link, useLocation } from 'wouter';
 import { AuthLegalLinks, DemoPromo } from '@/components/DemoPromo';
 import { useTranslation } from 'react-i18next';
@@ -195,7 +196,7 @@ export default function Register() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">{t('common.password')}</Label>
-                  <Input id="password" type="password" placeholder={t('auth.passwordHint')} value={password}
+                  <PasswordInput id="password" placeholder={t('auth.passwordHint')} value={password}
                     onChange={(e) => { setPassword(e.target.value); setError(null); }} required minLength={8} disabled={loading} autoComplete="new-password" />
                 </div>
                 <TermsConsent checked={agreed} onChange={(v) => { setAgreed(v); setError(null); }} disabled={loading} />

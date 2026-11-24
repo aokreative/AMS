@@ -60,6 +60,22 @@ export function followUpState(lead: { next_follow_up: string | null; stage: Lead
   return 'upcoming';
 }
 
+function addDays(d: string, n: number): string {
+  const t = new Date(`${d}T00:00:00Z`);
+  t.setUTCDate(t.getUTCDate() + n);
+  return t.toISOString().slice(0, 10);
+}
+
+/** One-tap follow-up dates offered on each lead. */
+export function quickFollowUps(today: string): { label: string; date: string }[] {
+  return [
+    { label: 'Today', date: today },
+    { label: 'Tomorrow', date: addDays(today, 1) },
+    { label: 'In 3 days', date: addDays(today, 3) },
+    { label: 'Next week', date: addDays(today, 7) },
+  ];
+}
+
 export interface PipelineRow {
   stage: LeadStage;
   count: number;

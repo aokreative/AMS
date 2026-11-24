@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { PasswordInput } from '@/components/PasswordInput';
 import { Link, useLocation } from 'wouter';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -356,9 +357,8 @@ export default function Join() {
 
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               placeholder={mode === 'signup' ? 'At least 8 characters' : 'Your password'}
               value={password}
               onChange={e => { setPassword(e.target.value); setError(null); }}

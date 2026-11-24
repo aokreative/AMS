@@ -61,7 +61,8 @@ type LeadRpc =
   | 'reopen_lead'
   | 'assign_lead'
   | 'delete_lead'
-  | 'convert_lead';
+  | 'convert_lead'
+  | 'set_lead_follow_up';
 
 /** Runs one lead RPC and refreshes leads (and policies/clients after a conversion). */
 export function useLeadAction() {
@@ -74,6 +75,7 @@ export function useLeadAction() {
     },
     onSuccess: (_d, v) => {
       void qc.invalidateQueries({ queryKey: ['leads'] });
+      void qc.invalidateQueries({ queryKey: ['notifications'] });
       if (v.rpc === 'convert_lead') {
         void qc.invalidateQueries({ queryKey: ['policies'] });
         void qc.invalidateQueries({ queryKey: ['clients'] });

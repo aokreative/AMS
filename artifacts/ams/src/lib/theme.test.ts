@@ -21,12 +21,14 @@ describe('theme', () => {
     expect(resolveTheme('light', true)).toBe('light');
     expect(resolveTheme('dark', false)).toBe('dark');
   });
-  it('defaults to system and remembers a choice', () => {
-    expect(readTheme()).toBe('system');
+  it('defaults to light and remembers any choice, including system', () => {
+    expect(readTheme()).toBe('light');
     writeTheme('dark');
     expect(readTheme()).toBe('dark');
-    store.set('ams.theme', 'purple');
+    writeTheme('system');
     expect(readTheme()).toBe('system');
+    store.set('ams.theme', 'purple');
+    expect(readTheme()).toBe('light');
   });
   it('the toggle flips what is showing', () => {
     expect(nextTheme('light')).toBe('dark');
