@@ -10,14 +10,18 @@ function useTheme(): [Theme, () => void] {
   useEffect(() => {
     const sync = () => setTheme(resolveTheme(readTheme(), systemPrefersDark()));
     const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
-    mq?.addEventListener('change', () => {
+    const onSystemChange = () => {
       if (readTheme() === 'system') {
-        applyTheme(resolveTheme('system', mq.matches));
+        applyTheme(resolveTheme('system', !!mq?.matches));
         sync();
       }
-    });
+    };
+    mq?.addEventListener('change', onSystemChange);
     window.addEventListener('ams-theme', sync);
-    return () => window.removeEventListener('ams-theme', sync);
+    return () => {
+      mq?.removeEventListener('change', onSystemChange);
+      window.removeEventListener('ams-theme', sync);
+    };
   }, []);
 
   const toggle = () => {

@@ -35,7 +35,8 @@ DECLARE
   a2  UUID := gen_random_uuid();   -- agent 2
   o2  UUID := gen_random_uuid();   -- owner of unpaid agency
   ins UUID; pl UUID;
-  l1 UUID; l2 UUID; pol UUID; cl UUID;
+  l1 UUID; l2 UUID; l3 UUID; pol UUID; cl UUID;
+  cb UUID := gen_random_uuid();   -- a client of agent 2
   n INTEGER;
   r RECORD;
 BEGIN
@@ -55,6 +56,7 @@ BEGIN
     (o2, ag2, 'owner', 'Owner2 020', 'o2-020@test.local');
   INSERT INTO insurers (agency_id, name) VALUES (ag, 'Insurer 020') RETURNING id INTO ins;
   INSERT INTO product_lines (agency_id, name) VALUES (ag, 'Motor 020') RETURNING id INTO pl;
+  INSERT INTO clients (id, agency_id, type, name, assigned_agent_id) VALUES (cb, ag, 'individual', 'Agent Two Client 020', a2);
 
   BEGIN
     SET LOCAL ROLE authenticated;
@@ -124,6 +126,17 @@ BEGIN
     -- paid -> convert to client + pending policy
     PERFORM _t020_as(a1);
     PERFORM move_lead(l1, 'paid');
+    -- an agent can't put their policy on another agent's client
+    PERFORM _t020_expect(format('SELECT convert_lead(%L, %L::jsonb)', l1, jsonb_build_object(
+      'client_id', cb, 'insurer_id', ins, 'product_line_id', pl, 'policy_number', 'T020-X',
+      'premium_amount', 42000, 'commission_rate', 10, 'start_date', today, 'expiry_date', today + 364)), 'Pick a client');
+    -- bad numbers get a clear message, not a database error
+    PERFORM _t020_expect(format('SELECT convert_lead(%L, %L::jsonb)', l1, jsonb_build_object(
+      'insurer_id', ins, 'product_line_id', pl, 'policy_number', 'T020-X',
+      'premium_amount', 42000, 'commission_rate', 'abc', 'start_date', today, 'expiry_date', today + 364)), 'Enter a commission rate between 0 and 100');
+    PERFORM _t020_expect(format('SELECT convert_lead(%L, %L::jsonb)', l1, jsonb_build_object(
+      'insurer_id', ins, 'product_line_id', pl, 'policy_number', 'T020-X',
+      'premium_amount', 'NaN', 'commission_rate', 10, 'start_date', today, 'expiry_date', today + 364)), 'Enter the premium');
     pol := convert_lead(l1, jsonb_build_object(
       'client_type', 'individual', 'insurer_id', ins, 'product_line_id', pl, 'policy_number', 'T020-0001',
       'premium_amount', 42000, 'commission_rate', 10, 'start_date', today, 'expiry_date', today + 364));
@@ -133,6 +146,14 @@ BEGIN
     ASSERT (SELECT (name, phone) FROM clients WHERE id = r.client_id) = ('Mary Wanjiku'::text, '0712000020'::text), 'client from lead';
     PERFORM _t020_expect(format('SELECT convert_lead(%L, %L::jsonb)', l1, '{}'), 'Already converted');
 
+    -- NaN figures are refused; a policy number already in use gets a clear message
+    l3 := create_lead(jsonb_build_object('full_name', 'Peter Kamau'));
+    PERFORM _t020_expect(format('SELECT log_lead_contact(%L, current_date, %L, NULL, %L::numeric, NULL)', l3, 'call', 'NaN'), 'Enter a figure of 0 or more');
+    PERFORM move_lead(l3, 'paid');
+    PERFORM _t020_expect(format('SELECT convert_lead(%L, %L::jsonb)', l3, jsonb_build_object(
+      'insurer_id', ins, 'product_line_id', pl, 'policy_number', 't020-0001',
+      'premium_amount', 30000, 'commission_rate', 10, 'start_date', today, 'expiry_date', today + 364)), 'That policy number is already used');
+
     -- timeline: contacts, moves and conversion
     SELECT count(*) INTO n FROM lead_activities WHERE lead_id = l1;
     ASSERT n >= 6, format('timeline has contacts, moves and conversion (%s)', n);
@@ -140,6 +161,13 @@ BEGIN
 
     -- pipeline view counts only what the caller can see
     ASSERT (SELECT count FROM lead_pipeline WHERE stage = 'paid') = 1, 'pipeline counts';
+
+    -- removing an agent hands their leads to the chosen member
+    PERFORM _t020_as(o);
+    PERFORM remove_member(a1, a2);
+    SELECT count(*) INTO n FROM leads WHERE agency_id = ag AND assigned_agent_id = a1;
+    ASSERT n = 0, 'no leads left on the removed agent';
+    ASSERT (SELECT assigned_agent_id FROM leads WHERE id = l3) = a2, 'open lead moved to agent 2';
 
     -- unpaid agency can't create leads
     PERFORM _t020_as(o2);

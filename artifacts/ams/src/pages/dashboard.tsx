@@ -127,6 +127,15 @@ export default function Dashboard() {
         insurer: { name: r.insurer_name },
       }));
 
+      // 7a. Open renewals expiring within 7 days (full count, not just the 5 listed)
+      const { count: renewalsThisWeek } = await supabase
+        .from('renewal_pipeline')
+        .select('policy_id', { count: 'exact', head: true })
+        .eq('agency_id', agency.id)
+        .in('stage', ['to_contact', 'contacted', 'quoted'])
+        .gte('days_to_expiry', 0)
+        .lte('days_to_expiry', 7);
+
       // 7b. Active per-premium (life) policies for the monthly projection
       const { data: perPremiumPolicies } = await supabase
         .from('policies')
@@ -145,6 +154,7 @@ export default function Dashboard() {
         activeCount: activeCount || 0,
         totalPremium,
         expiringCount: expiringCount || 0,
+        renewalsThisWeek: renewalsThisWeek || 0,
         expectedThisMonth,
         receivedThisMonth,
         overdueCount: overdueCount || 0,
@@ -164,7 +174,7 @@ export default function Dashboard() {
   const firstName = profile?.full_name?.split(' ')[0];
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const renewalsThisWeek = (metrics?.upcomingRenewals ?? []).filter((r: any) => r.daysLeft <= 7).length;
+  const renewalsThisWeek = metrics?.renewalsThisWeek ?? 0;
   const collectedPct = metrics && metrics.expectedThisMonth > 0
     ? Math.min(100, Math.round((metrics.receivedThisMonth / metrics.expectedThisMonth) * 100))
     : 0;

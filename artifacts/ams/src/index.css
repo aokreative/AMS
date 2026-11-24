@@ -113,9 +113,9 @@
   --destructive: 348 57% 51%;
   --destructive-foreground: 0 0% 100%;
 
-  --money: 172 82% 31%;
-  --due: 40 90% 42%;
-  --overdue: 348 57% 51%;
+  --money: 172 82% 24%;
+  --due: 38 92% 30%;
+  --overdue: 348 62% 42%;
 
   /* Deep indigo sidebar in both themes */
   --sidebar: 247 39% 17%;

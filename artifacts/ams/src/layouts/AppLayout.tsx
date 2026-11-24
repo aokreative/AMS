@@ -128,6 +128,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const initials = profile?.full_name?.substring(0, 2).toUpperCase() || 'U';
 
+  // Called as functions (not <NavLinks/>) so they aren't remounted on every render,
+  // which would drop keyboard focus and re-run their effects.
   const NavLinks = ({ rail = false }: { rail?: boolean }) => (
     <nav className="space-y-0.5" aria-label="Main">
       {navItems.map((item) => {
@@ -139,7 +141,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             href={item.path}
             onClick={() => setIsMobileMenuOpen(false)}
             aria-current={isActive ? 'page' : undefined}
-            aria-label={rail ? item.name : undefined}
+            aria-label={rail ? `${item.name}${item.badge !== undefined ? `, ${item.badge}` : ''}` : undefined}
             className={cn(
               'relative flex items-center gap-3 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
               rail ? 'h-10 w-10 justify-center' : 'px-3 py-2',
@@ -241,7 +243,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className={cn('flex-1 overflow-y-auto overflow-x-hidden py-3', collapsed ? 'flex flex-col items-center px-2' : 'px-3')}>
-          <NavLinks rail={collapsed} />
+          {NavLinks({ rail: collapsed })}
         </div>
 
         <button
@@ -259,7 +261,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           {!collapsed && <span>Collapse</span>}
         </button>
 
-        <Footer rail={collapsed} />
+        {Footer({ rail: collapsed })}
       </aside>
 
       {/* Main content */}
@@ -289,9 +291,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     <span className="font-display font-semibold text-sidebar-foreground">{t('common.menu')}</span>
                   </div>
                   <div className="flex-1 overflow-y-auto p-3">
-                    <NavLinks />
+                    {NavLinks({})}
                   </div>
-                  <Footer />
+                  {Footer({})}
                 </div>
               </SheetContent>
             </Sheet>

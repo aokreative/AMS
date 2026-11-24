@@ -104,6 +104,7 @@ New migrations go in `supabase/migrations/` and should be applied in order.
 | 019 / 019b | Resettable demo: agencies.is_demo, private demo_snapshot copy, admin_open_demo / admin_leave_demo reset the demo agency |
 | 019c | Demo review fixes: demo marked by id; every table trigger steps aside while ams.demo_restore is on (no DDL, only demo rows locked); table list from the catalog; people who joined during a session and the superadmin seat are switched off on leaving |
 | 020 | Leads pipeline: leads + lead_activities (contacts with channel, figure discussed, follow-up), stage moves new→contacted→quoted→won→paid / lost, convert a paid lead to client + pending policy, lead_pipeline view; RPC-only writes; covered by the demo reset |
+| 020a | Leads review fixes: convert_lead only uses the lead agent's clients for agents, clear errors for bad numbers/dates/NaN and duplicate policy numbers, remove_member hands leads over, sample demo leads (only the lead tables re-saved into the demo copy) |
 
 ### Running the database tests
 
