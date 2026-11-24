@@ -32,7 +32,8 @@
     "insurers": "شركات التأمين",
     "productLines": "فروع التأمين",
     "settings": "الإعدادات",
-    "workspace": "مساحة الوكالة"
+    "workspace": "مساحة الوكالة",
+    "leads": "العملاء المحتملون"
   },
   "auth": {
     "signInTitle": "مرحبًا بعودتك",

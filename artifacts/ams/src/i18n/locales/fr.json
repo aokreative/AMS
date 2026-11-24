@@ -32,7 +32,8 @@
     "insurers": "Assureurs",
     "productLines": "Branches",
     "settings": "Paramètres",
-    "workspace": "Espace de l'agence"
+    "workspace": "Espace de l'agence",
+    "leads": "Prospects"
   },
   "auth": {
     "signInTitle": "Bon retour",

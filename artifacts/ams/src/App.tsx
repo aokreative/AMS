@@ -34,6 +34,7 @@ import Payouts from '@/pages/payouts';
 import PayoutDetail from '@/pages/payout-detail';
 import MyEarnings from '@/pages/my-earnings';
 import Renewals from '@/pages/renewals';
+import Leads from '@/pages/leads';
 import Reports from '@/pages/reports';
 import Settings from '@/pages/settings';
 import ForgotPassword from '@/pages/forgot-password';
@@ -132,6 +133,7 @@ function Router() {
       <Route path="/payouts/:id" component={() => <ProtectedRoute component={PayoutDetail} />} />
       <Route path="/my-earnings" component={() => <ProtectedRoute component={MyEarnings} />} />
       <Route path="/renewals" component={() => <ProtectedRoute component={Renewals} />} />
+      <Route path="/leads" component={() => <ProtectedRoute component={Leads} />} />
       <Route path="/reports" component={() => <ProtectedRoute component={Reports} />} />
       <Route path="/insurers" component={() => <ProtectedRoute component={Insurers} />} />
       <Route path="/product-lines" component={() => <ProtectedRoute component={ProductLines} />} />

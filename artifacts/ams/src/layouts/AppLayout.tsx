@@ -1,36 +1,38 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  LayoutDashboard, 
-  Users, 
-  FileText, 
-  DollarSign, 
-  RefreshCcw, 
-  Building2, 
-  Tag, 
+import {
+  LayoutDashboard,
+  Users,
+  FileText,
+  DollarSign,
+  RefreshCcw,
+  Building2,
+  Tag,
   Settings,
   LogOut,
   Menu,
   BarChart2,
   Receipt,
   Wallet,
-  Coins
+  Coins,
+  Magnet,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAgentRates, useHasOwnEarnings } from '@/hooks/payouts';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { 
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { BrandMark } from '@/components/BrandLockup';
 import { SubscriptionBanner } from '@/components/SubscriptionBanner';
 import { DemoBanner } from '@/components/DemoBanner';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { readSidebar, writeSidebar } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 
 /** Terms and Privacy links at the foot of the menu. */
@@ -45,17 +47,31 @@ function LegalLinks() {
   );
 }
 
+interface NavItem {
+  name: string;
+  path: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: number;
+}
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { agency, profile, signOut, session, isOwnerOrManager } = useAuth();
   const [location] = useLocation();
   const { t } = useTranslation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [collapsed, setCollapsed] = React.useState(() => readSidebar() === 'collapsed');
 
-  // Get count of upcoming renewals in 30 days
+  const toggleCollapsed = () => {
+    setCollapsed((c) => {
+      writeSidebar(c ? 'expanded' : 'collapsed');
+      return !c;
+    });
+  };
+
+  // Open renewals expiring in the next 30 days
   const { data: renewalsCount = 0 } = useQuery({
     queryKey: ['renewals-count', agency?.id],
     queryFn: async () => {
-      // Open renewals expiring in the next 30 days (renewed/lost ones are done)
       const { count, error } = await supabase
         .from('renewal_pipeline')
         .select('policy_id', { count: 'exact', head: true })
@@ -63,7 +79,22 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         .in('stage', ['to_contact', 'contacted', 'quoted'])
         .gte('days_to_expiry', 0)
         .lte('days_to_expiry', 30);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!agency?.id && !!session,
+  });
 
+  // Open leads whose follow-up is due today or overdue
+  const { data: followUpsDue = 0 } = useQuery({
+    queryKey: ['leads', agency?.id, 'due-count'],
+    queryFn: async () => {
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Nairobi' }).format(new Date());
+      const { count, error } = await supabase
+        .from('leads')
+        .select('id', { count: 'exact', head: true })
+        .in('stage', ['new', 'contacted', 'quoted', 'won'])
+        .lte('next_follow_up', today);
       if (error) throw error;
       return count || 0;
     },
@@ -75,162 +106,204 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: hasOwnEarnings } = useHasOwnEarnings(isOwnerOrManager ? session?.id : undefined);
   const showMyEarnings = !isOwnerOrManager || (myRates?.length ?? 0) > 0 || !!hasOwnEarnings;
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { name: t('nav.dashboard'), path: '/dashboard', icon: LayoutDashboard },
+    { name: t('nav.leads'), path: '/leads', icon: Magnet, badge: followUpsDue > 0 ? followUpsDue : undefined },
     { name: t('nav.clients'), path: '/clients', icon: Users },
     { name: t('nav.policies'), path: '/policies', icon: FileText },
+    { name: t('nav.renewals'), path: '/renewals', icon: RefreshCcw, badge: renewalsCount > 0 ? renewalsCount : undefined },
     { name: t('nav.commissions'), path: '/commissions', icon: DollarSign },
     ...(isOwnerOrManager ? [{ name: t('nav.receipts'), path: '/receipts', icon: Receipt }] : []),
     ...(isOwnerOrManager ? [{ name: t('nav.payouts'), path: '/payouts', icon: Wallet }] : []),
     ...(showMyEarnings ? [{ name: t('nav.myEarnings'), path: '/my-earnings', icon: Coins }] : []),
-    { 
-      name: t('nav.renewals'),
-      path: '/renewals', 
-      icon: RefreshCcw,
-      badge: renewalsCount > 0 ? renewalsCount : undefined
-    },
-    // Owner/manager-only items
-    ...(isOwnerOrManager ? [
-      { name: t('nav.reports'), path: '/reports', icon: BarChart2 },
-      { name: t('nav.insurers'), path: '/insurers', icon: Building2 },
-      { name: t('nav.productLines'), path: '/product-lines', icon: Tag },
-    ] : []),
+    ...(isOwnerOrManager
+      ? [
+          { name: t('nav.reports'), path: '/reports', icon: BarChart2 },
+          { name: t('nav.insurers'), path: '/insurers', icon: Building2 },
+          { name: t('nav.productLines'), path: '/product-lines', icon: Tag },
+        ]
+      : []),
     { name: t('nav.settings'), path: '/settings', icon: Settings },
   ];
 
-  const NavLinks = () => (
-    <div className="space-y-1">
+  const initials = profile?.full_name?.substring(0, 2).toUpperCase() || 'U';
+
+  // Called as functions (not <NavLinks/>) so they aren't remounted on every render,
+  // which would drop keyboard focus and re-run their effects.
+  const NavLinks = ({ rail = false }: { rail?: boolean }) => (
+    <nav className="space-y-0.5" aria-label="Main">
       {navItems.map((item) => {
         const isActive = location === item.path || location.startsWith(item.path + '/');
         const Icon = item.icon;
-        
-        return (
-          <Link key={item.path} href={item.path} onClick={() => setIsMobileMenuOpen(false)}>
-            <div
-              className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors cursor-pointer text-sm font-medium ${
-                isActive 
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
-                  : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              <span>{item.name}</span>
-              {item.badge !== undefined && (
-                <Badge variant="destructive" className="ml-auto h-5 px-1.5 text-[10px] min-w-[20px] flex items-center justify-center rounded-full">
+        const link = (
+          <Link
+            key={item.path}
+            href={item.path}
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-current={isActive ? 'page' : undefined}
+            aria-label={rail ? `${item.name}${item.badge !== undefined ? `, ${item.badge}` : ''}` : undefined}
+            className={cn(
+              'relative flex items-center gap-3 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
+              rail ? 'h-10 w-10 justify-center' : 'px-3 py-2',
+              isActive
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                : 'text-sidebar-foreground/75 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
+            )}
+          >
+            {isActive && <span className="absolute inset-y-1.5 -start-3 w-1 rounded-full bg-sidebar-primary" aria-hidden />}
+            <Icon className="h-[18px] w-[18px] shrink-0" />
+            {!rail && <span className="truncate">{item.name}</span>}
+            {item.badge !== undefined &&
+              (rail ? (
+                <span className="absolute -end-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-due ring-2 ring-sidebar" aria-hidden />
+              ) : (
+                <span className="ms-auto min-w-5 rounded-full bg-due px-1.5 text-center text-[11px] font-semibold leading-5 text-sidebar tabular-nums">
                   {item.badge}
-                </Badge>
-              )}
-            </div>
+                </span>
+              ))}
           </Link>
         );
+        return rail ? (
+          <Tooltip key={item.path} delayDuration={150}>
+            <TooltipTrigger asChild>{link}</TooltipTrigger>
+            <TooltipContent side="right">
+              {item.name}
+              {item.badge !== undefined && ` (${item.badge})`}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          link
+        );
       })}
+    </nav>
+  );
+
+  const Footer = ({ rail = false }: { rail?: boolean }) => (
+    <div className={cn('shrink-0 border-t border-sidebar-border/60', rail ? 'flex flex-col items-center gap-2 py-3' : 'p-4')}>
+      {rail ? (
+        <>
+          <ThemeToggle className="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground" />
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={signOut}
+                aria-label={t('common.signOut')}
+                className="rounded-lg p-2 text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{t('common.signOut')}</TooltipContent>
+          </Tooltip>
+          <Avatar className="h-8 w-8 border border-sidebar-border/60" title={profile?.full_name ?? undefined}>
+            <AvatarFallback className="bg-sidebar-accent text-xs text-sidebar-foreground">{initials}</AvatarFallback>
+          </Avatar>
+        </>
+      ) : (
+        <>
+          <div className="mb-3 flex items-center gap-3">
+            <Avatar className="h-9 w-9 border border-sidebar-border/60">
+              <AvatarFallback className="bg-sidebar-accent text-xs text-sidebar-foreground">{initials}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-1 flex-col overflow-hidden">
+              <span className="truncate text-sm font-medium text-sidebar-foreground">{profile?.full_name}</span>
+              <span className="truncate text-xs text-sidebar-foreground/60">{profile?.role ? t(`roles.${profile.role}`) : ''}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              className="flex-1 justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              onClick={signOut}
+            >
+              <LogOut className="me-2 h-4 w-4" />
+              {t('common.signOut')}
+            </Button>
+            <ThemeToggle className="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground" />
+          </div>
+          <LegalLinks />
+        </>
+      )}
     </div>
   );
 
   return (
-    <div className="min-h-screen flex w-full bg-background">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex print:hidden flex-col w-64 bg-sidebar border-r border-sidebar-border shrink-0 fixed inset-y-0 z-20">
-        <div className="h-14 flex items-center px-4 border-b border-sidebar-border/50 shrink-0">
-          <div className="flex items-center gap-2 font-bold text-sidebar-foreground truncate">
-            <BrandMark alt="AMS" className="h-7 w-7 shrink-0" />
-            <span className="truncate">{agency?.name || t('nav.workspace')}</span>
-          </div>
+    <div className="flex min-h-screen w-full bg-background">
+      {/* Desktop sidebar: full or icon rail */}
+      <aside
+        className={cn(
+          'fixed inset-y-0 z-20 hidden shrink-0 flex-col border-e border-sidebar-border bg-sidebar transition-[width] duration-200 md:flex print:hidden',
+          collapsed ? 'w-[72px]' : 'w-64',
+        )}
+      >
+        <div className={cn('flex h-14 shrink-0 items-center border-b border-sidebar-border/60', collapsed ? 'justify-center' : 'gap-2 px-4')}>
+          <BrandMark alt="AMS" className="h-7 w-7 shrink-0" />
+          {!collapsed && <span className="truncate font-display font-semibold text-sidebar-foreground">{agency?.name || t('nav.workspace')}</span>}
         </div>
-        
-        <div className="flex-1 overflow-y-auto p-3">
-          <NavLinks />
+
+        <div className={cn('flex-1 overflow-y-auto overflow-x-hidden py-3', collapsed ? 'flex flex-col items-center px-2' : 'px-3')}>
+          {NavLinks({ rail: collapsed })}
         </div>
-        
-        <div className="p-4 border-t border-sidebar-border/50 shrink-0 mt-auto bg-sidebar/95">
-          <div className="flex items-center gap-3 mb-4">
-            <Avatar className="h-9 w-9 border border-sidebar-border/50">
-              <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground text-xs">
-                {profile?.full_name?.substring(0, 2).toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col flex-1 overflow-hidden">
-              <span className="text-sm font-medium text-sidebar-foreground truncate">
-                {profile?.full_name}
-              </span>
-              <span className="text-xs text-sidebar-foreground/60 capitalize truncate">
-                {profile?.role ? t(`roles.${profile.role}`) : ''}
-              </span>
-            </div>
-          </div>
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground" 
-            onClick={signOut}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            {t('common.signOut')}
-          </Button>
-          <LegalLinks />
-        </div>
+
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-label={collapsed ? 'Expand the menu' : 'Collapse the menu'}
+          aria-expanded={!collapsed}
+          title={collapsed ? 'Expand the menu' : 'Collapse the menu'}
+          className={cn(
+            'mx-3 mb-2 flex items-center gap-2 rounded-lg p-2 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
+            collapsed && 'mx-auto',
+          )}
+        >
+          {collapsed ? <PanelLeftOpen className="h-4 w-4 rtl:rotate-180" /> : <PanelLeftClose className="h-4 w-4 rtl:rotate-180" />}
+          {!collapsed && <span>Collapse</span>}
+        </button>
+
+        {Footer({ rail: collapsed })}
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col md:pl-64 print:pl-0 w-full min-w-0 overflow-hidden print:overflow-visible">
-        {/* Mobile Header */}
-        <header className="md:hidden print:hidden h-14 border-b bg-card flex items-center justify-between px-4 shrink-0 sticky top-0 z-10">
-          <div className="flex items-center gap-2 font-bold truncate">
+      {/* Main content */}
+      <div
+        className={cn(
+          'flex w-full min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-200 print:overflow-visible print:ps-0',
+          collapsed ? 'md:ps-[72px]' : 'md:ps-64',
+        )}
+      >
+        {/* Mobile header */}
+        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between border-b bg-card px-4 md:hidden print:hidden">
+          <div className="flex items-center gap-2 truncate font-bold">
             <BrandMark alt="AMS" className="h-7 w-7 shrink-0" />
-            <span className="truncate text-sm">{agency?.name || t('nav.workspace')}</span>
+            <span className="truncate font-display text-sm">{agency?.name || t('nav.workspace')}</span>
           </div>
-          
-          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="-mr-2">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0 bg-sidebar border-r-sidebar-border">
-              <div className="flex flex-col h-full">
-                <div className="h-14 flex items-center px-4 border-b border-sidebar-border/50 shrink-0">
-                  <span className="font-bold text-sidebar-foreground">{t('common.menu')}</span>
-                </div>
-                <div className="flex-1 overflow-y-auto p-3">
-                  <NavLinks />
-                </div>
-                <div className="p-4 border-t border-sidebar-border/50 shrink-0 mt-auto bg-sidebar">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Avatar className="h-9 w-9 border border-sidebar-border/50">
-                      <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground text-xs">
-                        {profile?.full_name?.substring(0, 2).toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col flex-1 overflow-hidden">
-                      <span className="text-sm font-medium text-sidebar-foreground truncate">
-                        {profile?.full_name}
-                      </span>
-                      <span className="text-xs text-sidebar-foreground/60 capitalize truncate">
-                        {profile?.role ? t(`roles.${profile.role}`) : ''}
-                      </span>
-                    </div>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="-me-2" aria-label={t('common.menu')}>
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 border-e-sidebar-border bg-sidebar p-0">
+                <div className="flex h-full flex-col">
+                  <div className="flex h-14 shrink-0 items-center border-b border-sidebar-border/60 px-4">
+                    <span className="font-display font-semibold text-sidebar-foreground">{t('common.menu')}</span>
                   </div>
-                          <Button 
-                    variant="ghost" 
-                    className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground" 
-                    onClick={signOut}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    {t('common.signOut')}
-                  </Button>
-                  <LegalLinks />
+                  <div className="flex-1 overflow-y-auto p-3">
+                    {NavLinks({})}
+                  </div>
+                  {Footer({})}
                 </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+              </SheetContent>
+            </Sheet>
+          </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-auto print:overflow-visible bg-background/50">
+        <main className="flex-1 overflow-auto print:overflow-visible">
           <DemoBanner />
           <SubscriptionBanner />
-          <div className="container mx-auto p-4 md:p-6 max-w-7xl">
-            {children}
-          </div>
+          <div className="container mx-auto max-w-7xl p-4 md:p-6 lg:p-8">{children}</div>
         </main>
       </div>
     </div>
