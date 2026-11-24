@@ -160,7 +160,7 @@ BEGIN
     ASSERT EXISTS (SELECT 1 FROM lead_activities WHERE lead_id = l1 AND kind = 'converted'), 'conversion logged';
 
     -- pipeline view counts only what the caller can see
-    ASSERT (SELECT count FROM lead_pipeline WHERE stage = 'paid') = 1, 'pipeline counts';
+    ASSERT (SELECT count FROM lead_pipeline WHERE stage = 'paid') = 2, 'pipeline counts (l1 and l3 are paid)';
 
     -- removing an agent hands their leads to the chosen member
     PERFORM _t020_as(o);
