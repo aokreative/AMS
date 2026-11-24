@@ -113,7 +113,7 @@ export default function ProductLines() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Product Lines</h1>
+          <h1 className="sr-only">Product Lines</h1>
           <p className="text-muted-foreground">Manage insurance classes and categories.</p>
         </div>
         

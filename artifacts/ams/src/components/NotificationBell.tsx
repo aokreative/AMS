@@ -54,7 +54,7 @@ export function NotificationBell() {
         >
           <Bell className="h-4 w-4" />
           {urgent > 0 && (
-            <span className="absolute -end-1.5 -top-1.5 min-w-5 rounded-full bg-overdue px-1 text-center text-[11px] font-semibold leading-5 text-white tabular-nums ring-2 ring-background">
+            <span className="absolute -end-1.5 -top-1.5 min-w-5 rounded-full bg-overdue px-1 text-center text-[11px] font-semibold leading-5 text-white dark:text-background tabular-nums ring-2 ring-background">
               {urgent > 99 ? '99+' : urgent}
             </span>
           )}

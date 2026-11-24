@@ -114,7 +114,7 @@
   --destructive-foreground: 0 0% 100%;
 
   --money: 172 82% 24%;
-  --due: 38 92% 30%;
+  --due: 38 92% 27%;
   --overdue: 348 62% 42%;
 
   /* Light sidebar (white panel, soft violet highlight for the current page) */
@@ -130,7 +130,7 @@
   /* Dashboard hero: indigo into money teal */
   --hero-from: #1E1B4B;
   --hero-via: #2A2F7A;
-  --hero-to: #0F766E;
+  --hero-to: #0B5E58;
 
   --panel-shadow: 0 1px 2px hsl(247 40% 20% / 0.06), 0 8px 24px -12px hsl(247 40% 20% / 0.14);
 

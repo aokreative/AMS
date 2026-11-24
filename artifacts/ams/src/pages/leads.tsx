@@ -27,31 +27,31 @@ function LeadCard({ lead, today, onOpen, draggable, showStage }: {
 }) {
   const fu = followUpState(lead, today);
   return (
+    // A plain container: the name is the button that opens the lead (keyboard and screen readers);
+    // clicking anywhere else on the card does the same for mouse users.
     <div
-      role="button"
-      tabIndex={0}
       onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onOpen();
-        }
-      }}
       draggable={draggable}
       onDragStart={(e) => {
         e.dataTransfer.setData('text/lead-id', lead.id);
         e.dataTransfer.effectAllowed = 'move';
       }}
-      aria-label={`${lead.full_name}, ${stageLabel(lead.stage)}`}
       className={cn(
-        'cursor-pointer rounded-2xl border bg-card p-4 text-start shadow-panel transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'cursor-pointer rounded-2xl border bg-card p-4 text-start shadow-panel transition-colors hover:border-primary/40 focus-within:border-primary/40',
         fu === 'overdue' && 'border-s-4 border-s-overdue',
         fu === 'due' && 'border-s-4 border-s-due',
       )}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate font-semibold">{lead.full_name}</p>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onOpen(); }}
+            aria-label={`Open ${lead.full_name}, ${stageLabel(lead.stage)}`}
+            className="max-w-full truncate rounded text-start font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {lead.full_name}
+          </button>
           {lead.interest && <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{lead.interest}</p>}
         </div>
         {lead.quoted_premium != null && (
@@ -133,13 +133,12 @@ export default function Leads() {
       </div>
 
       {/* Group switcher */}
-      <div role="tablist" aria-label="Lead groups" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
+      <div role="group" aria-label="Lead groups" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
         {VIEWS.map((v) => (
           <button
             key={v}
             type="button"
-            role="tab"
-            aria-selected={view === v}
+            aria-pressed={view === v}
             onClick={() => setView(v)}
             className={cn(
               'shrink-0 rounded-xl border px-4 py-2.5 text-start transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',

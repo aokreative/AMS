@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { CalendarPlus, X } from 'lucide-react';
 import { useLeadAction } from '@/hooks/leads';
 import { quickFollowUps, type Lead } from '@/lib/leads';
@@ -12,6 +13,9 @@ import { useToast } from '@/hooks/use-toast';
 export function FollowUpPicker({ lead, compact = false }: { lead: Lead; compact?: boolean }) {
   const act = useLeadAction();
   const { toast } = useToast();
+  const [picking, setPicking] = useState(false);
+  const [custom, setCustom] = useState('');
+  const [pickError, setPickError] = useState<string | null>(null);
   const today = todayNairobi();
   const set = (date: string | null) =>
     act.mutate(
@@ -48,20 +52,51 @@ export function FollowUpPicker({ lead, compact = false }: { lead: Lead; compact?
           {q.label}
         </button>
       ))}
-      <label className="relative inline-flex cursor-pointer items-center rounded-full border bg-card px-2 py-0.5 text-xs hover:bg-muted focus-within:ring-2 focus-within:ring-ring">
-        <CalendarPlus className="h-3.5 w-3.5" aria-hidden />
-        <span className="sr-only">Pick a date</span>
-        <input
-          type="date"
-          min={today}
-          className="absolute inset-0 cursor-pointer opacity-0"
-          onChange={(e) => e.target.value && set(e.target.value)}
-          aria-label="Pick a follow-up date"
-        />
-      </label>
-      {lead.next_follow_up && (
+      {picking ? (
+        <form
+          className="inline-flex items-center gap-1"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!custom || custom < today) {
+              setPickError('Pick today or a later date');
+              return;
+            }
+            set(custom);
+            setPicking(false);
+          }}
+        >
+          <input
+            type="date"
+            min={today}
+            value={custom}
+            autoFocus
+            onChange={(e) => { setCustom(e.target.value); setPickError(null); }}
+            aria-label="Follow-up date"
+            aria-invalid={!!pickError}
+            className="h-7 rounded-full border bg-card px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+          <button type="submit" disabled={act.isPending} className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-medium text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            Set
+          </button>
+          <button type="button" onClick={() => { setPicking(false); setPickError(null); }} className="rounded-full px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground">
+            Cancel
+          </button>
+          {pickError && <span className="text-xs text-overdue" role="alert">{pickError}</span>}
+        </form>
+      ) : (
         <button
           type="button"
+          onClick={() => { setCustom(lead.next_follow_up ?? ''); setPicking(true); }}
+          className="inline-flex items-center gap-1 rounded-full border bg-card px-2.5 py-0.5 text-xs hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <CalendarPlus className="h-3.5 w-3.5" aria-hidden />
+          {compact ? <span className="sr-only">Pick a date</span> : 'Pick a date'}
+        </button>
+      )}
+      {lead.next_follow_up && !picking && (
+        <button
+          type="button"
+          disabled={act.isPending}
           onClick={() => set(null)}
           aria-label="Clear the follow-up"
           title="Clear the follow-up"

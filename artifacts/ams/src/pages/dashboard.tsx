@@ -211,16 +211,16 @@ export default function Dashboard() {
         <div className="pointer-events-none absolute -end-24 -top-24 h-72 w-72 rounded-full bg-white/[0.06]" aria-hidden />
         <div className="relative grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
-            <p className="text-sm text-white/75">{format(new Date(), 'EEEE d MMMM')}</p>
+            <p className="text-sm text-white/90">{format(new Date(), 'EEEE d MMMM')}</p>
             <h2 id="hero-greeting" className="mt-1 text-2xl font-semibold sm:text-3xl">
               {greeting}{firstName ? `, ${firstName}` : ''}
             </h2>
-            <p className="mt-5 text-sm text-white/75">{my('Commission collected this month', 'Your commission collected this month')}</p>
+            <p className="mt-5 text-sm text-white/90">{my('Commission collected this month', 'Your commission collected this month')}</p>
             <p className="font-display text-4xl font-bold tabular-nums sm:text-5xl">{isLoading ? '—' : formatCurrency(metrics?.receivedThisMonth)}</p>
             <div className="mt-3 h-1.5 w-full max-w-sm overflow-hidden rounded-full bg-white/15" role="progressbar" aria-valuenow={collectedPct} aria-valuemin={0} aria-valuemax={100} aria-label="Commission collected against expected">
               <div className="h-full rounded-full bg-white/85 transition-[width] duration-700" style={{ width: `${collectedPct}%` }} />
             </div>
-            <p className="mt-2 text-sm text-white/75">
+            <p className="mt-2 text-sm text-white/90">
               {collectedPct}% of {formatCurrency(metrics?.expectedThisMonth)} expected · {formatCurrency(pipe.openQuoted)} being quoted
             </p>
           </div>
@@ -232,7 +232,7 @@ export default function Dashboard() {
                   className="block min-w-28 rounded-xl border border-white/15 bg-white/[0.08] px-4 py-3 transition-colors hover:bg-white/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                 >
                   <span className="block font-display text-2xl font-bold tabular-nums">{isLoading ? '—' : x.value}</span>
-                  <span className="block text-xs text-white/75">{x.label}</span>
+                  <span className="block text-xs text-white/90">{x.label}</span>
                 </Link>
               </li>
             ))}
@@ -299,13 +299,12 @@ function PremiumChart() {
     <section className="rounded-2xl border bg-card p-5 shadow-panel lg:col-span-3" aria-labelledby="chart-h">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="chart-h" className="text-lg font-semibold">{series === 'premium' ? 'Premium written' : 'Commission expected'}</h2>
-        <div role="tablist" className="inline-flex rounded-lg border bg-muted p-0.5 text-sm">
+        <div className="inline-flex rounded-lg border bg-muted p-0.5 text-sm" aria-label="Chart">
           {(['premium', 'expected'] as const).map((k) => (
             <button
               key={k}
               type="button"
-              role="tab"
-              aria-selected={series === k}
+              aria-pressed={series === k}
               onClick={() => setSeries(k)}
               className={cn('rounded-md px-3 py-1 font-medium transition-colors', series === k ? 'bg-card shadow-sm' : 'text-muted-foreground hover:text-foreground')}
             >
