@@ -32,7 +32,8 @@
     "insurers": "Seguradoras",
     "productLines": "Ramos",
     "settings": "Definições",
-    "workspace": "Área da agência"
+    "workspace": "Área da agência",
+    "leads": "Prospetos"
   },
   "auth": {
     "signInTitle": "Bem-vindo de volta",

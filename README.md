@@ -103,6 +103,7 @@ New migrations go in `supabase/migrations/` and should be applied in order.
 | 018a | Superadmin review fixes: a plan change clears the custom price; suspension also blocks agency profile/settings, member records, settings history and receipt file uploads/deletes |
 | 019 / 019b | Resettable demo: agencies.is_demo, private demo_snapshot copy, admin_open_demo / admin_leave_demo reset the demo agency |
 | 019c | Demo review fixes: demo marked by id; every table trigger steps aside while ams.demo_restore is on (no DDL, only demo rows locked); table list from the catalog; people who joined during a session and the superadmin seat are switched off on leaving |
+| 020 | Leads pipeline: leads + lead_activities (contacts with channel, figure discussed, follow-up), stage moves new→contacted→quoted→won→paid / lost, convert a paid lead to client + pending policy, lead_pipeline view; RPC-only writes; covered by the demo reset |
 
 ### Running the database tests
 
@@ -162,6 +163,18 @@ Every active policy expiring within 90 days (or already expired) is in the pipel
 - **Currencies:** each agency works in KES, TZS, UGX or USD (`agencies.currency`, chosen once in setup). Every amount in the app shows in it (`formatCurrency` → `lib/money.ts`). Plans are still billed in KES.
 - **Languages:** English, Kiswahili, French, Portuguese, Spanish, Arabic (right-to-left). Per person (`users.language`, switcher in the sidebar and on sign-in pages). Translations live in `artifacts/ams/src/i18n/locales/*.json`; a test checks every language has every key. Sign-in, sign-up, code, setup, menus, plans and the banner are translated; other pages fall back to English for now.
 - **Owners per plan:** Starter 1, Growth 2, Enterprise 3, Enterprise Plus unlimited. Owners can invite an Owner or promote a member; the last Owner can't be demoted, and nobody can remove themselves. Reminder emails go to every Owner.
+
+## Leads
+
+- `/leads`: stage bar (count and figures per stage), board with drag-forward on wide screens, one list per stage on phones, "Follow-ups due" filter. Agents see their own leads; owners/managers see all and can reassign or delete.
+- Lead drawer: call / WhatsApp / email shortcuts, **Log contact** (channel, what was said, figure discussed, next follow-up; the first contact moves New → Contacted), forward moves, **Lost** with a reason, **Reopen**, and on Paid **Create client & policy** (pending policy for the lead's agent).
+- The dashboard's pipeline ribbon and "Today" list read from leads; the menu shows a badge for follow-ups due.
+
+## Look and feel
+
+- Palette from the logo violet, Bricolage Grotesque headings + Figtree body; tokens in `src/index.css` (`--money`, `--due`, `--overdue` for status colours).
+- Light/dark toggle (top bar on phones, sidebar footer on desktop); stored as `ams.theme`, applied before first paint by an inline script in `index.html`; follows the device until chosen.
+- The desktop sidebar collapses to an icon rail (stored as `ams.sidebar`).
 
 ## Superadmin
 

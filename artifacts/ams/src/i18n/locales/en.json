@@ -32,7 +32,8 @@
     "insurers": "Insurers",
     "productLines": "Product Lines",
     "settings": "Settings",
-    "workspace": "Agency Workspace"
+    "workspace": "Agency Workspace",
+    "leads": "Leads"
   },
   "auth": {
     "signInTitle": "Welcome back",
