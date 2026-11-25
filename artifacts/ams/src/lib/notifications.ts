@@ -6,6 +6,8 @@ export interface Notice {
   id: string;
   kind: 'follow_up' | 'renewal';
   title: string;
+  /** Lead or client name, so the bell can word the title in the interface language. */
+  name: string | null;
   detail: string | null;
   date: string;
   urgency: Urgency;
@@ -41,6 +43,7 @@ export function buildNotifications(
       id: `lead:${l.id}`,
       kind: 'follow_up',
       title: `Follow up with ${l.full_name}`,
+      name: l.full_name,
       detail: l.interest,
       date: l.next_follow_up,
       urgency: urgency(l.next_follow_up, today),
@@ -53,6 +56,7 @@ export function buildNotifications(
       id: `renewal:${r.policy_id}`,
       kind: 'renewal',
       title: `${r.client_name ?? 'A client'} renews`,
+      name: r.client_name,
       detail: r.policy_number,
       date: r.expiry_date,
       urgency: urgency(r.expiry_date, today),

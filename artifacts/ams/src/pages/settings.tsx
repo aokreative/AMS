@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUpdateAgency, useAgencyUsers } from '@/hooks/queries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +26,7 @@ import { LanguageCurrencyCard } from '@/components/settings/LanguageCurrencyCard
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 export default function Settings({ tab }: { tab?: string } = {}) {
+  const { t } = useTranslation();
   const { agency, profile, session, isOwner, isOwnerOrManager } = useAuth();
   const updateAgency = useUpdateAgency();
   const { data: users, isLoading: usersLoading } = useAgencyUsers();
@@ -59,7 +61,7 @@ export default function Settings({ tab }: { tab?: string } = {}) {
     if (!agency?.id) return;
     updateAgency.mutate({ id: agency.id, ...values }, {
       onSuccess: () => {
-        toast({ title: 'Agency settings updated' });
+        toast({ title: t('agency.settingsUpdated') });
       }
     });
   };
@@ -67,16 +69,16 @@ export default function Settings({ tab }: { tab?: string } = {}) {
   return (
     <div className="space-y-8 max-w-5xl">
       <div>
-        <h1 className="sr-only">Agency Settings</h1>
-        <p className="text-muted-foreground">Manage your workspace configuration and team.</p>
+        <h1 className="sr-only">{t('agency.settingsTitle')}</h1>
+        <p className="text-muted-foreground">{t('agency.settingsSubtitle')}</p>
       </div>
 
       <Tabs defaultValue={tab === 'billing' && isOwner ? 'billing' : 'profile'} className="space-y-6">
         <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="agency">Agency</TabsTrigger>
-          {isOwnerOrManager && <TabsTrigger value="team">Team</TabsTrigger>}
-          {isOwner && <TabsTrigger value="billing">Billing</TabsTrigger>}
+          <TabsTrigger value="profile">{t('agency.tabProfile')}</TabsTrigger>
+          <TabsTrigger value="agency">{t('agency.tabAgency')}</TabsTrigger>
+          {isOwnerOrManager && <TabsTrigger value="team">{t('agency.tabTeam')}</TabsTrigger>}
+          {isOwner && <TabsTrigger value="billing">{t('agency.tabBilling')}</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="profile" className="space-y-4 max-w-md">
@@ -84,12 +86,12 @@ export default function Settings({ tab }: { tab?: string } = {}) {
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <Building className="w-4 h-4 text-primary" />
-                Current Workspace
+                {t('agency.currentWorkspace')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{agency?.name}</div>
-              <Badge variant="outline" className="mt-2 capitalize bg-background">{tierName(agency?.subscription_tier)} Plan</Badge>
+              <Badge variant="outline" className="mt-2 capitalize bg-background">{t('agency.planBadge', { tier: tierName(agency?.subscription_tier) })}</Badge>
             </CardContent>
           </Card>
 
@@ -97,13 +99,13 @@ export default function Settings({ tab }: { tab?: string } = {}) {
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4" />
-                Your Profile
+                {t('agency.yourProfile')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="font-medium">{profile?.full_name}</div>
               <div className="text-sm text-muted-foreground">{profile?.email}</div>
-              <Badge variant="secondary" className="mt-2 capitalize">{profile?.role}</Badge>
+              <Badge variant="secondary" className="mt-2 capitalize">{profile?.role ? t(`roles.${profile.role}`, { defaultValue: profile.role }) : ''}</Badge>
             </CardContent>
           </Card>
         </TabsContent>
@@ -111,8 +113,8 @@ export default function Settings({ tab }: { tab?: string } = {}) {
         <TabsContent value="agency">
           <Card>
             <CardHeader>
-              <CardTitle>Agency Profile</CardTitle>
-              <CardDescription>{isOwner ? "Update your agency's contact information and branding." : 'Only the owner can edit agency details.'}</CardDescription>
+              <CardTitle>{t('agency.agencyProfile')}</CardTitle>
+              <CardDescription>{isOwner ? t('agency.agencyProfileOwnerDesc') : t('agency.agencyProfileViewerDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...form}>
@@ -122,7 +124,7 @@ export default function Settings({ tab }: { tab?: string } = {}) {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Agency Name</FormLabel>
+                        <FormLabel>{t('agency.agencyName')}</FormLabel>
                         <FormControl><Input {...field} disabled={!isOwner} /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -134,7 +136,7 @@ export default function Settings({ tab }: { tab?: string } = {}) {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>General Email</FormLabel>
+                          <FormLabel>{t('agency.generalEmail')}</FormLabel>
                           <FormControl><Input type="email" {...field} disabled={!isOwner} /></FormControl>
                           <FormMessage />
                         </FormItem>
@@ -145,7 +147,7 @@ export default function Settings({ tab }: { tab?: string } = {}) {
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Phone Number</FormLabel>
+                          <FormLabel>{t('agency.phoneNumber')}</FormLabel>
                           <FormControl><Input {...field} disabled={!isOwner} /></FormControl>
                           <FormMessage />
                         </FormItem>
@@ -157,7 +159,7 @@ export default function Settings({ tab }: { tab?: string } = {}) {
                     name="address"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Physical Address</FormLabel>
+                        <FormLabel>{t('agency.physicalAddress')}</FormLabel>
                         <FormControl><Input {...field} disabled={!isOwner} /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -165,7 +167,7 @@ export default function Settings({ tab }: { tab?: string } = {}) {
                   />
                   {isOwner && (
                     <Button type="submit" disabled={updateAgency.isPending}>
-                      {updateAgency.isPending ? "Saving..." : "Save Changes"}
+                      {updateAgency.isPending ? t('agency.saving') : t('agency.saveChanges')}
                     </Button>
                   )}
                 </form>
@@ -174,18 +176,18 @@ export default function Settings({ tab }: { tab?: string } = {}) {
           </Card>
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Renewals</CardTitle>
+              <CardTitle>{t('agency.renewals')}</CardTitle>
               <CardDescription>
-                Owners and managers can always update any renewal.{' '}
-                {isOwner ? 'Only you can change this setting.' : 'Only the owner can change this setting.'}
+                {t('agency.renewalsDesc')}{' '}
+                {isOwner ? t('agency.renewalsOwnerNote') : t('agency.renewalsViewerNote')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between gap-4">
                 <Label htmlFor="agents-manage-renewals" className="font-normal">
-                  Agents can update their own renewals
+                  {t('agency.agentsManageRenewals')}
                   <span className="block text-xs text-muted-foreground">
-                    Log contacts, record quotes, renew and mark lost on policies assigned to them.
+                    {t('agency.agentsManageRenewalsHelp')}
                   </span>
                 </Label>
                 <Switch
@@ -195,8 +197,8 @@ export default function Settings({ tab }: { tab?: string } = {}) {
                   onCheckedChange={(checked) =>
                     setAgentsManage.mutate(checked, {
                       onSuccess: () =>
-                        toast({ title: checked ? 'Agents can now update their renewals' : 'Renewal updates by agents turned off' }),
-                      onError: (err) => toast({ title: 'Could not save', description: err.message, variant: 'destructive' }),
+                        toast({ title: checked ? t('agency.agentsCanNow') : t('agency.agentsOff') }),
+                      onError: (err) => toast({ title: t('agency.couldNotSave'), description: err.message, variant: 'destructive' }),
                     })
                   }
                 />
@@ -212,12 +214,12 @@ export default function Settings({ tab }: { tab?: string } = {}) {
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" /> Team Members
+                    <Users className="w-5 h-5" /> {t('agency.teamMembers')}
                   </CardTitle>
-                  <CardDescription>Manage who has access to your workspace.</CardDescription>
+                  <CardDescription>{t('agency.teamMembersDesc')}</CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setInviteOpen(true)}>
-                  Invite Member
+                  {t('agency.inviteMember')}
                 </Button>
               </CardHeader>
               <CardContent>
@@ -225,16 +227,16 @@ export default function Settings({ tab }: { tab?: string } = {}) {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead className="text-right">Clients</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>{t('agency.colName')}</TableHead>
+                        <TableHead>{t('agency.colEmail')}</TableHead>
+                        <TableHead>{t('agency.colRole')}</TableHead>
+                        <TableHead className="text-end">{t('agency.colClients')}</TableHead>
+                        <TableHead className="text-end">{t('agency.colActions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {usersLoading ? (
-                        <TableRow><TableCell colSpan={5} className="text-center py-4">Loading...</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={5} className="text-center py-4">{t('common.loading')}</TableCell></TableRow>
                       ) : (
                         activeUsers.map(user => (
                           <TableRow key={user.id}>
@@ -242,14 +244,14 @@ export default function Settings({ tab }: { tab?: string } = {}) {
                             <TableCell>{user.email}</TableCell>
                             <TableCell>
                               <Badge variant={user.role === 'owner' ? 'default' : 'secondary'} className="capitalize">
-                                {user.role}
+                                {t(`roles.${user.role}`, { defaultValue: user.role })}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right">{clientCounts?.[user.id] ?? 0}</TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-end">{clientCounts?.[user.id] ?? 0}</TableCell>
+                            <TableCell className="text-end">
                               <div className="flex items-center justify-end gap-2">
                                 <Button variant="outline" size="sm" onClick={() => setRatesFor({ id: user.id, full_name: user.full_name })}>
-                                  Rates
+                                  {t('agency.rates')}
                                 </Button>
                                 {isOwner && user.id !== session?.id && (
                                   <>
@@ -258,20 +260,20 @@ export default function Settings({ tab }: { tab?: string } = {}) {
                                       onValueChange={(role) => changeRole.mutate(
                                         { userId: user.id, role: role as 'owner' | 'manager' | 'agent' },
                                         {
-                                          onSuccess: () => toast({ title: 'Role updated' }),
-                                          onError: (err: any) => toast({ title: 'Could not change role', description: err.message, variant: 'destructive' }),
+                                          onSuccess: () => toast({ title: t('agency.roleUpdated') }),
+                                          onError: (err: any) => toast({ title: t('agency.couldNotChangeRole'), description: err.message, variant: 'destructive' }),
                                         },
                                       )}
                                     >
                                       <SelectTrigger className="w-28 h-8"><SelectValue /></SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="owner" disabled={ownerFull && user.role !== 'owner'}>Owner{ownerFull && user.role !== 'owner' ? ' (no places left)' : ''}</SelectItem>
-                                        <SelectItem value="manager">Manager</SelectItem>
-                                        <SelectItem value="agent">Agent</SelectItem>
+                                        <SelectItem value="owner" disabled={ownerFull && user.role !== 'owner'}>{ownerFull && user.role !== 'owner' ? t('agency.ownerNoPlaces', { role: t('roles.owner') }) : t('roles.owner')}</SelectItem>
+                                        <SelectItem value="manager">{t('roles.manager')}</SelectItem>
+                                        <SelectItem value="agent">{t('roles.agent')}</SelectItem>
                                       </SelectContent>
                                     </Select>
                                     <Button variant="outline" size="sm" onClick={() => setRemoving({ id: user.id, full_name: user.full_name })}>
-                                      Remove
+                                      {t('agency.removeBtn')}
                                     </Button>
                                   </>
                                 )}
@@ -285,7 +287,7 @@ export default function Settings({ tab }: { tab?: string } = {}) {
                 </div>
                 {removedUsers.length > 0 && (
                   <div className="mt-6">
-                    <div className="text-sm font-medium text-muted-foreground mb-2">Removed</div>
+                    <div className="text-sm font-medium text-muted-foreground mb-2">{t('agency.removedHeading')}</div>
                     <ul className="text-sm text-muted-foreground space-y-1">
                       {removedUsers.map(u => (
                         <li key={u.id}>{u.full_name}{u.email ? ` (${u.email})` : ''}</li>
@@ -298,43 +300,43 @@ export default function Settings({ tab }: { tab?: string } = {}) {
 
             <Card>
               <CardHeader>
-                <CardTitle>Pending Invites</CardTitle>
-                <CardDescription>Invites that have not been accepted yet.</CardDescription>
+                <CardTitle>{t('agency.pendingInvites')}</CardTitle>
+                <CardDescription>{t('agency.pendingInvitesDesc')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="border rounded-md">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Expires</TableHead>
-                        <TableHead className="text-right"></TableHead>
+                        <TableHead>{t('agency.colEmail')}</TableHead>
+                        <TableHead>{t('agency.colRole')}</TableHead>
+                        <TableHead>{t('agency.colExpires')}</TableHead>
+                        <TableHead className="text-end"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {!invites || invites.length === 0 ? (
-                        <TableRow><TableCell colSpan={4} className="text-center py-4 text-muted-foreground">No pending invites</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={4} className="text-center py-4 text-muted-foreground">{t('agency.noPendingInvites')}</TableCell></TableRow>
                       ) : (
                         invites.map(invite => {
                           const canRevoke = isOwner || (invite.role === 'agent' && invite.invited_by === session?.id);
                           return (
                             <TableRow key={invite.id}>
                               <TableCell className="font-medium">{invite.email}</TableCell>
-                              <TableCell><Badge variant="secondary" className="capitalize">{invite.role}</Badge></TableCell>
+                              <TableCell><Badge variant="secondary" className="capitalize">{t(`roles.${invite.role}`, { defaultValue: invite.role })}</Badge></TableCell>
                               <TableCell>{formatDate(invite.expires_at)}</TableCell>
-                              <TableCell className="text-right">
+                              <TableCell className="text-end">
                                 {canRevoke && (
                                   <Button
                                     variant="outline"
                                     size="sm"
                                     disabled={revokeInvite.isPending}
                                     onClick={() => revokeInvite.mutate(invite.id, {
-                                      onSuccess: () => toast({ title: 'Invite revoked' }),
-                                      onError: (err: any) => toast({ title: 'Could not revoke invite', description: err.message, variant: 'destructive' }),
+                                      onSuccess: () => toast({ title: t('agency.inviteRevoked') }),
+                                      onError: (err: any) => toast({ title: t('agency.couldNotRevokeInvite'), description: err.message, variant: 'destructive' }),
                                     })}
                                   >
-                                    Revoke
+                                    {t('agency.revoke')}
                                   </Button>
                                 )}
                               </TableCell>

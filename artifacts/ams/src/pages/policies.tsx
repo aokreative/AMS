@@ -1,5 +1,7 @@
 import { getCurrency } from '@/lib/money';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { usePolicies, useInsurers, useProductLines, useClients, useCreatePolicy, useUpdatePolicy, useDeletePolicy } from '@/hooks/queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,23 +26,26 @@ import { useToast } from '@/hooks/use-toast';
 import { Policy } from '@/lib/types';
 import { exportToCsv } from '@/lib/csv-export';
 
-// Omitted schema/form for brevity, will implement fully if requested, but going all the way:
-const policySchema = z.object({
-  client_id: z.string().min(1, 'Required'),
-  insurer_id: z.string().min(1, 'Required'),
-  product_line_id: z.string().min(1, 'Required'),
-  agent_id: z.string().min(1, 'Required'),
-  policy_number: z.string().min(1, 'Required'),
-  premium_amount: z.coerce.number().min(1, 'Must be positive'),
+const makePolicySchema = (t: TFunction) => z.object({
+  client_id: z.string().min(1, t('policies.required')),
+  insurer_id: z.string().min(1, t('policies.required')),
+  product_line_id: z.string().min(1, t('policies.required')),
+  agent_id: z.string().min(1, t('policies.required')),
+  policy_number: z.string().min(1, t('policies.required')),
+  premium_amount: z.coerce.number().min(1, t('policies.mustBePositive')),
   commission_rate: z.coerce.number().min(0).max(100),
-  start_date: z.string().min(1, 'Required'),
-  expiry_date: z.string().min(1, 'Required'),
+  start_date: z.string().min(1, t('policies.required')),
+  expiry_date: z.string().min(1, t('policies.required')),
   status: z.enum(['active', 'expired', 'cancelled', 'pending']),
   notes: z.string().optional(),
   ...commissionFields,
 }).superRefine(refineCommission);
 
+type PolicyFormValues = z.infer<ReturnType<typeof makePolicySchema>>;
+
 export default function Policies() {
+  const { t } = useTranslation();
+  const policySchema = useMemo(() => makePolicySchema(t), [t]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [insurerFilter, setInsurerFilter] = useState('all');
@@ -90,16 +95,16 @@ export default function Policies() {
     p.client?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const onSubmit = (values: z.infer<typeof policySchema>) => {
+  const onSubmit = (values: PolicyFormValues) => {
     // Agents never choose an agent: policies are always recorded against themselves
     createPolicy.mutate(withCommissionColumns(isOwnerOrManager ? values : { ...values, agent_id: session?.id ?? values.agent_id }), {
       onSuccess: () => {
-        toast({ title: 'Policy created' });
+        toast({ title: t('policies.policyCreated') });
         setIsAddOpen(false);
         form.reset();
       },
       onError: (err) => {
-        toast({ title: 'Error', description: err.message, variant: 'destructive' });
+        toast({ title: t('policies.error'), description: err.message, variant: 'destructive' });
       }
     });
   };
@@ -108,7 +113,7 @@ export default function Policies() {
     if (!deleteId) return;
     deletePolicy.mutate(deleteId, {
       onSuccess: () => {
-        toast({ title: 'Policy deleted' });
+        toast({ title: t('policies.policyDeleted') });
         setDeleteId(null);
       }
     });
@@ -136,18 +141,18 @@ export default function Policies() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="sr-only">Policies</h1>
-          <p className="text-muted-foreground">Manage all insurance policies across your agency.</p>
+          <h1 className="sr-only">{t('policies.title')}</h1>
+          <p className="text-muted-foreground">{t('policies.subtitle')}</p>
         </div>
         
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-2" /> Create Policy</Button>
+            <Button><Plus className="w-4 h-4 me-2" /> {t('policies.createPolicy')}</Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Create New Policy</DialogTitle>
-              <DialogDescription>Record a new policy in the system.</DialogDescription>
+              <DialogTitle>{t('policies.createTitle')}</DialogTitle>
+              <DialogDescription>{t('policies.createDescription')}</DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -156,9 +161,9 @@ export default function Policies() {
                   name="client_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Client</FormLabel>
+                      <FormLabel>{t('policies.client')}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger><SelectValue placeholder={t('policies.selectClient')} /></SelectTrigger></FormControl>
                         <SelectContent>
                           {clients?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                         </SelectContent>
@@ -174,9 +179,9 @@ export default function Policies() {
                     name="insurer_id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Insurer</FormLabel>
+                        <FormLabel>{t('policies.insurer')}</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Select insurer" /></SelectTrigger></FormControl>
+                          <FormControl><SelectTrigger><SelectValue placeholder={t('policies.selectInsurer')} /></SelectTrigger></FormControl>
                           <SelectContent>
                             {insurers?.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
                           </SelectContent>
@@ -190,9 +195,9 @@ export default function Policies() {
                     name="product_line_id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Product Line</FormLabel>
+                        <FormLabel>{t('policies.productLine')}</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger></FormControl>
+                          <FormControl><SelectTrigger><SelectValue placeholder={t('policies.selectProduct')} /></SelectTrigger></FormControl>
                           <SelectContent>
                             {productLines?.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                           </SelectContent>
@@ -209,7 +214,7 @@ export default function Policies() {
                     name="policy_number"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Policy Number</FormLabel>
+                        <FormLabel>{t('policies.policyNumber')}</FormLabel>
                         <FormControl><Input {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -220,14 +225,14 @@ export default function Policies() {
                     name="status"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Status</FormLabel>
+                        <FormLabel>{t('policies.status')}</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                           <SelectContent>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="expired">Expired</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                            <SelectItem value="active">{t('policies.statuses.active')}</SelectItem>
+                            <SelectItem value="pending">{t('policies.statuses.pending')}</SelectItem>
+                            <SelectItem value="expired">{t('policies.statuses.expired')}</SelectItem>
+                            <SelectItem value="cancelled">{t('policies.statuses.cancelled')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -242,7 +247,7 @@ export default function Policies() {
                     name="premium_amount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Premium ({getCurrency()})</FormLabel>
+                        <FormLabel>{t('policies.premium', { currency: getCurrency() })}</FormLabel>
                         <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -253,7 +258,7 @@ export default function Policies() {
                     name="commission_rate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Commission Rate (%)</FormLabel>
+                        <FormLabel>{t('policies.commissionRate')}</FormLabel>
                         <FormControl><Input type="number" step="0.1" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -269,7 +274,7 @@ export default function Policies() {
                     name="start_date"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Start Date</FormLabel>
+                        <FormLabel>{t('policies.startDate')}</FormLabel>
                         <FormControl><Input type="date" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -280,7 +285,7 @@ export default function Policies() {
                     name="expiry_date"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Expiry Date</FormLabel>
+                        <FormLabel>{t('policies.expiryDate')}</FormLabel>
                         <FormControl><Input type="date" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -294,7 +299,7 @@ export default function Policies() {
                     name="agent_id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Assigned Agent</FormLabel>
+                        <FormLabel>{t('policies.assignedAgent')}</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                           <SelectContent>
@@ -308,7 +313,7 @@ export default function Policies() {
                 )}
 
                 <Button type="submit" className="w-full mt-4" disabled={createPolicy.isPending}>
-                  {createPolicy.isPending ? "Saving..." : "Save Policy"}
+                  {createPolicy.isPending ? t('policies.saving') : t('policies.savePolicy')}
                 </Button>
               </form>
             </Form>
@@ -318,32 +323,32 @@ export default function Policies() {
 
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search policy # or client..."
-            className="pl-9 bg-card"
+            placeholder={t('policies.searchPlaceholder')}
+            className="ps-9 bg-card"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={handleExportCsv}>
-            <Download className="w-4 h-4 mr-2" /> Export CSV
+            <Download className="w-4 h-4 me-2" /> {t('policies.exportCsv')}
           </Button>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px] bg-card"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectTrigger className="w-[140px] bg-card"><SelectValue placeholder={t('policies.status')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="expired">Expired</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="all">{t('policies.allStatuses')}</SelectItem>
+              <SelectItem value="active">{t('policies.statuses.active')}</SelectItem>
+              <SelectItem value="pending">{t('policies.statuses.pending')}</SelectItem>
+              <SelectItem value="expired">{t('policies.statuses.expired')}</SelectItem>
+              <SelectItem value="cancelled">{t('policies.statuses.cancelled')}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={insurerFilter} onValueChange={setInsurerFilter}>
-            <SelectTrigger className="w-[180px] bg-card"><SelectValue placeholder="Insurer" /></SelectTrigger>
+            <SelectTrigger className="w-[180px] bg-card"><SelectValue placeholder={t('policies.insurer')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Insurers</SelectItem>
+              <SelectItem value="all">{t('policies.allInsurers')}</SelectItem>
               {insurers?.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -355,20 +360,20 @@ export default function Policies() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Policy & Client</TableHead>
-                <TableHead>Product & Insurer</TableHead>
-                <TableHead className="text-right">Premium</TableHead>
-                <TableHead className="text-right">Expected Comm.</TableHead>
-                <TableHead>Dates</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>{t('policies.colPolicyClient')}</TableHead>
+                <TableHead>{t('policies.colProductInsurer')}</TableHead>
+                <TableHead className="text-end">{t('policies.colPremium')}</TableHead>
+                <TableHead className="text-end">{t('policies.colExpectedComm')}</TableHead>
+                <TableHead>{t('policies.colDates')}</TableHead>
+                <TableHead>{t('policies.colStatus')}</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-8">{t('policies.loading')}</TableCell></TableRow>
               ) : filteredPolicies?.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8">No policies found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-8">{t('policies.noPolicies')}</TableCell></TableRow>
               ) : (
                 filteredPolicies?.map((policy) => (
                   <TableRow key={policy.id}>
@@ -381,10 +386,10 @@ export default function Policies() {
                       <div className="text-sm font-medium">{policy.product_line?.name}</div>
                       <div className="text-xs text-muted-foreground">{policy.insurer?.name}</div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <div className="font-medium">{formatCurrency(policy.premium_amount)}</div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <div className="font-medium text-emerald-600 dark:text-emerald-500">
                         {formatCurrency(policy.commission_expected)}
                       </div>
@@ -392,31 +397,31 @@ export default function Policies() {
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">{formatDate(policy.start_date)}</div>
-                      <div className="text-xs text-muted-foreground">to {formatDate(policy.expiry_date)}</div>
+                      <div className="text-xs text-muted-foreground">{t('policies.toDate', { date: formatDate(policy.expiry_date) })}</div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={getStatusColor(policy.status)} className="capitalize">
-                        {policy.status}
+                        {t(`policies.statuses.${policy.status}`, { defaultValue: policy.status })}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
+                            <span className="sr-only">{t('policies.openMenu')}</span>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuLabel>{t('policies.actions')}</DropdownMenuLabel>
                           <DropdownMenuItem onClick={() => {}} disabled>
-                            <Edit className="mr-2 h-4 w-4" /> Edit Policy
+                            <Edit className="me-2 h-4 w-4" /> {t('policies.editPolicy')}
                           </DropdownMenuItem>
                           {isOwnerOrManager && (
                             <>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem className="text-destructive focus:bg-destructive/10" onClick={() => setDeleteId(policy.id)}>
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete Policy
+                                <Trash2 className="me-2 h-4 w-4" /> {t('policies.deletePolicy')}
                               </DropdownMenuItem>
                             </>
                           )}
@@ -435,15 +440,15 @@ export default function Policies() {
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Policy</DialogTitle>
+            <DialogTitle>{t('policies.deletePolicy')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this policy? This action cannot be undone and will delete associated commission records.
+              {t('policies.deleteDescription')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>{t('common.cancel')}</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deletePolicy.isPending}>
-              {deletePolicy.isPending ? "Deleting..." : "Delete"}
+              {deletePolicy.isPending ? t('policies.deleting') : t('policies.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

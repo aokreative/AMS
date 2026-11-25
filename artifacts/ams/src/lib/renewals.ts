@@ -1,4 +1,5 @@
 import { addDays, addYears, format, parseISO } from 'date-fns';
+import i18n from '@/i18n';
 import type { LostReason, RenewalChannel, RenewalStage, UserRole } from './types';
 
 export const RENEWAL_STAGES: RenewalStage[] = ['to_contact', 'contacted', 'quoted', 'renewed', 'lost'];
@@ -6,33 +7,10 @@ export const OPEN_STAGES: RenewalStage[] = ['to_contact', 'contacted', 'quoted']
 export const RENEWAL_CHANNELS: RenewalChannel[] = ['phone', 'whatsapp', 'sms', 'email', 'in_person'];
 export const LOST_REASONS: LostReason[] = ['price', 'competitor', 'no_longer_needed', 'no_response', 'other'];
 
-const STAGE_LABELS: Record<RenewalStage, string> = {
-  to_contact: 'To contact',
-  contacted: 'Contacted',
-  quoted: 'Quoted',
-  renewed: 'Renewed',
-  lost: 'Lost',
-};
-
-const CHANNEL_LABELS: Record<RenewalChannel, string> = {
-  phone: 'Phone',
-  whatsapp: 'WhatsApp',
-  sms: 'SMS',
-  email: 'Email',
-  in_person: 'In person',
-};
-
-const LOST_REASON_LABELS: Record<LostReason, string> = {
-  price: 'Price',
-  competitor: 'Went to another agent/insurer',
-  no_longer_needed: 'No longer needs cover',
-  no_response: 'No response',
-  other: 'Other',
-};
-
-export const stageLabel = (s: RenewalStage): string => STAGE_LABELS[s] ?? s;
-export const channelLabel = (c: RenewalChannel): string => CHANNEL_LABELS[c] ?? c;
-export const lostReasonLabel = (r: LostReason): string => LOST_REASON_LABELS[r] ?? r;
+// Labels come from the 'policies' translation section in the interface language.
+export const stageLabel = (s: RenewalStage): string => i18n.t(`policies.stage.${s}`, { defaultValue: s });
+export const channelLabel = (c: RenewalChannel): string => i18n.t(`policies.channel.${c}`, { defaultValue: c });
+export const lostReasonLabel = (r: LostReason): string => i18n.t(`policies.lostReason.${r}`, { defaultValue: r });
 
 /** New term: starts the day after the old expiry, ends one year later less a day. */
 export function defaultRenewalDates(oldExpiry: string): { start: string; expiry: string } {

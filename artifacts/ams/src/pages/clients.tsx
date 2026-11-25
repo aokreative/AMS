@@ -19,6 +19,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,19 +27,21 @@ import { useAgencyMembers } from '@/hooks/team';
 import { ClientType } from '@/lib/types';
 import { exportToCsv } from '@/lib/csv-export';
 
-const clientSchema = z.object({
-  name: z.string().min(2, 'Name is required'),
+const makeClientSchema = (t: (key: string) => string) => z.object({
+  name: z.string().min(2, t('clients.nameRequired')),
   type: z.enum(['individual', 'corporate'] as const),
   phone: z.string().optional().nullable(),
-  email: z.string().email('Invalid email').optional().or(z.literal('')).nullable(),
+  email: z.string().email(t('clients.invalidEmail')).optional().or(z.literal('')).nullable(),
   kra_pin: z.string().optional().nullable(),
   id_or_reg_number: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
 });
 
-type ClientFormValues = z.infer<typeof clientSchema>;
+type ClientFormValues = z.infer<ReturnType<typeof makeClientSchema>>;
 
 export default function Clients() {
+  const { t } = useTranslation();
+  const clientSchema = React.useMemo(() => makeClientSchema(t), [t]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<any | null>(null);
@@ -80,24 +83,24 @@ export default function Clients() {
     if (editingClient) {
       updateClient.mutate({ id: editingClient.id, ...values }, {
         onSuccess: () => {
-          toast({ title: 'Client updated successfully' });
+          toast({ title: t('clients.updated') });
           setIsAddSheetOpen(false);
           setEditingClient(null);
           form.reset();
         },
         onError: (error) => {
-          toast({ title: 'Error updating client', description: error.message, variant: 'destructive' });
+          toast({ title: t('clients.errorUpdating'), description: error.message, variant: 'destructive' });
         }
       });
     } else {
       createClient.mutate(isOwnerOrManager && assigneeId ? { ...values, assigned_agent_id: assigneeId } : values, {
         onSuccess: () => {
-          toast({ title: 'Client created successfully' });
+          toast({ title: t('clients.created') });
           setIsAddSheetOpen(false);
           form.reset();
         },
         onError: (error) => {
-          toast({ title: 'Error creating client', description: error.message, variant: 'destructive' });
+          toast({ title: t('clients.errorCreating'), description: error.message, variant: 'destructive' });
         }
       });
     }
@@ -122,11 +125,11 @@ export default function Clients() {
     if (!deleteId) return;
     deleteClient.mutate(deleteId, {
       onSuccess: () => {
-        toast({ title: 'Client deleted' });
+        toast({ title: t('clients.deleted') });
         setDeleteId(null);
       },
       onError: (error) => {
-        toast({ title: 'Error deleting client', description: error.message, variant: 'destructive' });
+        toast({ title: t('clients.errorDeleting'), description: error.message, variant: 'destructive' });
       }
     });
   };
@@ -150,8 +153,8 @@ export default function Clients() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="sr-only">Clients</h1>
-          <p className="text-muted-foreground">Manage your individual and corporate clients.</p>
+          <h1 className="sr-only">{t('clients.title')}</h1>
+          <p className="text-muted-foreground">{t('clients.subtitle')}</p>
         </div>
         
         <Sheet open={isAddSheetOpen} onOpenChange={(open) => {
@@ -164,14 +167,14 @@ export default function Clients() {
         }}>
           <SheetTrigger asChild>
             <Button data-testid="button-add-client">
-              <Plus className="w-4 h-4 mr-2" /> Add Client
+              <Plus className="w-4 h-4 me-2" /> {t('clients.add')}
             </Button>
           </SheetTrigger>
           <SheetContent className="w-full sm:max-w-md overflow-y-auto">
             <SheetHeader>
-              <SheetTitle>{editingClient ? 'Edit Client' : 'Add New Client'}</SheetTitle>
+              <SheetTitle>{editingClient ? t('clients.editTitle') : t('clients.addTitle')}</SheetTitle>
               <SheetDescription>
-                {editingClient ? 'Update the client profile details.' : 'Create a new client profile. Click save when you\'re done.'}
+                {editingClient ? t('clients.editDesc') : t('clients.addDesc')}
               </SheetDescription>
             </SheetHeader>
             
@@ -182,16 +185,16 @@ export default function Clients() {
                   name="type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Client Type</FormLabel>
+                      <FormLabel>{t('clients.clientType')}</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
+                            <SelectValue placeholder={t('clients.selectType')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="individual">Individual</SelectItem>
-                          <SelectItem value="corporate">Corporate</SelectItem>
+                          <SelectItem value="individual">{t('clients.individual')}</SelectItem>
+                          <SelectItem value="corporate">{t('clients.corporate')}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -204,9 +207,9 @@ export default function Clients() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Full Name / Company Name</FormLabel>
+                      <FormLabel>{t('clients.nameLabel')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter name" {...field} />
+                        <Input placeholder={t('clients.namePlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -219,7 +222,7 @@ export default function Clients() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
+                        <FormLabel>{t('clients.phone')}</FormLabel>
                         <FormControl>
                           <Input placeholder="07XX XXX XXX" {...field} value={field.value || ''} />
                         </FormControl>
@@ -232,7 +235,7 @@ export default function Clients() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email Address</FormLabel>
+                        <FormLabel>{t('clients.email')}</FormLabel>
                         <FormControl>
                           <Input type="email" placeholder="email@example.com" {...field} value={field.value || ''} />
                         </FormControl>
@@ -248,7 +251,7 @@ export default function Clients() {
                     name="kra_pin"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>KRA PIN</FormLabel>
+                        <FormLabel>{t('clients.kraPin')}</FormLabel>
                         <FormControl>
                           <Input placeholder="A000000000A" {...field} value={field.value || ''} />
                         </FormControl>
@@ -261,9 +264,9 @@ export default function Clients() {
                     name="id_or_reg_number"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{form.watch('type') === 'corporate' ? 'Reg Number' : 'ID Number'}</FormLabel>
+                        <FormLabel>{form.watch('type') === 'corporate' ? t('clients.regNumber') : t('clients.idNumber')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter number" {...field} value={field.value || ''} />
+                          <Input placeholder={t('clients.numberPlaceholder')} {...field} value={field.value || ''} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -276,9 +279,9 @@ export default function Clients() {
                   name="address"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Physical Address</FormLabel>
+                      <FormLabel>{t('clients.address')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="P.O Box... or Physical Location" {...field} value={field.value || ''} />
+                        <Input placeholder={t('clients.addressPlaceholder')} {...field} value={field.value || ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -287,9 +290,9 @@ export default function Clients() {
 
                 {isOwnerOrManager && !editingClient && (
                   <div className="space-y-2">
-                    <div className="text-sm font-medium">Assigned to</div>
+                    <div className="text-sm font-medium">{t('clients.assignedTo')}</div>
                     <Select value={assigneeId} onValueChange={setAssigneeId}>
-                      <SelectTrigger data-testid="select-client-assignee"><SelectValue placeholder="Select member" /></SelectTrigger>
+                      <SelectTrigger data-testid="select-client-assignee"><SelectValue placeholder={t('clients.selectMember')} /></SelectTrigger>
                       <SelectContent>
                         {members?.map(m => <SelectItem key={m.id} value={m.id}>{m.full_name}</SelectItem>)}
                       </SelectContent>
@@ -299,7 +302,7 @@ export default function Clients() {
 
                 <div className="pt-4">
                   <Button type="submit" className="w-full" disabled={createClient.isPending || updateClient.isPending}>
-                    {createClient.isPending || updateClient.isPending ? "Saving..." : "Save Client"}
+                    {createClient.isPending || updateClient.isPending ? t('clients.saving') : t('clients.saveClient')}
                   </Button>
                 </div>
               </form>
@@ -310,25 +313,25 @@ export default function Clients() {
 
       <div className="flex items-center space-x-2">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name, email, KRA PIN..."
-            className="pl-9 bg-card"
+            placeholder={t('clients.searchPlaceholder')}
+            className="ps-9 bg-card"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         {isOwnerOrManager && (
           <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-            <SelectTrigger className="w-[180px] bg-card" data-testid="filter-assigned-to"><SelectValue placeholder="Assigned to" /></SelectTrigger>
+            <SelectTrigger className="w-[180px] bg-card" data-testid="filter-assigned-to"><SelectValue placeholder={t('clients.assignedToPlaceholder')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All members</SelectItem>
+              <SelectItem value="all">{t('clients.allMembers')}</SelectItem>
               {members?.map(m => <SelectItem key={m.id} value={m.id}>{m.full_name}</SelectItem>)}
             </SelectContent>
           </Select>
         )}
-        <Button variant="secondary" size="sm" onClick={handleExportCsv} className="ml-auto">
-          <Download className="w-4 h-4 mr-2" /> Export CSV
+        <Button variant="secondary" size="sm" onClick={handleExportCsv} className="ms-auto">
+          <Download className="w-4 h-4 me-2" /> {t('clients.exportCsv')}
         </Button>
       </div>
 
@@ -336,23 +339,23 @@ export default function Clients() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Identifiers</TableHead>
-              <TableHead>Assigned to</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t('clients.colName')}</TableHead>
+              <TableHead>{t('clients.colType')}</TableHead>
+              <TableHead>{t('clients.colContact')}</TableHead>
+              <TableHead>{t('clients.colIdentifiers')}</TableHead>
+              <TableHead>{t('clients.assignedTo')}</TableHead>
+              <TableHead className="text-end">{t('clients.colActions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">Loading clients...</TableCell>
+                <TableCell colSpan={6} className="text-center py-8">{t('clients.loading')}</TableCell>
               </TableRow>
             ) : filteredClients?.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  No clients found. {searchTerm && "Try a different search."}
+                  {t('clients.empty')} {searchTerm && t('clients.emptySearch')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -366,7 +369,7 @@ export default function Clients() {
                   <TableCell>
                     <Badge variant={client.type === 'corporate' ? 'default' : 'secondary'} className="gap-1">
                       {client.type === 'corporate' ? <Building2 className="w-3 h-3" /> : <User className="w-3 h-3" />}
-                      <span className="capitalize">{client.type}</span>
+                      <span>{client.type === 'corporate' ? t('clients.corporate') : t('clients.individual')}</span>
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -374,16 +377,16 @@ export default function Clients() {
                     <div className="text-xs text-muted-foreground">{client.email || '-'}</div>
                   </TableCell>
                   <TableCell>
-                    {client.kra_pin && <div className="text-sm">KRA: {client.kra_pin}</div>}
-                    {client.id_or_reg_number && <div className="text-xs text-muted-foreground">ID/Reg: {client.id_or_reg_number}</div>}
+                    {client.kra_pin && <div className="text-sm">{t('clients.kra', { value: client.kra_pin })}</div>}
+                    {client.id_or_reg_number && <div className="text-xs text-muted-foreground">{t('clients.idReg', { value: client.id_or_reg_number })}</div>}
                   </TableCell>
                   <TableCell className="text-sm">{client.assigned_agent?.full_name ?? '—'}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={(e) => openEdit(client, e)}>
+                  <TableCell className="text-end">
+                    <Button variant="ghost" size="icon" aria-label={t('clients.editAria')} onClick={(e) => openEdit(client, e)}>
                       <Edit className="h-4 w-4" />
                     </Button>
                     {isOwnerOrManager && (
-                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); setDeleteId(client.id); }}>
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" aria-label={t('clients.deleteAria')} onClick={(e) => { e.stopPropagation(); setDeleteId(client.id); }}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     )}
@@ -398,15 +401,15 @@ export default function Clients() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Client?</AlertDialogTitle>
+            <AlertDialogTitle>{t('clients.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will also remove all linked policies and data. This action cannot be undone.
+              {t('clients.deleteDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeleteId(null)}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={deleteClient.isPending}>
-              {deleteClient.isPending ? "Deleting..." : "Delete"}
+              {deleteClient.isPending ? t('clients.deleting') : t('clients.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { Bell, CalendarClock, PhoneCall } from 'lucide-react';
@@ -10,7 +11,6 @@ import { buildNotifications, type Urgency } from '@/lib/notifications';
 import { todayNairobi } from '@/lib/subscription';
 import { formatDate, cn } from '@/lib/utils';
 
-const WHEN: Record<Urgency, string> = { overdue: 'Overdue', today: 'Today', soon: 'Soon', later: 'Coming up' };
 const TONE: Record<Urgency, string> = {
   overdue: 'bg-overdue/12 text-overdue',
   today: 'bg-due/15 text-due',
@@ -20,6 +20,7 @@ const TONE: Record<Urgency, string> = {
 
 /** Bell in the top bar: follow-ups and renewals, nearest due first. */
 export function NotificationBell() {
+  const { t } = useTranslation();
   const { agency, session } = useAuth();
   const { data: leads } = useLeads();
   const { data: renewals } = useQuery({
@@ -49,7 +50,7 @@ export function NotificationBell() {
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={urgent > 0 ? `Notifications, ${urgent} need attention` : 'Notifications'}
+          aria-label={urgent > 0 ? t('workspace.bell.attention', { count: urgent }) : t('workspace.bell.label')}
           className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border bg-card text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Bell className="h-4 w-4" />
@@ -62,15 +63,18 @@ export function NotificationBell() {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[min(92vw,380px)] p-0">
         <div className="flex items-baseline justify-between border-b px-4 py-3">
-          <p className="font-display font-semibold">Follow-ups and renewals</p>
-          <span className="text-xs text-muted-foreground">Next 30 days</span>
+          <p className="font-display font-semibold">{t('workspace.bell.title')}</p>
+          <span className="text-xs text-muted-foreground">{t('workspace.bell.next30')}</span>
         </div>
         {items.length === 0 ? (
-          <p className="px-4 py-8 text-center text-sm text-muted-foreground">You're all caught up. Set a follow-up on a lead and it will show here.</p>
+          <p className="px-4 py-8 text-center text-sm text-muted-foreground">{t('workspace.bell.empty')}</p>
         ) : (
           <ul className="max-h-[60vh] divide-y overflow-y-auto">
             {items.map((n) => {
               const Icon = n.kind === 'follow_up' ? PhoneCall : CalendarClock;
+              const title = n.kind === 'follow_up'
+                ? t('workspace.bell.followUpTitle', { name: n.name ?? '' })
+                : t('workspace.bell.renewsTitle', { name: n.name ?? t('workspace.bell.aClient') });
               return (
                 <li key={n.id}>
                   <Link href={n.href} className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:outline-none">
@@ -78,11 +82,11 @@ export function NotificationBell() {
                       <Icon className="h-4 w-4" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium">{n.title}</span>
+                      <span className="block truncate text-sm font-medium">{title}</span>
                       {n.detail && <span className="block truncate text-xs text-muted-foreground">{n.detail}</span>}
                     </span>
                     <span className="shrink-0 text-end">
-                      <span className={cn('block rounded-full px-2 py-0.5 text-[11px] font-medium', TONE[n.urgency])}>{WHEN[n.urgency]}</span>
+                      <span className={cn('block rounded-full px-2 py-0.5 text-[11px] font-medium', TONE[n.urgency])}>{t(`workspace.bell.${n.urgency}`)}</span>
                       <span className="mt-0.5 block text-[11px] text-muted-foreground tabular-nums">{formatDate(n.date)}</span>
                     </span>
                   </Link>

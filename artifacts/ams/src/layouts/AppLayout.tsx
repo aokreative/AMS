@@ -35,6 +35,7 @@ import { NotificationBell } from '@/components/NotificationBell';
 import { readSidebar, writeSidebar } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import { isRtl } from '@/i18n';
 
 /** Terms and Privacy links at the foot of the menu. */
 function LegalLinks() {
@@ -64,7 +65,8 @@ interface NavGroup {
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { agency, profile, signOut, session, isOwnerOrManager } = useAuth();
   const [location] = useLocation();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const rtl = isRtl(i18n.language);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [collapsed, setCollapsed] = React.useState(() => readSidebar() === 'collapsed');
 
@@ -115,7 +117,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const groups: NavGroup[] = [
     {
-      label: 'Workspace',
+      label: t('workspace.layout.groupWorkspace'),
       items: [
         { name: t('nav.dashboard'), path: '/dashboard', icon: LayoutDashboard },
         { name: t('nav.leads'), path: '/leads', icon: Magnet, count: followUpsDue || undefined, attention: true },
@@ -125,7 +127,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       ],
     },
     {
-      label: 'Money',
+      label: t('workspace.layout.groupMoney'),
       items: [
         { name: t('nav.commissions'), path: '/commissions', icon: DollarSign },
         ...(isOwnerOrManager ? [{ name: t('nav.receipts'), path: '/receipts', icon: Receipt }] : []),
@@ -134,7 +136,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       ],
     },
     {
-      label: 'Agency',
+      label: t('workspace.layout.groupAgency'),
       items: [
         ...(isOwnerOrManager
           ? [
@@ -150,7 +152,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const allItems = groups.flatMap((g) => g.items);
   const current = allItems.find((i) => location === i.path || location.startsWith(i.path + '/'));
-  const pageTitle = current?.name ?? (location.startsWith('/billing') ? 'Billing' : agency?.name ?? '');
+  const pageTitle = current?.name ?? (location.startsWith('/billing') ? t('workspace.layout.billing') : agency?.name ?? '');
   const initials = profile?.full_name?.substring(0, 2).toUpperCase() || 'U';
 
   const renderLink = (item: NavItem, rail: boolean) => {
@@ -191,7 +193,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return rail ? (
       <Tooltip key={item.path} delayDuration={150}>
         <TooltipTrigger asChild>{link}</TooltipTrigger>
-        <TooltipContent side="right">
+        <TooltipContent side={rtl ? 'left' : 'right'}>
           {item.name}
           {item.count ? ` (${item.count})` : ''}
         </TooltipContent>
@@ -202,7 +204,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   const renderNav = (rail: boolean) => (
-    <nav aria-label="Main" className="space-y-5">
+    <nav aria-label={t('workspace.layout.main')} className="space-y-5">
       {groups
         .filter((g) => g.items.length > 0)
         .map((g) => (
@@ -235,7 +237,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <LogOut className="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right">{t('common.signOut')}</TooltipContent>
+          <TooltipContent side={rtl ? 'left' : 'right'}>{t('common.signOut')}</TooltipContent>
         </Tooltip>
       </div>
     ) : (
@@ -280,8 +282,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={toggleCollapsed}
-              aria-label="Collapse the menu"
-              title="Collapse the menu"
+              aria-label={t('workspace.layout.collapse')}
+              title={t('workspace.layout.collapse')}
               aria-expanded
               className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
@@ -293,8 +295,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             onClick={toggleCollapsed}
-            aria-label="Expand the menu"
-            title="Expand the menu"
+            aria-label={t('workspace.layout.expand')}
+            title={t('workspace.layout.expand')}
             aria-expanded={false}
             className="mx-auto mb-2 rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
@@ -322,7 +324,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex w-72 flex-col border-e-sidebar-border bg-sidebar p-0 text-sidebar-foreground">
+            <SheetContent side={rtl ? 'right' : 'left'} className="flex w-72 flex-col border-e-sidebar-border bg-sidebar p-0 text-sidebar-foreground">
               <SheetTitle className="sr-only">{t('common.menu')}</SheetTitle>
               <div className="flex h-16 shrink-0 items-center gap-2 px-4">
                 <BrandMark alt="AMS" className="h-8 w-8 shrink-0" />

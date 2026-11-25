@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Link } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAgentEarnings, usePayouts } from '@/hooks/payouts';
@@ -6,8 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatDay, kes, methodLabel, monthStartLocal, sumCents, yearStartLocal } from '@/lib/payouts';
 import { fromCents } from '@/lib/reconcile';
+import type { PayoutMethod } from '@/lib/types';
 
 export default function MyEarnings() {
+  const { t } = useTranslation();
+  const methodText = (m: PayoutMethod) => (m === 'bank' ? t('payouts.bank') : m === 'cash' ? t('payouts.cash') : methodLabel(m));
   const { session } = useAuth();
   const me = session?.id;
   const { data: earnings, isLoading } = useAgentEarnings({ agentId: me });
@@ -25,16 +29,16 @@ export default function MyEarnings() {
   const thisYear = total(all.filter((e) => e.earned_on >= yearStart));
 
   const cards = [
-    { label: 'Unpaid now', value: unpaid },
-    { label: 'Earned this month', value: thisMonth },
-    { label: 'Earned this year', value: thisYear },
+    { label: t('payouts.unpaidNow'), value: unpaid },
+    { label: t('payouts.earnedMonth'), value: thisMonth },
+    { label: t('payouts.earnedYear'), value: thisYear },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="sr-only">My earnings</h1>
-        <p className="text-muted-foreground">Your share of commission and what you have been paid.</p>
+        <h1 className="sr-only">{t('payouts.myTitle')}</h1>
+        <p className="text-muted-foreground">{t('payouts.mySubtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -49,32 +53,32 @@ export default function MyEarnings() {
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold tracking-tight">My payouts</h2>
+        <h2 className="text-lg font-semibold tracking-tight">{t('payouts.myPayouts')}</h2>
         <div className="border rounded-md bg-card overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Paid on</TableHead>
-                <TableHead>Method</TableHead>
-                <TableHead>Reference</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>{t('payouts.paidOn')}</TableHead>
+                <TableHead>{t('payouts.method')}</TableHead>
+                <TableHead>{t('payouts.reference')}</TableHead>
+                <TableHead className="text-end">{t('payouts.amount')}</TableHead>
+                <TableHead>{t('payouts.status')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {payoutsLoading ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-8">{t('common.loading')}</TableCell></TableRow>
               ) : !payouts || payouts.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No payouts yet.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">{t('payouts.noPayouts')}</TableCell></TableRow>
               ) : payouts.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell>
                     <Link href={`/payouts/${p.id}`} className="font-medium text-primary underline">{formatDay(p.paid_on)}</Link>
                   </TableCell>
-                  <TableCell>{methodLabel(p.method)}</TableCell>
+                  <TableCell>{methodText(p.method)}</TableCell>
                   <TableCell>{p.reference ?? '-'}</TableCell>
-                  <TableCell className="text-right font-medium">{kes(p.amount)}</TableCell>
-                  <TableCell>{p.voided_at ? <Badge variant="destructive">Voided</Badge> : <Badge variant="success">Paid</Badge>}</TableCell>
+                  <TableCell className="text-end font-medium">{kes(p.amount)}</TableCell>
+                  <TableCell>{p.voided_at ? <Badge variant="destructive">{t('payouts.voided')}</Badge> : <Badge variant="success">{t('payouts.paid')}</Badge>}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

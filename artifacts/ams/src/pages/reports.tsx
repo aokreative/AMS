@@ -1,5 +1,6 @@
 import { getCurrency } from '@/lib/money';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   BarChart2, 
   TrendingUp, 
@@ -70,6 +71,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function Reports() {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language;
   const { session, agency } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -111,19 +114,19 @@ export default function Reports() {
       });
 
       if (error) {
-        throw new Error(error.message || 'Failed to generate report');
+        throw new Error(error.message || t('agency.failedToGenerate'));
       }
 
       toast({
-        title: 'Success',
-        description: 'Report generated successfully',
+        title: t('agency.success'),
+        description: t('agency.reportGenerated'),
       });
       setIsGenerateOpen(false);
       queryClient.invalidateQueries({ queryKey: ['reports'] });
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message || 'An error occurred while generating the report',
+        title: t('agency.error'),
+        description: error.message || t('agency.errorGenerating'),
         variant: 'destructive',
       });
     } finally {
@@ -136,6 +139,12 @@ export default function Reports() {
     setIsViewOpen(true);
   };
 
+  const amount10kLabel = t('agency.seriesAmount10k', { currency: getCurrency() });
+  const statusData = (policyStatus || []).map((e: any) => ({
+    ...e,
+    label: t(`agency.status${String(e.name).charAt(0).toUpperCase()}${String(e.name).slice(1)}`, { defaultValue: e.name }),
+  }));
+
   const topInsurersData = topInsurers?.map(i => ({
     ...i,
     premium10k: i.premium / 10000
@@ -146,12 +155,12 @@ export default function Reports() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="sr-only">Reports & Analytics</h1>
-          <p className="text-muted-foreground mt-1">Agency performance at a glance</p>
+          <h1 className="sr-only">{t('agency.reportsTitle')}</h1>
+          <p className="text-muted-foreground mt-1">{t('agency.reportsSubtitle')}</p>
         </div>
         <Button onClick={() => setIsGenerateOpen(true)} className="gap-2">
           <BarChart2 className="w-4 h-4" />
-          Generate Report
+          {t('agency.generateReport')}
         </Button>
       </div>
 
@@ -163,7 +172,7 @@ export default function Reports() {
           <>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Active Policies</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t('agency.kpiActivePolicies')}</CardTitle>
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -172,7 +181,7 @@ export default function Reports() {
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Premium Volume YTD</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t('agency.kpiPremiumYtd')}</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -181,7 +190,7 @@ export default function Reports() {
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Commission Received YTD</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t('agency.kpiCommissionYtd')}</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -190,7 +199,7 @@ export default function Reports() {
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">New Clients YTD</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t('agency.kpiNewClientsYtd')}</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -199,7 +208,7 @@ export default function Reports() {
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Collection Rate</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t('agency.kpiCollectionRate')}</CardTitle>
                 <BarChart2 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -220,7 +229,7 @@ export default function Reports() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle>Monthly Premium & Commission</CardTitle>
+            <CardTitle>{t('agency.chartMonthlyPremium')}</CardTitle>
           </CardHeader>
           <CardContent className="h-80">
             {isLoadingMonthly ? <div className="h-full w-full flex items-center justify-center"><Skeleton className="h-8 w-32 animate-pulse rounded-md" /></div> : (
@@ -234,9 +243,9 @@ export default function Reports() {
                     cursor={{fill: '#f1f5f9'}}
                   />
                   <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                  <Bar dataKey="premium" name="Premium" fill={COLORS.primary} radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="expected" name="Expected Comm." fill={COLORS.accent} radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="received" name="Received Comm." fill={COLORS.emerald} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="premium" name={t('agency.seriesPremium')} fill={COLORS.primary} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="expected" name={t('agency.seriesExpectedComm')} fill={COLORS.accent} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="received" name={t('agency.seriesReceivedComm')} fill={COLORS.emerald} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -245,14 +254,15 @@ export default function Reports() {
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Policy Portfolio Mix</CardTitle>
+            <CardTitle>{t('agency.chartPortfolioMix')}</CardTitle>
           </CardHeader>
           <CardContent className="h-80">
             {isLoadingStatus ? <div className="h-full w-full flex items-center justify-center"><Skeleton className="h-8 w-32 animate-pulse rounded-md" /></div> : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={policyStatus || []}
+                    data={statusData}
+                    nameKey="label"
                     cx="50%"
                     cy="50%"
                     innerRadius={80}
@@ -269,7 +279,7 @@ export default function Reports() {
                       className="text-3xl font-bold fill-foreground"
                     />
                   </Pie>
-                  <RechartsTooltip formatter={(value: number) => [value, 'Policies']} />
+                  <RechartsTooltip formatter={(value: number) => [value, t('agency.seriesPolicies')]} />
                   <Legend wrapperStyle={{ paddingTop: '20px' }} />
                 </PieChart>
               </ResponsiveContainer>
@@ -282,7 +292,7 @@ export default function Reports() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Top 5 Clients by Premium</CardTitle>
+            <CardTitle>{t('agency.chartTopClients')}</CardTitle>
           </CardHeader>
           <CardContent className="h-80">
             {isLoadingClients ? <div className="h-full w-full flex items-center justify-center"><Skeleton className="h-8 w-32 animate-pulse rounded-md" /></div> : (
@@ -292,7 +302,7 @@ export default function Reports() {
                   <XAxis type="number" tickFormatter={formatCompactKsh} axisLine={false} tickLine={false} />
                   <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} width={100} tickFormatter={(val: string) => val.length > 20 ? val.substring(0, 20) + '...' : val} />
                   <RechartsTooltip formatter={(value: number) => formatCurrency(value)} cursor={{fill: '#f1f5f9'}} />
-                  <Bar dataKey="premium" name="Premium" fill={COLORS.primary} radius={[0, 4, 4, 0]} barSize={32} />
+                  <Bar dataKey="premium" name={t('agency.seriesPremium')} fill={COLORS.primary} radius={[0, 4, 4, 0]} barSize={32} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -301,7 +311,7 @@ export default function Reports() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Top 5 Insurers</CardTitle>
+            <CardTitle>{t('agency.chartTopInsurers')}</CardTitle>
           </CardHeader>
           <CardContent className="h-80">
             {isLoadingInsurers ? <div className="h-full w-full flex items-center justify-center"><Skeleton className="h-8 w-32 animate-pulse rounded-md" /></div> : (
@@ -312,12 +322,12 @@ export default function Reports() {
                   <YAxis yAxisId="left" orientation="left" axisLine={false} tickLine={false} />
                   <YAxis yAxisId="right" orientation="right" tickFormatter={formatCompactKsh} axisLine={false} tickLine={false} />
                   <RechartsTooltip 
-                    formatter={(value: number, name: string) => name === `${getCurrency()} (×10k)` ? formatCurrency(value * 10000) : value}
+                    formatter={(value: number, name: string) => name === amount10kLabel ? formatCurrency(value * 10000) : value}
                     cursor={{fill: '#f1f5f9'}}
                   />
                   <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                  <Bar yAxisId="left" dataKey="count" name="Policies" fill={COLORS.accent} radius={[4, 4, 0, 0]} />
-                  <Bar yAxisId="right" dataKey="premium10k" name={`${getCurrency()} (×10k)`} fill={COLORS.emerald} radius={[4, 4, 0, 0]} />
+                  <Bar yAxisId="left" dataKey="count" name={t('agency.seriesPolicies')} fill={COLORS.accent} radius={[4, 4, 0, 0]} />
+                  <Bar yAxisId="right" dataKey="premium10k" name={amount10kLabel} fill={COLORS.emerald} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -328,7 +338,7 @@ export default function Reports() {
       {/* Row 4: New Clients Area Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>New Client Acquisition (Last 6 Months)</CardTitle>
+          <CardTitle>{t('agency.chartNewClients')}</CardTitle>
         </CardHeader>
         <CardContent className="h-80">
           {isLoadingNewClients ? <div className="h-full w-full flex items-center justify-center"><Skeleton className="h-8 w-32 animate-pulse rounded-md" /></div> : (
@@ -344,7 +354,7 @@ export default function Reports() {
                 <XAxis dataKey="month" axisLine={false} tickLine={false} />
                 <YAxis allowDecimals={false} axisLine={false} tickLine={false} />
                 <RechartsTooltip cursor={{ stroke: COLORS.accent, strokeWidth: 1, strokeDasharray: '3 3' }} />
-                <Area type="monotone" dataKey="clients" name="New Clients" stroke={COLORS.accent} strokeWidth={3} fillOpacity={1} fill="url(#colorClients)" />
+                <Area type="monotone" dataKey="clients" name={t('agency.seriesNewClients')} stroke={COLORS.accent} strokeWidth={3} fillOpacity={1} fill="url(#colorClients)" />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -355,11 +365,11 @@ export default function Reports() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Monthly Report Archive</CardTitle>
-            <CardDescription>Generated snapshots of agency performance by month</CardDescription>
+            <CardTitle>{t('agency.archiveTitle')}</CardTitle>
+            <CardDescription>{t('agency.archiveDesc')}</CardDescription>
           </div>
           <Button variant="secondary" size="sm" onClick={() => setIsGenerateOpen(true)}>
-            <BarChart2 className="w-4 h-4 mr-2" /> Generate Report
+            <BarChart2 className="w-4 h-4 me-2" /> {t('agency.generateReport')}
           </Button>
         </CardHeader>
         <CardContent>
@@ -367,13 +377,13 @@ export default function Reports() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Month/Year</TableHead>
-                  <TableHead className="text-right">Policies Written</TableHead>
-                  <TableHead className="text-right">Premium ({getCurrency()})</TableHead>
-                  <TableHead className="text-right">Commissions Received</TableHead>
-                  <TableHead className="text-right">Collection Rate</TableHead>
-                  <TableHead className="text-right">New Clients</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('agency.colMonthYear')}</TableHead>
+                  <TableHead className="text-end">{t('agency.colPoliciesWritten')}</TableHead>
+                  <TableHead className="text-end">{t('agency.colPremium', { currency: getCurrency() })}</TableHead>
+                  <TableHead className="text-end">{t('agency.colCommissionsReceived')}</TableHead>
+                  <TableHead className="text-end">{t('agency.colCollectionRate')}</TableHead>
+                  <TableHead className="text-end">{t('agency.colNewClients')}</TableHead>
+                  <TableHead className="text-end">{t('agency.colActions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -381,32 +391,32 @@ export default function Reports() {
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-                      Loading archive...
+                      {t('agency.loadingArchive')}
                     </TableCell>
                   </TableRow>
                 ) : !reports || reports.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      No reports generated yet. Click 'Generate Report' to create your first monthly snapshot.
+                      {t('agency.noReports')}
                     </TableCell>
                   </TableRow>
                 ) : (
                   reports.map((report: any) => {
                     const md = report.metadata || {};
                     const dateObj = new Date(report.year, report.month - 1);
-                    const monthName = dateObj.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+                    const monthName = dateObj.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
                     
                     return (
                       <TableRow key={report.id}>
                         <TableCell className="font-medium">{monthName}</TableCell>
-                        <TableCell className="text-right">{md.total_policies_written || 0}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(md.total_premium_kes || 0)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(md.commission_received_kes || 0)}</TableCell>
-                        <TableCell className="text-right">{md.collection_rate_pct ?? 0}%</TableCell>
-                        <TableCell className="text-right">{md.new_clients || 0}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-end">{md.total_policies_written || 0}</TableCell>
+                        <TableCell className="text-end">{formatCurrency(md.total_premium_kes || 0)}</TableCell>
+                        <TableCell className="text-end">{formatCurrency(md.commission_received_kes || 0)}</TableCell>
+                        <TableCell className="text-end">{md.collection_rate_pct ?? 0}%</TableCell>
+                        <TableCell className="text-end">{md.new_clients || 0}</TableCell>
+                        <TableCell className="text-end">
                           <Button variant="ghost" size="sm" onClick={() => handleViewReport(report)}>
-                            <Eye className="w-4 h-4 mr-2" /> View
+                            <Eye className="w-4 h-4 me-2" /> {t('agency.view')}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -423,35 +433,35 @@ export default function Reports() {
       <Dialog open={isGenerateOpen} onOpenChange={setIsGenerateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Generate Monthly Report</DialogTitle>
-            <DialogDescription>Create a performance snapshot for a specific month. Reports are stored in your archive.</DialogDescription>
+            <DialogTitle>{t('agency.generateDialogTitle')}</DialogTitle>
+            <DialogDescription>{t('agency.generateDialogDesc')}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Month</Label>
+              <Label>{t('agency.month')}</Label>
               <Select value={generateMonth} onValueChange={setGenerateMonth}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select month" />
+                  <SelectValue placeholder={t('agency.selectMonth')} />
                 </SelectTrigger>
                 <SelectContent>
                   {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
                     <SelectItem key={m} value={m.toString()}>
-                      {new Date(2000, m - 1).toLocaleDateString('en-GB', { month: 'long' })}
+                      {new Date(2000, m - 1).toLocaleDateString(locale, { month: 'long' })}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Year</Label>
+              <Label>{t('agency.year')}</Label>
               <Input type="number" value={generateYear} onChange={e => setGenerateYear(e.target.value)} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsGenerateOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsGenerateOpen(false)}>{t('common.cancel')}</Button>
             <Button onClick={handleGenerate} disabled={isGenerating}>
-              {isGenerating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Generate
+              {isGenerating ? <Loader2 className="w-4 h-4 me-2 animate-spin" /> : null}
+              {t('agency.generate')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -469,7 +479,7 @@ export default function Reports() {
             }
           `}} />
           <DialogHeader className="print:hidden">
-            <DialogTitle>Report Details</DialogTitle>
+            <DialogTitle>{t('agency.reportDetails')}</DialogTitle>
           </DialogHeader>
           
           {selectedReport && (
@@ -477,47 +487,47 @@ export default function Reports() {
               <div className="border-b pb-4">
                 <h2 className="text-2xl font-bold text-foreground">{agency?.name}</h2>
                 <p className="text-lg text-muted-foreground mt-1">
-                  Monthly Report &mdash; {new Date(selectedReport.year, selectedReport.month - 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+                  {t('agency.monthlyReport')} &mdash; {new Date(selectedReport.year, selectedReport.month - 1).toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
                 </p>
               </div>
               
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div className="p-4 bg-muted/50 rounded-lg border">
-                  <div className="text-sm font-medium text-muted-foreground">Policies Written</div>
+                  <div className="text-sm font-medium text-muted-foreground">{t('agency.colPoliciesWritten')}</div>
                   <div className="text-2xl font-bold mt-1">{selectedReport.metadata?.total_policies_written || 0}</div>
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg border">
-                  <div className="text-sm font-medium text-muted-foreground">Total Premium</div>
+                  <div className="text-sm font-medium text-muted-foreground">{t('agency.statTotalPremium')}</div>
                   <div className="text-2xl font-bold mt-1">{formatCurrency(selectedReport.metadata?.total_premium_kes || 0)}</div>
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg border">
-                  <div className="text-sm font-medium text-muted-foreground">Expected Comm.</div>
+                  <div className="text-sm font-medium text-muted-foreground">{t('agency.seriesExpectedComm')}</div>
                   <div className="text-2xl font-bold mt-1">{formatCurrency(selectedReport.metadata?.commission_expected_kes || 0)}</div>
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg border">
-                  <div className="text-sm font-medium text-muted-foreground">Received Comm.</div>
+                  <div className="text-sm font-medium text-muted-foreground">{t('agency.seriesReceivedComm')}</div>
                   <div className="text-2xl font-bold mt-1">{formatCurrency(selectedReport.metadata?.commission_received_kes || 0)}</div>
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg border">
-                  <div className="text-sm font-medium text-muted-foreground">Collection Rate</div>
+                  <div className="text-sm font-medium text-muted-foreground">{t('agency.colCollectionRate')}</div>
                   <div className="text-2xl font-bold mt-1">{selectedReport.metadata?.collection_rate_pct || 0}%</div>
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg border">
-                  <div className="text-sm font-medium text-muted-foreground">New Clients</div>
+                  <div className="text-sm font-medium text-muted-foreground">{t('agency.colNewClients')}</div>
                   <div className="text-2xl font-bold mt-1">{selectedReport.metadata?.new_clients || 0}</div>
                 </div>
               </div>
 
               <div className="text-xs text-muted-foreground pt-4 border-t">
-                Generated: {formatDate(selectedReport.generated_at)}
+                {t('agency.generatedOn', { date: formatDate(selectedReport.generated_at) })}
               </div>
             </div>
           )}
 
           <DialogFooter className="print:hidden">
-            <Button variant="outline" onClick={() => setIsViewOpen(false)}>Close</Button>
+            <Button variant="outline" onClick={() => setIsViewOpen(false)}>{t('common.close')}</Button>
             <Button onClick={() => window.print()} className="gap-2">
-              <Printer className="w-4 h-4" /> Print / Save as PDF
+              <Printer className="w-4 h-4" /> {t('agency.printSave')}
             </Button>
           </DialogFooter>
         </DialogContent>

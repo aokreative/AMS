@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Loader2, MessageCircle, Phone, Mail, Pencil, Trash2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -11,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLeadAction, useLeadActivities } from '@/hooks/leads';
 import { useInsurers, useProductLines } from '@/hooks/queries';
 import { useAgencyMembers } from '@/hooks/team';
-import { CHANNELS, LOST_REASONS, SOURCES, followUpState, nextStages, stageLabel, type Lead, type LeadActivity, type LeadChannel } from '@/lib/leads';
+import { CHANNELS, LOST_REASONS, followUpState, nextStages, type Lead, type LeadActivity, type LeadChannel } from '@/lib/leads';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { todayNairobi } from '@/lib/subscription';
 import { cn } from '@/lib/utils';
@@ -25,20 +27,21 @@ function waLink(phone: string) {
   return `https://wa.me/${intl}`;
 }
 
-function describe(a: LeadActivity): string {
+function describe(a: LeadActivity, t: TFunction): string {
+  const stage = a.to_stage ? t(`workspace.stage.${a.to_stage}`) : '?';
   switch (a.kind) {
     case 'contact':
-      return CHANNELS.find((c) => c.value === a.channel)?.label ?? 'Contact';
+      return CHANNELS.some((c) => c.value === a.channel) ? t(`workspace.channel.${a.channel}`) : t('workspace.channel.contact');
     case 'stage':
-      return `Moved to ${a.to_stage ? stageLabel(a.to_stage) : '?'}`;
+      return t('workspace.drawer.movedTo', { stage });
     case 'lost':
-      return 'Marked lost';
+      return t('workspace.drawer.markedLost');
     case 'reopened':
-      return `Reopened at ${a.to_stage ? stageLabel(a.to_stage) : '?'}`;
+      return t('workspace.drawer.reopenedAt', { stage });
     case 'converted':
-      return 'Client and policy created';
+      return t('workspace.drawer.converted2');
     case 'assigned':
-      return 'Reassigned';
+      return t('workspace.drawer.reassigned');
   }
 }
 
@@ -46,6 +49,7 @@ type Panel = null | 'contact' | 'lost' | 'convert';
 
 /** One lead: details, stage moves, contact log, conversion and its full timeline. */
 export function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void }) {
+  const { t } = useTranslation();
   const { isOwnerOrManager } = useAuth();
   const { data: activities, isLoading } = useLeadActivities(lead?.id);
   const { data: members } = useAgencyMembers();
@@ -77,60 +81,60 @@ export function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () =
                 {lead.agent?.full_name && <span className="text-xs text-muted-foreground">{lead.agent.full_name}</span>}
               </div>
               <SheetTitle className="font-display text-2xl">{lead.full_name}</SheetTitle>
-              <SheetDescription>{lead.interest ?? 'No details yet'}</SheetDescription>
+              <SheetDescription>{lead.interest ?? t('workspace.drawer.noDetails')}</SheetDescription>
             </SheetHeader>
 
             <div className="mt-4 flex flex-wrap gap-2">
               {lead.phone && (
                 <>
-                  <Button size="sm" variant="outline" asChild><a href={`tel:${lead.phone}`}><Phone className="me-1.5 h-4 w-4" />Call</a></Button>
-                  <Button size="sm" variant="outline" asChild><a href={waLink(lead.phone)} target="_blank" rel="noreferrer"><MessageCircle className="me-1.5 h-4 w-4" />WhatsApp</a></Button>
+                  <Button size="sm" variant="outline" asChild><a href={`tel:${lead.phone}`}><Phone className="me-1.5 h-4 w-4" />{t('workspace.channel.call')}</a></Button>
+                  <Button size="sm" variant="outline" asChild><a href={waLink(lead.phone)} target="_blank" rel="noreferrer"><MessageCircle className="me-1.5 h-4 w-4" />{t('workspace.channel.whatsapp')}</a></Button>
                 </>
               )}
               {lead.email && (
-                <Button size="sm" variant="outline" asChild><a href={`mailto:${lead.email}`}><Mail className="me-1.5 h-4 w-4" />Email</a></Button>
+                <Button size="sm" variant="outline" asChild><a href={`mailto:${lead.email}`}><Mail className="me-1.5 h-4 w-4" />{t('workspace.channel.email')}</a></Button>
               )}
-              <Button size="sm" variant="ghost" onClick={() => setEditing(true)}><Pencil className="me-1.5 h-4 w-4" />Edit</Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(true)}><Pencil className="me-1.5 h-4 w-4" />{t('workspace.drawer.edit')}</Button>
             </div>
 
             <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-muted/50 p-4 text-sm">
               <div>
-                <dt className="text-xs text-muted-foreground">Figure discussed</dt>
+                <dt className="text-xs text-muted-foreground">{t('workspace.drawer.figure')}</dt>
                 <dd className="font-display text-lg tabular-nums">{lead.quoted_premium != null ? formatCurrency(lead.quoted_premium) : '—'}</dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">Next follow-up</dt>
+                <dt className="text-xs text-muted-foreground">{t('workspace.drawer.nextFollowUp')}</dt>
                 <dd className={cn('text-lg font-display', fu === 'overdue' && 'text-overdue', fu === 'due' && 'text-due')}>
                   {lead.next_follow_up ? formatDate(lead.next_follow_up) : '—'}
-                  {fu === 'overdue' && <span className="ms-1.5 text-xs font-sans font-medium">overdue</span>}
-                  {fu === 'due' && <span className="ms-1.5 text-xs font-sans font-medium">today</span>}
+                  {fu === 'overdue' && <span className="ms-1.5 text-xs font-sans font-medium">{t('workspace.drawer.overdue')}</span>}
+                  {fu === 'due' && <span className="ms-1.5 text-xs font-sans font-medium">{t('workspace.drawer.today')}</span>}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">Phone</dt>
+                <dt className="text-xs text-muted-foreground">{t('workspace.drawer.phone')}</dt>
                 <dd>{lead.phone ?? '—'}</dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">Product line</dt>
+                <dt className="text-xs text-muted-foreground">{t('workspace.form.productLine')}</dt>
                 <dd>{lead.product_line?.name ?? '—'}</dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">Came from</dt>
-                <dd>{SOURCES.find((s) => s.value === lead.source)?.label ?? '—'}</dd>
+                <dt className="text-xs text-muted-foreground">{t('workspace.drawer.cameFrom')}</dt>
+                <dd>{lead.source ? t(`workspace.source.${lead.source}`) : '—'}</dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">Added</dt>
+                <dt className="text-xs text-muted-foreground">{t('workspace.drawer.added')}</dt>
                 <dd>{formatDate(lead.created_at)}</dd>
               </div>
               {lead.stage === 'lost' && (
                 <div className="col-span-2">
-                  <dt className="text-xs text-muted-foreground">Lost because</dt>
-                  <dd>{LOST_REASONS.find((r) => r.value === lead.lost_reason)?.label ?? '—'}</dd>
+                  <dt className="text-xs text-muted-foreground">{t('workspace.drawer.lostBecause')}</dt>
+                  <dd>{lead.lost_reason ? t(`workspace.reason.${lead.lost_reason}`) : '—'}</dd>
                 </div>
               )}
               {lead.notes && (
                 <div className="col-span-2">
-                  <dt className="text-xs text-muted-foreground">Notes</dt>
+                  <dt className="text-xs text-muted-foreground">{t('workspace.drawer.notes')}</dt>
                   <dd className="whitespace-pre-wrap">{lead.notes}</dd>
                 </div>
               )}
@@ -146,28 +150,28 @@ export function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () =
             <section className="mt-5 space-y-2">
               {open && (
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" onClick={() => setPanel(panel === 'contact' ? null : 'contact')}>Log contact</Button>
+                  <Button size="sm" onClick={() => setPanel(panel === 'contact' ? null : 'contact')}>{t('workspace.drawer.logContact')}</Button>
                   {nextStages(lead.stage).map((s) => (
                     <Button key={s} size="sm" variant="outline" disabled={act.isPending} onClick={() => run('move_lead', { p_lead_id: lead.id, p_to: s })}>
-                      {stageLabel(s)}
+                      {t(`workspace.stage.${s}`)}
                     </Button>
                   ))}
-                  <Button size="sm" variant="ghost" className="text-overdue" onClick={() => setPanel(panel === 'lost' ? null : 'lost')}>Lost</Button>
+                  <Button size="sm" variant="ghost" className="text-overdue" onClick={() => setPanel(panel === 'lost' ? null : 'lost')}>{t('workspace.drawer.lost')}</Button>
                 </div>
               )}
               {lead.stage === 'paid' && !lead.policy_id && (
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" onClick={() => setPanel('convert')}>Create client &amp; policy</Button>
-                  <Button size="sm" variant="ghost" onClick={() => run('reopen_lead', { p_lead_id: lead.id })}>Reopen</Button>
+                  <Button size="sm" onClick={() => setPanel('convert')}>{t('workspace.drawer.createClientPolicy')}</Button>
+                  <Button size="sm" variant="ghost" onClick={() => run('reopen_lead', { p_lead_id: lead.id })}>{t('workspace.drawer.reopen')}</Button>
                 </div>
               )}
               {lead.stage === 'lost' && (
-                <Button size="sm" variant="outline" onClick={() => run('reopen_lead', { p_lead_id: lead.id })}>Reopen</Button>
+                <Button size="sm" variant="outline" onClick={() => run('reopen_lead', { p_lead_id: lead.id })}>{t('workspace.drawer.reopen')}</Button>
               )}
               {lead.policy_id && (
                 <p className="rounded-lg border border-money/30 bg-money/10 p-3 text-sm">
-                  Converted.{' '}
-                  {lead.client_id && <Link href={`/clients/${lead.client_id}`} className="font-medium underline underline-offset-2">Open the client</Link>}
+                  {t('workspace.drawer.converted')}{' '}
+                  {lead.client_id && <Link href={`/clients/${lead.client_id}`} className="font-medium underline underline-offset-2">{t('workspace.drawer.openClient')}</Link>}
                 </p>
               )}
               {act.error && <p className="text-sm text-destructive">{(act.error as Error).message}</p>}
@@ -180,7 +184,7 @@ export function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () =
             {isOwnerOrManager && (
               <section className="mt-5 flex flex-wrap items-end gap-2 border-t pt-4">
                 <div className="grid min-w-48 flex-1 gap-1.5">
-                  <Label className="text-xs text-muted-foreground">Agent</Label>
+                  <Label className="text-xs text-muted-foreground">{t('workspace.drawer.agent')}</Label>
                   <Select value={lead.assigned_agent_id} onValueChange={(v) => run('assign_lead', { p_lead_id: lead.id, p_agent_id: v })}>
                     <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -193,23 +197,23 @@ export function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () =
                   variant="ghost"
                   className="text-overdue"
                   onClick={() => {
-                    if (window.confirm(`Delete ${lead.full_name} and their contact history? This can't be undone.`)) {
+                    if (window.confirm(t('workspace.drawer.deleteConfirm', { name: lead.full_name }))) {
                       run('delete_lead', { p_lead_id: lead.id }, onClose);
                     }
                   }}
                 >
-                  <Trash2 className="me-1.5 h-4 w-4" />Delete
+                  <Trash2 className="me-1.5 h-4 w-4" />{t('workspace.drawer.delete')}
                 </Button>
               </section>
             )}
 
             {/* Timeline */}
             <section className="mt-6">
-              <h3 className="font-display text-base font-semibold">History</h3>
+              <h3 className="font-display text-base font-semibold">{t('workspace.drawer.history')}</h3>
               {isLoading ? (
                 <Loader2 className="mt-3 h-4 w-4 animate-spin text-muted-foreground" />
               ) : (activities?.length ?? 0) === 0 ? (
-                <p className="mt-2 text-sm text-muted-foreground">No contacts yet. Log the first one when you reach them.</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t('workspace.drawer.noHistory')}</p>
               ) : (
                 <ol className="relative mt-3 space-y-4 border-s border-border ps-5">
                   {activities!.map((a) => (
@@ -221,13 +225,13 @@ export function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () =
                         )}
                       />
                       <div className="flex flex-wrap items-baseline justify-between gap-x-2">
-                        <span className="font-medium">{describe(a)}</span>
+                        <span className="font-medium">{describe(a, t)}</span>
                         <span className="text-xs text-muted-foreground">{formatDate(a.kind === 'contact' ? a.occurred_on : a.created_at)}</span>
                       </div>
-                      {a.premium != null && <div className="tabular-nums">Figure: <span className="font-medium">{formatCurrency(a.premium)}</span></div>}
-                      {a.next_follow_up && <div className="text-muted-foreground">Follow up {formatDate(a.next_follow_up)}</div>}
+                      {a.premium != null && <div className="tabular-nums">{t('workspace.drawer.figureLabel')} <span className="font-medium">{formatCurrency(a.premium)}</span></div>}
+                      {a.next_follow_up && <div className="text-muted-foreground">{t('workspace.drawer.followUpOn', { date: formatDate(a.next_follow_up) })}</div>}
                       {a.note && <p className="mt-0.5 whitespace-pre-wrap text-muted-foreground">{a.note}</p>}
-                      {a.author?.full_name && <div className="text-xs text-muted-foreground">by {a.author.full_name}</div>}
+                      {a.author?.full_name && <div className="text-xs text-muted-foreground">{t('workspace.drawer.by', { name: a.author.full_name })}</div>}
                     </li>
                   ))}
                 </ol>
@@ -243,6 +247,7 @@ export function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () =
 }
 
 function ContactForm({ lead, onDone }: { lead: Lead; onDone: () => void }) {
+  const { t } = useTranslation();
   const act = useLeadAction();
   const [channel, setChannel] = useState<LeadChannel>('call');
   const [date, setDate] = useState(todayNairobi());
@@ -270,7 +275,7 @@ function ContactForm({ lead, onDone }: { lead: Lead; onDone: () => void }) {
         );
       }}
     >
-      <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="How you contacted them">
+      <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t('workspace.drawer.howContacted')}>
         {CHANNELS.map((c) => (
           <button
             key={c.value}
@@ -283,33 +288,33 @@ function ContactForm({ lead, onDone }: { lead: Lead; onDone: () => void }) {
               channel === c.value ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-muted',
             )}
           >
-            {c.label}
+            {t(`workspace.channel.${c.value}`)}
           </button>
         ))}
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="grid gap-1.5">
-          <Label htmlFor="c-date">When</Label>
+          <Label htmlFor="c-date">{t('workspace.drawer.when')}</Label>
           <Input id="c-date" type="date" value={date} max={todayNairobi()} onChange={(e) => setDate(e.target.value)} />
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor="c-figure">Figure discussed</Label>
-          <Input id="c-figure" type="number" min={0} step="0.01" inputMode="decimal" value={figure} onChange={(e) => setFigure(e.target.value)} placeholder="Optional" />
+          <Label htmlFor="c-figure">{t('workspace.drawer.figure')}</Label>
+          <Input id="c-figure" type="number" min={0} step="0.01" inputMode="decimal" value={figure} onChange={(e) => setFigure(e.target.value)} placeholder={t('workspace.drawer.optional')} />
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor="c-follow">Follow up on</Label>
+          <Label htmlFor="c-follow">{t('workspace.drawer.followUpDate')}</Label>
           <Input id="c-follow" type="date" min={todayNairobi()} value={follow} onChange={(e) => setFollow(e.target.value)} />
         </div>
       </div>
       <div className="grid gap-1.5">
-        <Label htmlFor="c-note">What was said</Label>
+        <Label htmlFor="c-note">{t('workspace.drawer.whatWasSaid')}</Label>
         <Textarea id="c-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
       </div>
       {act.error && <p className="text-sm text-destructive">{(act.error as Error).message}</p>}
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={onDone}>Cancel</Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onDone}>{t('common.cancel')}</Button>
         <Button type="submit" size="sm" disabled={act.isPending}>
-          {act.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}Save contact
+          {act.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}{t('workspace.drawer.saveContact')}
         </Button>
       </div>
     </form>
@@ -317,6 +322,7 @@ function ContactForm({ lead, onDone }: { lead: Lead; onDone: () => void }) {
 }
 
 function LostForm({ lead, onDone }: { lead: Lead; onDone: () => void }) {
+  const { t } = useTranslation();
   const act = useLeadAction();
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
@@ -329,25 +335,26 @@ function LostForm({ lead, onDone }: { lead: Lead; onDone: () => void }) {
       }}
     >
       <div className="grid gap-1.5">
-        <Label>Why was it lost?</Label>
+        <Label>{t('workspace.drawer.whyLost')}</Label>
         <Select value={reason} onValueChange={setReason}>
-          <SelectTrigger><SelectValue placeholder="Pick a reason" /></SelectTrigger>
+          <SelectTrigger><SelectValue placeholder={t('workspace.drawer.pickReason')} /></SelectTrigger>
           <SelectContent>
-            {LOST_REASONS.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+            {LOST_REASONS.map((r) => <SelectItem key={r.value} value={r.value}>{t(`workspace.reason.${r.value}`)}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
-      <Textarea rows={2} placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
+      <Textarea rows={2} placeholder={t('workspace.drawer.notePlaceholder')} value={note} onChange={(e) => setNote(e.target.value)} />
       {act.error && <p className="text-sm text-destructive">{(act.error as Error).message}</p>}
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={onDone}>Cancel</Button>
-        <Button type="submit" size="sm" variant="destructive" disabled={act.isPending}>Mark lost</Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onDone}>{t('common.cancel')}</Button>
+        <Button type="submit" size="sm" variant="destructive" disabled={act.isPending}>{t('workspace.drawer.markLost')}</Button>
       </div>
     </form>
   );
 }
 
 function ConvertForm({ lead, onDone }: { lead: Lead; onDone: () => void }) {
+  const { t } = useTranslation();
   const act = useLeadAction();
   const { data: insurers } = useInsurers();
   const { data: productLines } = useProductLines();
@@ -378,59 +385,59 @@ function ConvertForm({ lead, onDone }: { lead: Lead; onDone: () => void }) {
       }}
     >
       <p className="text-sm text-muted-foreground">
-        Creates the client {lead.full_name} and a pending policy for {lead.agent?.full_name ?? 'the agent'}. Commissions and renewals pick it up from there.
+        {t('workspace.drawer.convertIntro', { name: lead.full_name, agent: lead.agent?.full_name ?? t('workspace.drawer.theAgent') })}
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="grid gap-1.5">
-          <Label>Client type</Label>
+          <Label>{t('workspace.drawer.clientType')}</Label>
           <Select value={f.client_type} onValueChange={set('client_type')}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="individual">Individual</SelectItem>
-              <SelectItem value="corporate">Corporate</SelectItem>
+              <SelectItem value="individual">{t('workspace.drawer.individual')}</SelectItem>
+              <SelectItem value="corporate">{t('workspace.drawer.corporate')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor="cv-number">Policy number</Label>
+          <Label htmlFor="cv-number">{t('workspace.drawer.policyNumber')}</Label>
           <Input id="cv-number" value={f.policy_number} onChange={(e) => set('policy_number')(e.target.value)} required />
         </div>
         <div className="grid gap-1.5">
-          <Label>Insurer</Label>
+          <Label>{t('workspace.drawer.insurer')}</Label>
           <Select value={f.insurer_id} onValueChange={set('insurer_id')}>
-            <SelectTrigger><SelectValue placeholder="Pick an insurer" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('workspace.drawer.pickInsurer')} /></SelectTrigger>
             <SelectContent>{insurers?.map((i) => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div className="grid gap-1.5">
-          <Label>Product line</Label>
+          <Label>{t('workspace.form.productLine')}</Label>
           <Select value={f.product_line_id} onValueChange={set('product_line_id')}>
-            <SelectTrigger><SelectValue placeholder="Pick a product line" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('workspace.drawer.pickProductLine')} /></SelectTrigger>
             <SelectContent>{productLines?.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor="cv-premium">Premium</Label>
+          <Label htmlFor="cv-premium">{t('workspace.drawer.premium')}</Label>
           <Input id="cv-premium" type="number" min={0} step="0.01" value={f.premium_amount} onChange={(e) => set('premium_amount')(e.target.value)} required />
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor="cv-rate">Commission rate (%)</Label>
+          <Label htmlFor="cv-rate">{t('workspace.drawer.commissionRate')}</Label>
           <Input id="cv-rate" type="number" min={0} max={100} step="0.01" value={f.commission_rate} onChange={(e) => set('commission_rate')(e.target.value)} required />
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor="cv-start">Starts</Label>
+          <Label htmlFor="cv-start">{t('workspace.drawer.starts')}</Label>
           <Input id="cv-start" type="date" value={f.start_date} onChange={(e) => set('start_date')(e.target.value)} required />
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor="cv-end">Expires</Label>
+          <Label htmlFor="cv-end">{t('workspace.drawer.expires')}</Label>
           <Input id="cv-end" type="date" value={f.expiry_date} onChange={(e) => set('expiry_date')(e.target.value)} required />
         </div>
       </div>
       {act.error && <p className="text-sm text-destructive">{(act.error as Error).message}</p>}
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={onDone}>Cancel</Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onDone}>{t('common.cancel')}</Button>
         <Button type="submit" size="sm" disabled={act.isPending}>
-          {act.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}Create client &amp; policy
+          {act.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}{t('workspace.drawer.createClientPolicy')}
         </Button>
       </div>
     </form>

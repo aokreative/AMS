@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, Monitor, Moon, Sun } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { applyTheme, readTheme, resolveTheme, systemPrefersDark, writeTheme, type ThemePref } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
-const OPTIONS: { value: ThemePref; label: string; icon: typeof Sun }[] = [
-  { value: 'light', label: 'Light', icon: Sun },
-  { value: 'dark', label: 'Dark', icon: Moon },
-  { value: 'system', label: 'System', icon: Monitor },
+const OPTIONS: { value: ThemePref; icon: typeof Sun }[] = [
+  { value: 'light', icon: Sun },
+  { value: 'dark', icon: Moon },
+  { value: 'system', icon: Monitor },
 ];
 
 /** The saved choice, kept in sync across the page and with the device when on "System". */
@@ -46,6 +47,7 @@ function useThemePref(): [ThemePref, (p: ThemePref) => void, boolean] {
 
 /** Light / Dark / System menu. Light by default; the choice is remembered on this device. */
 export function ThemeToggle({ className }: { className?: string }) {
+  const { t } = useTranslation();
   const [pref, choose, dark] = useThemePref();
   const Icon = pref === 'system' ? Monitor : dark ? Moon : Sun;
   return (
@@ -53,8 +55,8 @@ export function ThemeToggle({ className }: { className?: string }) {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label="Appearance"
-          title="Appearance"
+          aria-label={t('workspace.theme.appearance')}
+          title={t('workspace.theme.appearance')}
           className={cn(
             'inline-flex h-9 w-9 items-center justify-center rounded-lg border bg-card text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             className,
@@ -67,7 +69,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         {OPTIONS.map((o) => (
           <DropdownMenuItem key={o.value} onSelect={() => choose(o.value)} className="gap-2">
             <o.icon className="h-4 w-4" />
-            <span className="flex-1">{o.label}</span>
+            <span className="flex-1">{t(`workspace.theme.${o.value}`)}</span>
             {pref === o.value && <Check className="h-4 w-4" />}
           </DropdownMenuItem>
         ))}

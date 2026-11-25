@@ -1,5 +1,7 @@
 import { getCurrency } from '@/lib/money';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCommissions, useCreateCommission, usePolicies } from '@/hooks/queries';
 import { useCreateReceipt } from '@/hooks/receipts';
@@ -24,16 +26,17 @@ import * as z from 'zod';
 import { Textarea } from '@/components/ui/textarea';
 import { exportToCsv } from '@/lib/csv-export';
 
-const commissionSchema = z.object({
-  policy_id: z.string().min(1, 'Required'),
-  amount: z.coerce.number().min(1, 'Must be positive'),
-  expected_date: z.string().min(1, 'Required'),
+const makeCommissionSchema = (t: TFunction) => z.object({
+  policy_id: z.string().min(1, t('money.commissions.required')),
+  amount: z.coerce.number().min(1, t('money.commissions.mustBePositive')),
+  expected_date: z.string().min(1, t('money.commissions.required')),
   notes: z.string().optional()
 });
 
-type CommissionFormValues = z.infer<typeof commissionSchema>;
+type CommissionFormValues = z.infer<ReturnType<typeof makeCommissionSchema>>;
 
 export default function Commissions() {
+  const { t } = useTranslation();
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [payingComm, setPayingComm] = useState<any | null>(null);
@@ -54,7 +57,7 @@ export default function Commissions() {
   const { toast } = useToast();
 
   const form = useForm<CommissionFormValues>({
-    resolver: zodResolver(commissionSchema),
+    resolver: zodResolver(makeCommissionSchema(t)),
     defaultValues: {
       policy_id: '',
       amount: 0,
@@ -107,10 +110,10 @@ export default function Commissions() {
   const overdueItems = commissions?.filter(isOverdueRow) || [];
   
   const aging = {
-    '0-30': { label: '0–30 Days', count: 0, amount: 0 },
-    '31-60': { label: '31–60 Days', count: 0, amount: 0 },
-    '61-90': { label: '61–90 Days', count: 0, amount: 0 },
-    '90+': { label: '90+ Days', count: 0, amount: 0 }
+    '0-30': { label: t('money.commissions.age0_30'), count: 0, amount: 0 },
+    '31-60': { label: t('money.commissions.age31_60'), count: 0, amount: 0 },
+    '61-90': { label: t('money.commissions.age61_90'), count: 0, amount: 0 },
+    '90+': { label: t('money.commissions.age90plus'), count: 0, amount: 0 }
   };
 
   overdueItems.forEach(c => {
@@ -126,7 +129,7 @@ export default function Commissions() {
   const sameInsurer = selectedComms.length > 0 && selectedInsurerIds.size === 1;
   const selectedTotal = fromCents(selectedComms.reduce((sum, c) => sum + remainingCentsOf(c), 0));
 
-  const showError = (err: Error) => toast({ title: 'Error', description: err.message, variant: 'destructive' });
+  const showError = (err: Error) => toast({ title: t('money.shared.error'), description: err.message, variant: 'destructive' });
 
   const openBulkDialog = () => {
     setPayDate(today);
@@ -145,7 +148,7 @@ export default function Commissions() {
       allocations: selectedComms.map(c => ({ commission_id: c.id, amount: remainingOf(c) })),
     }, {
       onSuccess: () => {
-        toast({ title: 'Payment recorded' });
+        toast({ title: t('money.commissions.toastPaymentRecorded') });
         setBulkOpen(false);
         setSelectedIds(new Set());
       },
@@ -175,7 +178,7 @@ export default function Commissions() {
     const insurerId = payingComm?.policy?.insurer?.id;
     if (!payingComm || !insurerId || cents === null || cents <= 0) return;
     if (cents > remainingCentsOf(payingComm)) {
-      toast({ title: 'Error', description: `Amount exceeds the remaining ${formatCurrency(remainingOf(payingComm))}`, variant: 'destructive' });
+      toast({ title: t('money.shared.error'), description: t('money.commissions.errExceeds', { amount: formatCurrency(remainingOf(payingComm)) }), variant: 'destructive' });
       return;
     }
     const amount = fromCents(cents);
@@ -187,7 +190,7 @@ export default function Commissions() {
       allocations: [{ commission_id: payingComm.id, amount }],
     }, {
       onSuccess: () => {
-        toast({ title: 'Payment recorded' });
+        toast({ title: t('money.commissions.toastPaymentRecorded') });
         setPayingComm(null);
       },
       onError: showError,
@@ -206,12 +209,12 @@ export default function Commissions() {
       ...values
     }, {
       onSuccess: () => {
-        toast({ title: 'Commission transaction added' });
+        toast({ title: t('money.commissions.toastTransactionAdded') });
         setIsAddOpen(false);
         form.reset();
       },
       onError: (err) => {
-        toast({ title: 'Error', description: err.message, variant: 'destructive' });
+        toast({ title: t('money.shared.error'), description: err.message, variant: 'destructive' });
       }
     });
   };
@@ -235,8 +238,8 @@ export default function Commissions() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="sr-only">Commissions</h1>
-          <p className="text-muted-foreground">{isAgent ? 'Your expected and received commissions.' : 'Track expected and received commissions.'}</p>
+          <h1 className="sr-only">{t('nav.commissions')}</h1>
+          <p className="text-muted-foreground">{isAgent ? t('money.commissions.agentSubtitle') : t('money.commissions.managerSubtitle')}</p>
         </div>
 
         {!isAgent && (
@@ -245,12 +248,12 @@ export default function Commissions() {
           if (!open) form.reset();
         }}>
           <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-2" /> Add Transaction</Button>
+            <Button><Plus className="w-4 h-4 me-2" /> {t('money.commissions.addTransaction')}</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add Commission Transaction</DialogTitle>
-              <DialogDescription>Record a new expected or received commission.</DialogDescription>
+              <DialogTitle>{t('money.commissions.addTitle')}</DialogTitle>
+              <DialogDescription>{t('money.commissions.addDescription')}</DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmitAdd)} className="space-y-4">
@@ -259,9 +262,9 @@ export default function Commissions() {
                   name="policy_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Policy</FormLabel>
+                      <FormLabel>{t('money.shared.policy')}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select policy" /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger><SelectValue placeholder={t('money.commissions.selectPolicy')} /></SelectTrigger></FormControl>
                         <SelectContent>
                           {policies?.map(p => (
                             <SelectItem key={p.id} value={p.id}>{p.policy_number} - {p.client?.name ?? '—'}</SelectItem>
@@ -278,7 +281,7 @@ export default function Commissions() {
                     name="amount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Amount ({getCurrency()})</FormLabel>
+                        <FormLabel>{t('money.commissions.amountCur', { currency: getCurrency() })}</FormLabel>
                         <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -290,7 +293,7 @@ export default function Commissions() {
                   name="expected_date"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Expected Date</FormLabel>
+                      <FormLabel>{t('money.commissions.expectedDate')}</FormLabel>
                       <FormControl><Input type="date" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -301,14 +304,14 @@ export default function Commissions() {
                   name="notes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Notes (Optional)</FormLabel>
+                      <FormLabel>{t('money.commissions.notesOptional')}</FormLabel>
                       <FormControl><Textarea {...field} value={field.value || ''} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <Button type="submit" className="w-full" disabled={createCommission.isPending}>
-                  {createCommission.isPending ? "Saving..." : "Save Transaction"}
+                  {createCommission.isPending ? t('money.shared.saving') : t('money.commissions.saveTransaction')}
                 </Button>
               </form>
             </Form>
@@ -320,25 +323,25 @@ export default function Commissions() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-card">
           <CardContent className="p-6">
-            <div className="text-sm font-medium text-muted-foreground mb-1">Total Expected</div>
+            <div className="text-sm font-medium text-muted-foreground mb-1">{t('money.commissions.totalExpected')}</div>
             <div className="text-2xl font-bold">{formatCurrency(totalExpected)}</div>
           </CardContent>
         </Card>
         <Card className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900">
           <CardContent className="p-6">
-            <div className="text-sm font-medium text-emerald-800 dark:text-emerald-400 mb-1">Total Received</div>
+            <div className="text-sm font-medium text-emerald-800 dark:text-emerald-400 mb-1">{t('money.commissions.totalReceived')}</div>
             <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-500">{formatCurrency(totalReceived)}</div>
           </CardContent>
         </Card>
         <Card className="bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900">
           <CardContent className="p-6">
-            <div className="text-sm font-medium text-red-800 dark:text-red-400 mb-1">Overdue (Unpaid)</div>
+            <div className="text-sm font-medium text-red-800 dark:text-red-400 mb-1">{t('money.commissions.overdueUnpaid')}</div>
             <div className="text-2xl font-bold text-red-700 dark:text-red-500">{formatCurrency(totalOverdue)}</div>
           </CardContent>
         </Card>
         <Card className={`${rateBg} ${rateBorder}`}>
           <CardContent className="p-6">
-            <div className={`text-sm font-medium mb-1 ${totalExpected > 0 ? rateColor.replace('700', '800').replace('500', '400') : 'text-muted-foreground'}`}>Collection Rate</div>
+            <div className={`text-sm font-medium mb-1 ${totalExpected > 0 ? rateColor.replace('700', '800').replace('500', '400') : 'text-muted-foreground'}`}>{t('money.commissions.collectionRate')}</div>
             <div className={`text-2xl font-bold ${rateColor}`}>{totalExpected > 0 ? `${collectionRate.toFixed(1)}%` : '0%'}</div>
           </CardContent>
         </Card>
@@ -346,7 +349,7 @@ export default function Commissions() {
 
       {overdueItems.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold tracking-tight">Overdue by Age</h2>
+          <h2 className="text-lg font-semibold tracking-tight">{t('money.commissions.overdueByAge')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {Object.values(aging).map((b, i) => (
               <Card key={i} className={`bg-card ${b.count === 0 ? 'opacity-40' : ''}`}>
@@ -365,20 +368,20 @@ export default function Commissions() {
 
       {selectedIds.size > 0 && !isAgent && (
         <div className="sticky top-20 z-10 flex flex-wrap items-center justify-between gap-2 bg-primary text-primary-foreground px-4 py-3 rounded-md shadow-md">
-          <div className="text-sm font-medium">{selectedIds.size} selected</div>
+          <div className="text-sm font-medium">{t('money.commissions.selectedCount', { n: selectedIds.size })}</div>
           <div className="flex flex-wrap gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
                   <Button size="sm" variant="secondary" onClick={openBulkDialog} disabled={!sameInsurer}>
-                    Record payment for selected
+                    {t('money.commissions.recordPaymentSelected')}
                   </Button>
                 </span>
               </TooltipTrigger>
-              {!sameInsurer && <TooltipContent>Select commissions from one insurer</TooltipContent>}
+              {!sameInsurer && <TooltipContent>{t('money.commissions.selectOneInsurer')}</TooltipContent>}
             </Tooltip>
             <Button size="sm" variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/20 hover:text-primary-foreground" onClick={() => setSelectedIds(new Set())}>
-              Clear
+              {t('money.commissions.clear')}
             </Button>
           </div>
         </div>
@@ -386,29 +389,29 @@ export default function Commissions() {
 
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search policy, client, insurer..."
-            className="pl-9 bg-card"
+            placeholder={t('money.commissions.searchPlaceholder')}
+            className="ps-9 bg-card"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={handleExportCsv}>
-            <Download className="w-4 h-4 mr-2" /> Export CSV
+            <Download className="w-4 h-4 me-2" /> {t('money.commissions.exportCsv')}
           </Button>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px] bg-card">
-              <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
-              <SelectValue placeholder="Status" />
+              <Filter className="w-4 h-4 me-2 text-muted-foreground" />
+              <SelectValue placeholder={t('money.shared.status')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="part_paid">Part-paid</SelectItem>
-              <SelectItem value="received">Received</SelectItem>
-              <SelectItem value="overdue">Overdue</SelectItem>
+              <SelectItem value="all">{t('money.commissions.allStatuses')}</SelectItem>
+              <SelectItem value="pending">{t('money.status.pending')}</SelectItem>
+              <SelectItem value="part_paid">{t('money.status.part_paid')}</SelectItem>
+              <SelectItem value="received">{t('money.status.received')}</SelectItem>
+              <SelectItem value="overdue">{t('money.status.overdue')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -426,19 +429,19 @@ export default function Commissions() {
                   />
                 </TableHead>
               )}
-              <TableHead>Policy & Client</TableHead>
-              <TableHead>Insurer</TableHead>
-              <TableHead className="text-right">Amount ({getCurrency()})</TableHead>
-              <TableHead>Dates</TableHead>
-              <TableHead>Status</TableHead>
-              {!isAgent && <TableHead className="text-right">Action</TableHead>}
+              <TableHead>{t('money.commissions.policyAndClient')}</TableHead>
+              <TableHead>{t('money.shared.insurer')}</TableHead>
+              <TableHead className="text-end">{t('money.commissions.amountCur', { currency: getCurrency() })}</TableHead>
+              <TableHead>{t('money.commissions.dates')}</TableHead>
+              <TableHead>{t('money.shared.status')}</TableHead>
+              {!isAgent && <TableHead className="text-end">{t('money.shared.action')}</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={isAgent ? 5 : 7} className="text-center py-8">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={isAgent ? 5 : 7} className="text-center py-8">{t('common.loading')}</TableCell></TableRow>
             ) : filteredCommissions?.length === 0 ? (
-              <TableRow><TableCell colSpan={isAgent ? 5 : 7} className="text-center py-8 text-muted-foreground">No commission records found.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={isAgent ? 5 : 7} className="text-center py-8 text-muted-foreground">{t('money.commissions.noRecords')}</TableCell></TableRow>
             ) : (
               filteredCommissions?.map((comm) => {
                 const isOverdue = isOverdueRow(comm);
@@ -463,21 +466,21 @@ export default function Commissions() {
                     <TableCell className="font-medium">
                       {comm.policy?.insurer?.name}
                     </TableCell>
-                    <TableCell className="text-right font-medium">
+                    <TableCell className="text-end font-medium">
                       {formatCurrency(comm.amount)}
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">Expected: {formatDate(comm.expected_date)}</div>
-                      {receivedOn && <div className="text-xs text-emerald-600">Received: {formatDate(receivedOn)}</div>}
+                      <div className="text-sm">{t('money.commissions.expectedOn', { date: formatDate(comm.expected_date) })}</div>
+                      {receivedOn && <div className="text-xs text-emerald-600">{t('money.commissions.receivedOn', { date: formatDate(receivedOn) })}</div>}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap items-center gap-1">
                         {comm.status === 'part_paid' ? (
-                          <Badge variant="warning">Part-paid</Badge>
+                          <Badge variant="warning">{t('money.status.part_paid')}</Badge>
                         ) : (
-                          <Badge variant={getStatusColor(comm.status)} className="capitalize">{comm.status}</Badge>
+                          <Badge variant={getStatusColor(comm.status)} className="capitalize">{t(`money.status.${comm.status}`, { defaultValue: comm.status })}</Badge>
                         )}
-                        {isOverdue && <Badge variant="destructive">Overdue</Badge>}
+                        {isOverdue && <Badge variant="destructive">{t('money.status.overdue')}</Badge>}
                       </div>
                       {comm.status === 'part_paid' && (
                         <div className="text-xs text-muted-foreground mt-1">
@@ -488,17 +491,17 @@ export default function Commissions() {
                         <div className="text-xs mt-1 space-x-2">
                           {Array.from(new Map(((comm.allocations ?? []) as any[]).filter(a => a.receipt?.id).map(a => [a.receipt.id, a.receipt])).values()).map((r: any) => (
                             <Link key={r.id} href={`/receipts/${r.id}`} className="text-primary underline">
-                              Receipt {formatDate(r.received_on)}
+                              {t('money.commissions.receiptLink', { date: formatDate(r.received_on) })}
                             </Link>
                           ))}
                         </div>
                       )}
                     </TableCell>
                     {!isAgent && (
-                      <TableCell className="text-right">
+                      <TableCell className="text-end">
                         {remaining > 0 && (
                           <Button size="sm" variant="outline" onClick={() => openReceiveDialog(comm)}>
-                            <CheckCircle2 className="w-4 h-4 mr-2" /> Record payment
+                            <CheckCircle2 className="w-4 h-4 me-2" /> {t('money.shared.recordPayment')}
                           </Button>
                         )}
                       </TableCell>
@@ -515,29 +518,29 @@ export default function Commissions() {
       <Dialog open={!!payingComm} onOpenChange={(open) => !open && setPayingComm(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Record payment</DialogTitle>
+            <DialogTitle>{t('money.shared.recordPayment')}</DialogTitle>
             <DialogDescription>
-              {payingComm?.policy?.policy_number} - {payingComm?.policy?.insurer?.name}. Remaining {payingComm ? formatCurrency(remainingOf(payingComm)) : ''}.
+              {t('money.commissions.paymentDescription', { policy: payingComm?.policy?.policy_number, insurer: payingComm?.policy?.insurer?.name, amount: payingComm ? formatCurrency(remainingOf(payingComm)) : '' })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Date received</label>
+              <label className="text-sm font-medium">{t('money.shared.dateReceived')}</label>
               <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Amount received ({getCurrency()})</label>
+              <label className="text-sm font-medium">{t('money.shared.amountReceivedCur', { currency: getCurrency() })}</label>
               <Input type="number" step="0.01" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Bank reference (optional)</label>
+              <label className="text-sm font-medium">{t('money.shared.bankReferenceOptional')}</label>
               <Input value={payRef} onChange={(e) => setPayRef(e.target.value)} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPayingComm(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setPayingComm(null)}>{t('common.cancel')}</Button>
             <Button onClick={handleReceive} disabled={createReceipt.isPending || !((toCents(payAmount) ?? 0) > 0) || !payDate}>
-              {createReceipt.isPending ? "Saving..." : "Record payment"}
+              {createReceipt.isPending ? t('money.shared.saving') : t('money.shared.recordPayment')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -548,25 +551,25 @@ export default function Commissions() {
       <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Record payment for selected</DialogTitle>
+            <DialogTitle>{t('money.commissions.recordPaymentSelected')}</DialogTitle>
             <DialogDescription>
-              {selectedComms.length} commission{selectedComms.length === 1 ? '' : 's'}, {formatCurrency(selectedTotal)} in total (each paid in full).
+              {t('money.commissions.bulkDescription', { count: selectedComms.length, total: formatCurrency(selectedTotal) })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Date received</label>
+              <label className="text-sm font-medium">{t('money.shared.dateReceived')}</label>
               <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Bank reference (optional)</label>
+              <label className="text-sm font-medium">{t('money.shared.bankReferenceOptional')}</label>
               <Input value={payRef} onChange={(e) => setPayRef(e.target.value)} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setBulkOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setBulkOpen(false)}>{t('common.cancel')}</Button>
             <Button onClick={handleBulkRecord} disabled={createReceipt.isPending || !sameInsurer || !payDate}>
-              {createReceipt.isPending ? "Saving..." : "Record payment"}
+              {createReceipt.isPending ? t('money.shared.saving') : t('money.shared.recordPayment')}
             </Button>
           </DialogFooter>
         </DialogContent>

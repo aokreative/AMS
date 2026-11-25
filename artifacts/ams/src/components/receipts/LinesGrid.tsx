@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +9,7 @@ import { getCurrency } from '@/lib/money';
 import { emptyRow, parsePastedRows, isMultiCellPaste, rowErrors, rowIsEmpty, formatKes, type GridRow } from '@/lib/receipt-grid';
 
 const FIELDS: (keyof GridRow)[] = ['policyNumber', 'clientName', 'premium', 'commission', 'period'];
-const PLACEHOLDERS = ['Policy no.', 'Client', 'Premium', 'Commission', 'YYYY-MM-DD'];
+const PLACEHOLDER_KEYS = ['money.shared.policyNo', 'money.shared.client', 'money.shared.premium', 'money.shared.commission', 'money.grid.periodPlaceholder'];
 
 export function LinesGrid({
   rows,
@@ -19,6 +20,7 @@ export function LinesGrid({
   onChange: (rows: GridRow[]) => void;
   amountCents: number | null;
 }) {
+  const { t } = useTranslation();
   const focusCell = (r: number, c: number) => {
     setTimeout(() => {
       document.querySelector<HTMLInputElement>(`[data-cell="${r}-${c}"]`)?.focus();
@@ -59,18 +61,17 @@ export function LinesGrid({
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        Type a row and press Enter for the next one, or paste rows copied from the statement (tab or comma separated:
-        policy no., client, premium, commission, period).
+        {t('money.grid.intro')}
       </p>
       <div className="border rounded-md bg-card overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[140px]">Policy no.</TableHead>
-              <TableHead className="min-w-[160px]">Client</TableHead>
-              <TableHead className="min-w-[110px]">Premium</TableHead>
-              <TableHead className="min-w-[120px]">Commission</TableHead>
-              <TableHead className="min-w-[130px]">Period</TableHead>
+              <TableHead className="min-w-[140px]">{t('money.shared.policyNo')}</TableHead>
+              <TableHead className="min-w-[160px]">{t('money.shared.client')}</TableHead>
+              <TableHead className="min-w-[110px]">{t('money.shared.premium')}</TableHead>
+              <TableHead className="min-w-[120px]">{t('money.shared.commission')}</TableHead>
+              <TableHead className="min-w-[130px]">{t('money.shared.period')}</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
@@ -86,7 +87,7 @@ export function LinesGrid({
                       <Input
                         data-cell={`${r}-${c}`}
                         value={row[field]}
-                        placeholder={PLACEHOLDERS[c]}
+                        placeholder={t(PLACEHOLDER_KEYS[c])}
                         inputMode={field === 'premium' || field === 'commission' ? 'decimal' : undefined}
                         aria-invalid={(field === 'commission' && err.amount) || (field === 'premium' && err.premium) || (field === 'period' && err.date) || undefined}
                         className={
@@ -104,21 +105,21 @@ export function LinesGrid({
                         }}
                       />
                       {field === 'premium' && err.premium && (
-                        <div className="text-xs text-destructive mt-1">Check this amount</div>
+                        <div className="text-xs text-destructive mt-1">{t('money.grid.checkAmount')}</div>
                       )}
                       {field === 'commission' && err.amount && (
-                        <div className="text-xs text-destructive mt-1">Check this amount</div>
+                        <div className="text-xs text-destructive mt-1">{t('money.grid.checkAmount')}</div>
                       )}
                       {field === 'commission' && isReversal && (
-                        <Badge variant="warning" className="mt-1">Reversal</Badge>
+                        <Badge variant="warning" className="mt-1">{t('money.grid.reversal')}</Badge>
                       )}
                       {field === 'period' && err.date && (
-                        <div className="text-xs text-destructive mt-1">Check this date</div>
+                        <div className="text-xs text-destructive mt-1">{t('money.grid.checkDate')}</div>
                       )}
                     </TableCell>
                   ))}
                   <TableCell className="p-1 align-top">
-                    <Button type="button" variant="ghost" size="icon" aria-label="Remove row" onClick={() => removeRow(r)}>
+                    <Button type="button" variant="ghost" size="icon" aria-label={t('money.grid.removeRow')} onClick={() => removeRow(r)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
@@ -130,12 +131,12 @@ export function LinesGrid({
       </div>
       <div className="flex items-center justify-between flex-wrap gap-2">
         <Button type="button" variant="outline" size="sm" onClick={() => addRowAfter(rows.length - 1)}>
-          Add row
+          {t('money.grid.addRow')}
         </Button>
         <div className="text-sm">
-          Lines total {getCurrency()} {formatKes(linesTotal)} vs received {getCurrency()} {amountCents === null ? '—' : formatKes(amountCents)}
+          {t('money.grid.totals', { currency: getCurrency(), lines: formatKes(linesTotal), received: amountCents === null ? '—' : formatKes(amountCents) })}
           {diff !== null && diff !== 0 && (
-            <span className={diff > 0 ? 'text-destructive ml-2' : 'text-muted-foreground ml-2'}>
+            <span className={diff > 0 ? 'text-destructive ms-2' : 'text-muted-foreground ms-2'}>
               ({diff > 0 ? '+' : '-'}{getCurrency()} {formatKes(Math.abs(diff))})
             </span>
           )}

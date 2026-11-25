@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearch } from 'wouter';
 import { Plus, Search, Loader2, BellRing } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLeadAction, useLeads } from '@/hooks/leads';
 import { useAgencyMembers } from '@/hooks/team';
@@ -11,7 +12,7 @@ import { LeadDrawer } from '@/components/leads/LeadDrawer';
 import { LeadForm } from '@/components/leads/LeadForm';
 import { StagePill } from '@/components/leads/StagePill';
 import { FollowUpPicker } from '@/components/leads/FollowUpPicker';
-import { LEAD_STAGES, followUpState, nextStages, stageLabel, type Lead, type LeadStage } from '@/lib/leads';
+import { LEAD_STAGES, followUpState, nextStages, type Lead, type LeadStage } from '@/lib/leads';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { todayNairobi } from '@/lib/subscription';
 
@@ -26,6 +27,7 @@ function LeadCard({ lead, today, onOpen, draggable, showStage }: {
   draggable?: boolean;
   showStage?: boolean;
 }) {
+  const { t } = useTranslation();
   const fu = followUpState(lead, today);
   return (
     // A plain container: the name is the button that opens the lead (keyboard and screen readers);
@@ -48,7 +50,7 @@ function LeadCard({ lead, today, onOpen, draggable, showStage }: {
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onOpen(); }}
-            aria-label={`Open ${lead.full_name}, ${stageLabel(lead.stage)}`}
+            aria-label={t('workspace.leads.open', { name: lead.full_name, stage: t(`workspace.stage.${lead.stage}`) })}
             className="max-w-full truncate rounded text-start font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {lead.full_name}
@@ -64,7 +66,7 @@ function LeadCard({ lead, today, onOpen, draggable, showStage }: {
         {lead.agent?.full_name && <span>{lead.agent.full_name}</span>}
         {lead.next_follow_up && fu !== 'none' && (
           <span className={cn(fu === 'overdue' && 'font-medium text-overdue', fu === 'due' && 'font-medium text-due')}>
-            {fu === 'overdue' ? `Follow-up overdue (${formatDate(lead.next_follow_up)})` : fu === 'due' ? 'Follow up today' : `Follow up ${formatDate(lead.next_follow_up)}`}
+            {fu === 'overdue' ? t('workspace.leads.overdue', { date: formatDate(lead.next_follow_up) }) : fu === 'due' ? t('workspace.leads.dueToday') : t('workspace.leads.upcoming', { date: formatDate(lead.next_follow_up) })}
           </span>
         )}
       </div>
@@ -79,6 +81,7 @@ function LeadCard({ lead, today, onOpen, draggable, showStage }: {
 
 /** Leads: pick a group (All, New, Contacted, …) and it fills the screen. */
 export default function Leads() {
+  const { t } = useTranslation();
   const { isOwnerOrManager } = useAuth();
   const { data: leads, isLoading, error } = useLeads();
   const { data: members } = useAgencyMembers();
@@ -134,19 +137,19 @@ export default function Leads() {
     setDropTarget(null);
     const lead = leads?.find((l) => l.id === id);
     if (!lead || !(nextStages(lead.stage) as LeadStage[]).includes(to)) return;
-    if (to === 'paid' && !window.confirm(`Mark ${lead.full_name} as paid? This closes the lead.`)) return;
+    if (to === 'paid' && !window.confirm(t('workspace.leads.confirmPaid', { name: lead.full_name }))) return;
     move.mutate({ rpc: 'move_lead', args: { p_lead_id: id, p_to: to } });
   };
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-muted-foreground">People who might buy cover, from first call to paid policy.</p>
-        <Button onClick={() => setAdding(true)}><Plus className="me-1.5 h-4 w-4" />Add lead</Button>
+        <p className="text-muted-foreground">{t('workspace.leads.intro')}</p>
+        <Button onClick={() => setAdding(true)}><Plus className="me-1.5 h-4 w-4" />{t('workspace.leads.add')}</Button>
       </div>
 
       {/* Group switcher */}
-      <div role="group" aria-label="Lead groups" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
+      <div role="group" aria-label={t('workspace.leads.groups')} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
         {VIEWS.map((v) => (
           <button
             key={v}
@@ -159,7 +162,7 @@ export default function Leads() {
             )}
           >
             <span className="flex items-baseline gap-2">
-              <span className="text-sm font-medium">{v === 'all' ? 'All' : stageLabel(v)}</span>
+              <span className="text-sm font-medium">{v === 'all' ? t('workspace.leads.all') : t(`workspace.stage.${v}`)}</span>
               <span className={cn('font-display text-lg font-bold tabular-nums', view !== v && 'text-muted-foreground')}>{count(v)}</span>
             </span>
             {v !== 'lost' && value(v) > 0 && (
@@ -173,19 +176,19 @@ export default function Leads() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative sm:w-72">
           <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="ps-8" placeholder="Name, phone or what they want" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search leads" />
+          <Input className="ps-8" placeholder={t('workspace.leads.searchPlaceholder')} value={q} onChange={(e) => setQ(e.target.value)} aria-label={t('workspace.leads.searchLabel')} />
         </div>
         {isOwnerOrManager && (
           <Select value={agent} onValueChange={setAgent}>
-            <SelectTrigger className="sm:w-52" aria-label="Agent"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="sm:w-52" aria-label={t('workspace.leads.agent')}><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All agents</SelectItem>
+              <SelectItem value={ALL}>{t('workspace.leads.allAgents')}</SelectItem>
               {members?.map((m) => <SelectItem key={m.id} value={m.id}>{m.full_name}</SelectItem>)}
             </SelectContent>
           </Select>
         )}
         <Button variant={dueOnly ? 'default' : 'outline'} onClick={() => setDueOnly((v) => !v)} aria-pressed={dueOnly}>
-          <BellRing className="me-1.5 h-4 w-4" />Follow-ups due{dueCount > 0 && <span className="ms-1.5 tabular-nums">{dueCount}</span>}
+          <BellRing className="me-1.5 h-4 w-4" />{t('workspace.leads.due')}{dueCount > 0 && <span className="ms-1.5 tabular-nums">{dueCount}</span>}
         </Button>
       </div>
 
@@ -195,9 +198,9 @@ export default function Leads() {
 
       {!isLoading && (leads?.length ?? 0) === 0 && (
         <div className="rounded-2xl border border-dashed p-10 text-center">
-          <p className="font-display text-lg font-semibold">Add your first lead</p>
-          <p className="mt-1 text-sm text-muted-foreground">Add the people asking about cover, then log each call or WhatsApp and set when to follow up.</p>
-          <Button className="mt-4" onClick={() => setAdding(true)}><Plus className="me-1.5 h-4 w-4" />Add lead</Button>
+          <p className="font-display text-lg font-semibold">{t('workspace.leads.emptyTitle')}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t('workspace.leads.emptyBody')}</p>
+          <Button className="mt-4" onClick={() => setAdding(true)}><Plus className="me-1.5 h-4 w-4" />{t('workspace.leads.add')}</Button>
         </div>
       )}
 
@@ -241,7 +244,7 @@ export default function Leads() {
       {!isLoading && (leads?.length ?? 0) > 0 && view !== 'all' && (
         shown.length === 0 ? (
           <p className="rounded-2xl border border-dashed py-12 text-center text-sm text-muted-foreground">
-            No {stageLabel(view).toLowerCase()} leads{q || dueOnly || agent !== ALL ? ' match these filters' : ''}.
+            {t(q || dueOnly || agent !== ALL ? 'workspace.leads.noneFiltered' : 'workspace.leads.noneInStage', { stage: t(`workspace.stage.${view}`) })}
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

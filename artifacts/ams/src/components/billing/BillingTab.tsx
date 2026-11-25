@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { format, parseISO } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,15 +10,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePayments, useSubscriptionUsage } from '@/hooks/subscription';
 import { agencyAccess, daysLeft, formatKes, tierName, TIERS, todayNairobi } from '@/lib/subscription';
 import { PayDialog } from './PayDialog';
+import { usePlanPrice } from '@/hooks/fx';
+import { formatDate } from '@/lib/utils';
 
-const fmt = (d: string) => format(parseISO(d), 'd MMM yyyy');
+const fmt = (d: string) => formatDate(d);
 
 function UsageRow({ label, used, max }: { label: string; used: number; max: number | null }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-sm">
         <span>{label}</span>
-        <span className="text-muted-foreground">{max == null ? `${used} · unlimited` : `${used} of ${max}`}</span>
+        <span className="text-muted-foreground">{max == null ? t('billing.usedUnlimited', { used }) : t('billing.usedOf', { used, max })}</span>
       </div>
       {max != null && <Progress value={Math.min(100, (used / max) * 100)} />}
     </div>
@@ -26,6 +29,8 @@ function UsageRow({ label, used, max }: { label: string; used: number; max: numb
 }
 
 export function BillingTab({ welcome }: { welcome?: boolean }) {
+  const { t } = useTranslation();
+  const price = usePlanPrice();
   const { agency } = useAuth();
   const { data: payments } = usePayments();
   const { data: usage } = useSubscriptionUsage();
@@ -36,13 +41,13 @@ export function BillingTab({ welcome }: { welcome?: boolean }) {
   const access = agencyAccess(agency, today);
   const left = daysLeft(agency, today);
   const comped = !!agency.complimentary_until && agency.complimentary_until >= today;
-  const tier = TIERS.find((t) => t.key === agency.subscription_tier);
+  const tier = TIERS.find((x) => x.key === agency.subscription_tier);
 
   let status: React.ReactNode;
-  if (comped) status = <>Complimentary until {fmt(agency.complimentary_until!)}</>;
-  else if (access === 'active') status = <>Active until {fmt(agency.paid_until!)}</>;
-  else if (access === 'grace') status = <>Expired {fmt(agency.paid_until!)}: {3 + (left ?? 0) + 1} day{3 + (left ?? 0) + 1 === 1 ? '' : 's'} of grace left</>;
-  else status = agency.paid_until ? <>Access stopped on {fmt(agency.paid_until)}. Pay to keep working.</> : <>No plan yet. Pick a plan to start.</>;
+  if (comped) status = t('billing.statusComped', { date: fmt(agency.complimentary_until!) });
+  else if (access === 'active') status = t('billing.statusActive', { date: fmt(agency.paid_until!) });
+  else if (access === 'grace') status = t('billing.statusGrace', { date: fmt(agency.paid_until!), count: 3 + (left ?? 0) + 1 });
+  else status = agency.paid_until ? t('billing.statusStopped', { date: fmt(agency.paid_until) }) : t('billing.statusNone');
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -52,11 +57,11 @@ export function BillingTab({ welcome }: { welcome?: boolean }) {
             <div className="flex items-start gap-3">
               <Sparkles className="mt-0.5 h-5 w-5 text-primary" />
               <div>
-                <p className="font-semibold">Welcome! Pick a plan to start</p>
-                <p className="text-sm text-muted-foreground">Your agency opens once the first payment goes through. Pay with M-Pesa or card.</p>
+                <p className="font-semibold">{t('billing.welcomeTitle')}</p>
+                <p className="text-sm text-muted-foreground">{t('billing.welcomeBody')}</p>
               </div>
             </div>
-            <Button onClick={() => setPayOpen(true)}>Choose a plan</Button>
+            <Button onClick={() => setPayOpen(true)}>{t('billing.choosePlan')}</Button>
           </CardContent>
         </Card>
       )}
@@ -64,53 +69,54 @@ export function BillingTab({ welcome }: { welcome?: boolean }) {
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
           <div>
-            <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" /> {tierName(agency.subscription_tier)} plan</CardTitle>
+            <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" /> {t('billing.planName', { plan: tierName(agency.subscription_tier) })}</CardTitle>
             <CardDescription className="mt-1">{status}</CardDescription>
           </div>
           <div className="flex flex-col items-end gap-2">
             <Badge variant={access === 'active' ? 'secondary' : 'destructive'}>
-              {comped ? 'Complimentary' : access === 'active' ? 'Active' : access === 'grace' ? 'Grace period' : 'Unpaid'}
+              {comped ? t('billing.badgeComped') : access === 'active' ? t('billing.badgeActive') : access === 'grace' ? t('billing.badgeGrace') : t('billing.badgeUnpaid')}
             </Badge>
-            {!comped && <Button size="sm" onClick={() => setPayOpen(true)}>{access === 'active' ? 'Renew or upgrade' : 'Pay now'}</Button>}
+            {!comped && <Button size="sm" onClick={() => setPayOpen(true)}>{access === 'active' ? t('billing.renew') : t('billing.payNow')}</Button>}
           </div>
         </CardHeader>
         {usage && tier && (
           <CardContent className="space-y-4">
-            <UsageRow label="Team members (incl. pending invites)" used={usage.members + usage.pending_invites} max={comped ? null : tier.max_members} />
-            <UsageRow label="Active policies" used={usage.active_policies} max={comped ? null : tier.max_active_policies} />
-            <p className="text-xs text-muted-foreground">{formatKes(tier.price_kes)} per month. Pay 1, 3, 6 or 12 months at a time; time adds on to your current paid period.</p>
+            <UsageRow label={t('billing.usageMembers')} used={usage.members + usage.pending_invites} max={comped ? null : tier.max_members} />
+            <UsageRow label={t('billing.usagePolicies')} used={usage.active_policies} max={comped ? null : tier.max_active_policies} />
+            <p className="text-xs text-muted-foreground">{t('billing.perMonthLine', { price: price.main(tier.price_kes) })}
+              {price.charged(tier.price_kes) && <> {t('billing.approxNote', { currency: price.currency })}</>}</p>
           </CardContent>
         )}
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Payments</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">{t('billing.payments')}</CardTitle></CardHeader>
         <CardContent className="overflow-x-auto">
           {payments && payments.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead><TableHead>Plan</TableHead><TableHead>Months</TableHead>
-                  <TableHead className="text-right">Amount</TableHead><TableHead>Method</TableHead><TableHead>Status</TableHead>
+                  <TableHead>{t('billing.colDate')}</TableHead><TableHead>{t('billing.colPlan')}</TableHead><TableHead>{t('billing.colMonths')}</TableHead>
+                  <TableHead className="text-end">{t('billing.colAmount')}</TableHead><TableHead>{t('billing.colMethod')}</TableHead><TableHead>{t('billing.colStatus')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {payments.map((p) => (
                   <TableRow key={p.id}>
-                    <TableCell className="whitespace-nowrap">{format(new Date(p.paid_at ?? p.created_at), 'd MMM yyyy')}</TableCell>
+                    <TableCell className="whitespace-nowrap">{fmt(p.paid_at ?? p.created_at)}</TableCell>
                     <TableCell>{tierName(p.tier)}</TableCell>
-                    <TableCell>{p.months === 0 ? 'Upgrade' : p.months}</TableCell>
-                    <TableCell className="text-right whitespace-nowrap">{formatKes(p.amount_kes)}</TableCell>
-                    <TableCell className="capitalize">{p.channel === 'mobile_money' ? 'M-Pesa' : p.channel ?? '—'}</TableCell>
+                    <TableCell>{p.months === 0 ? t('billing.upgrade') : p.months}</TableCell>
+                    <TableCell className="text-end whitespace-nowrap">{formatKes(p.amount_kes)}</TableCell>
+                    <TableCell>{p.channel === 'mobile_money' ? 'M-Pesa' : p.channel === 'card' ? t('billing.card') : p.channel ?? '—'}</TableCell>
                     <TableCell>
-                      <Badge variant={p.status === 'paid' ? 'secondary' : p.status === 'failed' ? 'destructive' : 'outline'} className="capitalize">{p.status === 'needs_review' ? 'Held for review' : p.status}</Badge>
+                      <Badge variant={p.status === 'paid' ? 'secondary' : p.status === 'failed' ? 'destructive' : 'outline'} >{p.status === 'needs_review' ? t('billing.heldForReview') : p.status === 'paid' ? t('billing.paid') : p.status === 'failed' ? t('billing.failed') : t('billing.pending')}</Badge>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           ) : (
-            <p className="text-sm text-muted-foreground">No payments yet.</p>
+            <p className="text-sm text-muted-foreground">{t('billing.noPayments')}</p>
           )}
         </CardContent>
       </Card>

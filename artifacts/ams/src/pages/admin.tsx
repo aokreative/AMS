@@ -6,6 +6,7 @@ import { useAdminAction, useAdminAgencies, useAdminAgencyDetail, useAdminOvervie
 import { ADMIN_STATUSES, matchesSearch, type AdminAgencyRow, type AdminRpc, type AdminStatus } from '@/lib/admin';
 import { formatKes, tierName, TIERS, todayNairobi } from '@/lib/subscription';
 import { BrandMark } from '@/components/BrandLockup';
+import { ExchangeRatesCard } from '@/components/admin/ExchangeRatesCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -232,6 +233,8 @@ export default function Admin() {
             </TableBody>
           </Table>
         </Card>
+
+        <ExchangeRatesCard />
       </main>
 
       <Sheet open={!!open} onOpenChange={(o) => { if (!o) setOpenId(null); }}>

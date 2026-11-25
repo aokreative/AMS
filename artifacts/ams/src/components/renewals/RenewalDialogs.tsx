@@ -1,5 +1,7 @@
 import { getCurrency } from '@/lib/money';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,9 +34,10 @@ const today = () => format(new Date(), 'yyyy-MM-dd');
 
 function useErrorToast() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   return (err: unknown) =>
     toast({
-      title: 'Could not save',
+      title: t('policies.couldNotSave'),
       description: err instanceof Error ? err.message : String((err as { message?: string })?.message ?? err),
       variant: 'destructive',
     });
@@ -46,6 +49,7 @@ interface DialogProps {
 }
 
 function ContactDialog({ row, onClose }: DialogProps) {
+  const { t } = useTranslation();
   const [channel, setChannel] = useState<RenewalChannel>('phone');
   const [date, setDate] = useState(today());
   const [note, setNote] = useState('');
@@ -67,7 +71,7 @@ function ContactDialog({ row, onClose }: DialogProps) {
       { policyId: row.policy_id, channel, occurredOn: date, note },
       {
         onSuccess: () => {
-          toast({ title: 'Contact logged' });
+          toast({ title: t('policies.contactLogged') });
           onClose();
         },
         onError,
@@ -79,14 +83,14 @@ function ContactDialog({ row, onClose }: DialogProps) {
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Log contact</DialogTitle>
+          <DialogTitle>{t('policies.logContact')}</DialogTitle>
           <DialogDescription>
-            {row?.client_name ?? 'Client'} · {row?.policy_number}
+            {row?.client_name ?? t('policies.clientFallback')} · {row?.policy_number}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Channel</Label>
+            <Label>{t('policies.channelLabel')}</Label>
             <Select value={channel} onValueChange={(v) => setChannel(v as RenewalChannel)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -97,17 +101,17 @@ function ContactDialog({ row, onClose }: DialogProps) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="contact-date">Date</Label>
+            <Label htmlFor="contact-date">{t('policies.date')}</Label>
             <Input id="contact-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="contact-note">Note (optional)</Label>
+            <Label htmlFor="contact-note">{t('policies.noteOptional')}</Label>
             <Textarea id="contact-note" value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
         </div>
         <DialogFooter>
           <Button onClick={save} disabled={!date || logContact.isPending}>
-            {logContact.isPending ? 'Saving…' : 'Save'}
+            {logContact.isPending ? t('policies.saving') : t('common.save')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -116,6 +120,7 @@ function ContactDialog({ row, onClose }: DialogProps) {
 }
 
 function QuoteDialog({ row, onClose }: DialogProps) {
+  const { t } = useTranslation();
   const { data: insurers } = useInsurers();
   const [insurerId, setInsurerId] = useState('');
   const [premium, setPremium] = useState('');
@@ -141,7 +146,7 @@ function QuoteDialog({ row, onClose }: DialogProps) {
       { policyId: row.policy_id, insurerId, premium: fromCents(premiumCents), note },
       {
         onSuccess: () => {
-          toast({ title: 'Quote recorded' });
+          toast({ title: t('policies.quoteRecorded') });
           onClose();
         },
         onError,
@@ -153,16 +158,16 @@ function QuoteDialog({ row, onClose }: DialogProps) {
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Record quote</DialogTitle>
+          <DialogTitle>{t('policies.recordQuote')}</DialogTitle>
           <DialogDescription>
-            {row?.client_name ?? 'Client'} · {row?.policy_number}
+            {row?.client_name ?? t('policies.clientFallback')} · {row?.policy_number}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Insurer</Label>
+            <Label>{t('policies.insurer')}</Label>
             <Select value={insurerId} onValueChange={setInsurerId}>
-              <SelectTrigger><SelectValue placeholder="Pick an insurer" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t('policies.pickInsurer')} /></SelectTrigger>
               <SelectContent>
                 {(insurers ?? []).map((i) => (
                   <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
@@ -171,17 +176,17 @@ function QuoteDialog({ row, onClose }: DialogProps) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="quote-premium">Premium ({getCurrency()})</Label>
+            <Label htmlFor="quote-premium">{t('policies.premium', { currency: getCurrency() })}</Label>
             <Input id="quote-premium" inputMode="decimal" value={premium} onChange={(e) => setPremium(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="quote-note">Note (optional)</Label>
+            <Label htmlFor="quote-note">{t('policies.noteOptional')}</Label>
             <Textarea id="quote-note" value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
         </div>
         <DialogFooter>
           <Button onClick={save} disabled={!valid || recordQuote.isPending}>
-            {recordQuote.isPending ? 'Saving…' : 'Save'}
+            {recordQuote.isPending ? t('policies.saving') : t('common.save')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -190,6 +195,7 @@ function QuoteDialog({ row, onClose }: DialogProps) {
 }
 
 function LostDialog({ row, onClose }: DialogProps) {
+  const { t } = useTranslation();
   const [reason, setReason] = useState<LostReason | ''>('');
   const [note, setNote] = useState('');
   const markLost = useMarkLost();
@@ -209,7 +215,7 @@ function LostDialog({ row, onClose }: DialogProps) {
       { policyId: row.policy_id, reason, note },
       {
         onSuccess: () => {
-          toast({ title: 'Marked lost' });
+          toast({ title: t('policies.markedLost') });
           onClose();
         },
         onError,
@@ -221,16 +227,16 @@ function LostDialog({ row, onClose }: DialogProps) {
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Mark lost</DialogTitle>
+          <DialogTitle>{t('policies.markLost')}</DialogTitle>
           <DialogDescription>
-            {row?.client_name ?? 'Client'} · {row?.policy_number}
+            {row?.client_name ?? t('policies.clientFallback')} · {row?.policy_number}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Reason</Label>
+            <Label>{t('policies.reason')}</Label>
             <Select value={reason} onValueChange={(v) => setReason(v as LostReason)}>
-              <SelectTrigger><SelectValue placeholder="Pick a reason" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t('policies.pickReason')} /></SelectTrigger>
               <SelectContent>
                 {LOST_REASONS.map((r) => (
                   <SelectItem key={r} value={r}>{lostReasonLabel(r)}</SelectItem>
@@ -239,13 +245,13 @@ function LostDialog({ row, onClose }: DialogProps) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="lost-note">Note (optional)</Label>
+            <Label htmlFor="lost-note">{t('policies.noteOptional')}</Label>
             <Textarea id="lost-note" value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
         </div>
         <DialogFooter>
           <Button variant="destructive" onClick={save} disabled={!reason || markLost.isPending}>
-            {markLost.isPending ? 'Saving…' : 'Mark lost'}
+            {markLost.isPending ? t('policies.saving') : t('policies.markLost')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -253,28 +259,31 @@ function LostDialog({ row, onClose }: DialogProps) {
   );
 }
 
-const renewSchema = z
-  .object({
-    policy_number: z.string().trim().min(1, 'Enter the policy number'),
-    insurer_id: z.string().min(1, 'Required'),
-    product_line_id: z.string().min(1, 'Required'),
-    premium_amount: z.coerce.number().positive('Enter a premium'),
-    commission_rate: z.coerce.number().min(0).max(100),
-    start_date: z.string().min(1, 'Required'),
-    expiry_date: z.string().min(1, 'Required'),
-    notes: z.string().optional(),
-    ...commissionFields,
-  })
-  .superRefine((v, ctx) => {
-    refineCommission(v, ctx);
-    if (v.start_date && v.expiry_date && v.expiry_date <= v.start_date) {
-      ctx.addIssue({ code: 'custom', path: ['expiry_date'], message: 'Expiry must be after the start date' });
-    }
-  });
+const makeRenewSchema = (t: TFunction) =>
+  z
+    .object({
+      policy_number: z.string().trim().min(1, t('policies.enterPolicyNumber')),
+      insurer_id: z.string().min(1, t('policies.required')),
+      product_line_id: z.string().min(1, t('policies.required')),
+      premium_amount: z.coerce.number().positive(t('policies.enterPremium')),
+      commission_rate: z.coerce.number().min(0).max(100),
+      start_date: z.string().min(1, t('policies.required')),
+      expiry_date: z.string().min(1, t('policies.required')),
+      notes: z.string().optional(),
+      ...commissionFields,
+    })
+    .superRefine((v, ctx) => {
+      refineCommission(v, ctx);
+      if (v.start_date && v.expiry_date && v.expiry_date <= v.start_date) {
+        ctx.addIssue({ code: 'custom', path: ['expiry_date'], message: t('policies.expiryAfterStart') });
+      }
+    });
 
-type RenewValues = z.input<typeof renewSchema>;
+type RenewValues = z.input<ReturnType<typeof makeRenewSchema>>;
 
 function RenewDialog({ row, onClose }: DialogProps) {
+  const { t } = useTranslation();
+  const renewSchema = useMemo(() => makeRenewSchema(t), [t]);
   const { data: old } = usePolicyForRenewal(row?.policy_id);
   const { data: insurers } = useInsurers();
   const { data: productLines } = useProductLines();
@@ -328,7 +337,7 @@ function RenewDialog({ row, onClose }: DialogProps) {
       },
       {
         onSuccess: () => {
-          toast({ title: 'Renewed', description: `New policy ${cols.policy_number.trim()} created.` });
+          toast({ title: t('policies.renewed'), description: t('policies.newPolicyCreated', { number: cols.policy_number.trim() }) });
           onClose();
         },
         onError,
@@ -342,14 +351,13 @@ function RenewDialog({ row, onClose }: DialogProps) {
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Renew policy</DialogTitle>
+          <DialogTitle>{t('policies.renewTitle')}</DialogTitle>
           <DialogDescription>
-            Creates the next term for {row?.client_name ?? 'this client'} with the same agent, and marks{' '}
-            {row?.policy_number} expired.
+            {t('policies.renewDescription', { client: row?.client_name ?? t('policies.thisClient'), policy: row?.policy_number })}
           </DialogDescription>
         </DialogHeader>
         {!ready ? (
-          <div className="py-6 text-center text-sm text-muted-foreground">Loading policy…</div>
+          <div className="py-6 text-center text-sm text-muted-foreground">{t('policies.loadingPolicy')}</div>
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -358,7 +366,7 @@ function RenewDialog({ row, onClose }: DialogProps) {
                 name="policy_number"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Policy number</FormLabel>
+                    <FormLabel>{t('policies.policyNumber')}</FormLabel>
                     <FormControl><Input {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -370,7 +378,7 @@ function RenewDialog({ row, onClose }: DialogProps) {
                   name="insurer_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Insurer</FormLabel>
+                      <FormLabel>{t('policies.insurer')}</FormLabel>
                       <Select value={field.value} onValueChange={field.onChange}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
@@ -388,7 +396,7 @@ function RenewDialog({ row, onClose }: DialogProps) {
                   name="product_line_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Product line</FormLabel>
+                      <FormLabel>{t('policies.productLine')}</FormLabel>
                       <Select value={field.value} onValueChange={field.onChange}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
@@ -406,7 +414,7 @@ function RenewDialog({ row, onClose }: DialogProps) {
                   name="premium_amount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Premium ({getCurrency()})</FormLabel>
+                      <FormLabel>{t('policies.premium', { currency: getCurrency() })}</FormLabel>
                       <FormControl><Input type="number" step="0.01" {...field} value={field.value as number | string ?? ''} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -417,7 +425,7 @@ function RenewDialog({ row, onClose }: DialogProps) {
                   name="commission_rate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Commission rate (%)</FormLabel>
+                      <FormLabel>{t('policies.commissionRate')}</FormLabel>
                       <FormControl><Input type="number" step="0.01" {...field} value={field.value as number | string ?? ''} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -428,7 +436,7 @@ function RenewDialog({ row, onClose }: DialogProps) {
                   name="start_date"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Start date</FormLabel>
+                      <FormLabel>{t('policies.startDate')}</FormLabel>
                       <FormControl><Input type="date" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -439,7 +447,7 @@ function RenewDialog({ row, onClose }: DialogProps) {
                   name="expiry_date"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Expiry date</FormLabel>
+                      <FormLabel>{t('policies.expiryDate')}</FormLabel>
                       <FormControl><Input type="date" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -452,7 +460,7 @@ function RenewDialog({ row, onClose }: DialogProps) {
                 name="notes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Notes (optional)</FormLabel>
+                    <FormLabel>{t('policies.notesOptional')}</FormLabel>
                     <FormControl><Textarea {...field} value={field.value ?? ''} /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -460,7 +468,7 @@ function RenewDialog({ row, onClose }: DialogProps) {
               />
               <DialogFooter>
                 <Button type="submit" disabled={renew.isPending}>
-                  {renew.isPending ? 'Renewing…' : 'Renew'}
+                  {renew.isPending ? t('policies.renewing') : t('policies.renew')}
                 </Button>
               </DialogFooter>
             </form>

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PasswordInput } from '@/components/PasswordInput';
 import { useLocation } from 'wouter';
 import { supabase } from '@/lib/supabase';
-import { newPasswordError, MIN_PASSWORD_LENGTH } from '@/lib/auth';
+import { MIN_PASSWORD_LENGTH } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +15,7 @@ type Status = 'checking' | 'ready' | 'invalid' | 'done';
 
 /** Landing page of the emailed reset link: the link signs the user in, then they choose a new password. */
 export default function ResetPassword() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [status, setStatus] = useState<Status>('checking');
   const [password, setPassword] = useState('');
@@ -58,7 +60,12 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const problem = newPasswordError(password, confirm);
+    const problem =
+      password.length < MIN_PASSWORD_LENGTH
+        ? t('workspace.reset.tooShort', { min: MIN_PASSWORD_LENGTH })
+        : password !== confirm
+          ? t('workspace.reset.mismatch')
+          : null;
     if (problem) {
       setError(problem);
       return;
@@ -70,8 +77,8 @@ export default function ResetPassword() {
     if (updateError) {
       setError(
         updateError.message.toLowerCase().includes('different from the old')
-          ? 'Choose a password different from your current one.'
-          : updateError.message || 'Could not save the new password. Please try again.',
+          ? t('workspace.reset.mustDiffer')
+          : updateError.message || t('workspace.reset.failed'),
       );
       return;
     }
@@ -88,13 +95,13 @@ export default function ResetPassword() {
 
         <Card className="border-border/50 shadow-xl">
           <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-2xl font-bold tracking-tight text-center">Set a new password</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight text-center">{t('workspace.reset.title')}</CardTitle>
             <CardDescription className="text-center">
               {status === 'invalid'
-                ? 'This reset link has expired or was already used.'
+                ? t('workspace.reset.invalid')
                 : status === 'done'
-                  ? 'Password updated. Taking you to your dashboard…'
-                  : `Choose a password with at least ${MIN_PASSWORD_LENGTH} characters.`}
+                  ? t('workspace.reset.done')
+                  : t('workspace.reset.choose', { min: MIN_PASSWORD_LENGTH })}
             </CardDescription>
           </CardHeader>
 
@@ -107,10 +114,10 @@ export default function ResetPassword() {
           {status === 'invalid' && (
             <CardFooter className="flex flex-col space-y-3 pt-2">
               <Button className="w-full" onClick={() => setLocation('/forgot-password')}>
-                Request a new link
+                {t('workspace.reset.requestNew')}
               </Button>
               <a href="/login" className="text-xs text-primary font-medium hover:underline">
-                Back to sign in
+                {t('workspace.forgot.backToSignIn')}
               </a>
             </CardFooter>
           )}
@@ -131,7 +138,7 @@ export default function ResetPassword() {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <Label htmlFor="new-password">New password</Label>
+                  <Label htmlFor="new-password">{t('workspace.reset.newPassword')}</Label>
                   <PasswordInput
                     id="new-password"
                     value={password}
@@ -143,7 +150,7 @@ export default function ResetPassword() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm new password</Label>
+                  <Label htmlFor="confirm-password">{t('workspace.reset.confirm')}</Label>
                   <PasswordInput
                     id="confirm-password"
                     value={confirm}
@@ -156,8 +163,8 @@ export default function ResetPassword() {
               </CardContent>
               <CardFooter className="pt-4">
                 <Button type="submit" className="w-full" disabled={saving}>
-                  {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Save new password
+                  {saving && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
+                  {t('workspace.reset.save')}
                 </Button>
               </CardFooter>
             </form>

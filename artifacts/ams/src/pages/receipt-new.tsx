@@ -1,6 +1,7 @@
 import { getCurrency } from '@/lib/money';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInsurers } from '@/hooks/queries';
 import {
@@ -32,6 +33,7 @@ const MAX_PDF_BYTES = 10 * 1024 * 1024;
 const today = () => new Date().toISOString().split('T')[0];
 
 export default function ReceiptNew() {
+  const { t } = useTranslation();
   const { agency, isOwnerOrManager } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -102,7 +104,7 @@ export default function ReceiptNew() {
   }, [rows]);
 
   if (!isOwnerOrManager) {
-    return <div className="text-muted-foreground">Only owners and managers can record receipts.</div>;
+    return <div className="text-muted-foreground">{t('money.receiptNew.ownersOnly')}</div>;
   }
 
   const onPdfChange = (file: File | null) => {
@@ -110,11 +112,11 @@ export default function ReceiptNew() {
     if (!file) return setPdf(null);
     if (file.type !== 'application/pdf') {
       setPdf(null);
-      return setPdfError('Choose a PDF file');
+      return setPdfError(t('money.receiptNew.choosePdf'));
     }
     if (file.size > MAX_PDF_BYTES) {
       setPdf(null);
-      return setPdfError('The PDF must be 10 MB or smaller');
+      return setPdfError(t('money.receiptNew.pdfTooBig'));
     }
     setPdf(file);
   };
@@ -176,11 +178,15 @@ export default function ReceiptNew() {
         throw err;
       }
       toast({
-        title: `Receipt recorded — ${getCurrency()} ${formatKes(Math.round(Number(result.applied) * 100))} applied, ${getCurrency()} ${formatKes(Math.round(Number(result.unapplied) * 100))} unapplied`,
+        title: t('money.receiptNew.toastRecorded', {
+          currency: getCurrency(),
+          applied: formatKes(Math.round(Number(result.applied) * 100)),
+          unapplied: formatKes(Math.round(Number(result.unapplied) * 100)),
+        }),
       });
       navigate(`/receipts/${result.receipt_id}`);
     } catch (err) {
-      toast({ title: 'Could not record receipt', description: (err as Error).message, variant: 'destructive' });
+      toast({ title: t('money.receiptNew.toastFailed'), description: (err as Error).message, variant: 'destructive' });
       setSubmitting(false);
     }
   };
@@ -191,19 +197,19 @@ export default function ReceiptNew() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Record receipt</h1>
-        <p className="text-muted-foreground">Step {step} of 3 — {['Details', 'Statement lines', 'Match & apply'][step - 1]}</p>
+        <h1 className="text-3xl font-bold tracking-tight">{t('money.shared.recordReceipt')}</h1>
+        <p className="text-muted-foreground">{t('money.receiptNew.stepOf', { step, name: t(['money.receiptNew.stepDetails', 'money.receiptNew.stepLines', 'money.receiptNew.stepMatch'][step - 1]) })}</p>
       </div>
 
       {step === 1 && (
         <Card>
-          <CardHeader><CardTitle>Details</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t('money.receiptNew.details')}</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Insurer</Label>
+                <Label>{t('money.shared.insurer')}</Label>
                 <Select value={insurerId} onValueChange={changeInsurer}>
-                  <SelectTrigger><SelectValue placeholder="Select insurer" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t('money.receiptNew.selectInsurer')} /></SelectTrigger>
                   <SelectContent>
                     {insurers?.filter((i) => i.is_active || i.id === insurerId).map((i) => (
                       <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
@@ -212,28 +218,28 @@ export default function ReceiptNew() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="received-on">Date received</Label>
+                <Label htmlFor="received-on">{t('money.shared.dateReceived')}</Label>
                 <Input id="received-on" type="date" value={receivedOn} onChange={(e) => setReceivedOn(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="amount">Amount received ({getCurrency()})</Label>
+                <Label htmlFor="amount">{t('money.shared.amountReceivedCur', { currency: getCurrency() })}</Label>
                 <Input id="amount" inputMode="decimal" value={amountText} onChange={(e) => setAmountText(e.target.value)} />
                 {amountText.trim() !== '' && (amountCents === null || amountCents <= 0) && (
-                  <div className="text-xs text-destructive">Enter an amount greater than zero</div>
+                  <div className="text-xs text-destructive">{t('money.receiptNew.amountError')}</div>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="bank-ref">Bank reference</Label>
+                <Label htmlFor="bank-ref">{t('money.shared.bankReference')}</Label>
                 <Input id="bank-ref" value={bankReference} onChange={(e) => setBankReference(e.target.value)} />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="pdf">Statement PDF (optional, up to 10 MB)</Label>
+              <Label htmlFor="pdf">{t('money.receiptNew.statementPdf')}</Label>
               <Input id="pdf" type="file" accept="application/pdf" onChange={(e) => onPdfChange(e.target.files?.[0] ?? null)} />
               {pdfError && <div className="text-xs text-destructive">{pdfError}</div>}
             </div>
             <div className="flex justify-end">
-              <Button disabled={!detailsValid} onClick={() => setStep(2)}>Next</Button>
+              <Button disabled={!detailsValid} onClick={() => setStep(2)}>{t('money.shared.next')}</Button>
             </div>
           </CardContent>
         </Card>
@@ -241,13 +247,13 @@ export default function ReceiptNew() {
 
       {step === 2 && (
         <Card>
-          <CardHeader><CardTitle>Statement lines (optional)</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t('money.receiptNew.linesTitle')}</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <LinesGrid rows={rows} onChange={setRows} amountCents={amountCents} />
             <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
+              <Button variant="outline" onClick={() => setStep(1)}>{t('common.back')}</Button>
               <Button disabled={gridBlocked} onClick={() => setStep(3)}>
-                {hasLines ? 'Next: Match & apply' : 'Skip lines'}
+                {hasLines ? t('money.receiptNew.nextMatch') : t('money.receiptNew.skipLines')}
               </Button>
             </div>
           </CardContent>
@@ -256,31 +262,32 @@ export default function ReceiptNew() {
 
       {step === 3 && (
         <Card>
-          <CardHeader><CardTitle>Match &amp; apply</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{t('money.receiptNew.matchTitle')}</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="text-sm text-muted-foreground">
-              {insurerName} — {getCurrency()} {amountCents !== null ? formatKes(amountCents) : '—'} received on {receivedOn}
+              {t('money.receiptNew.receivedSummary', { insurer: insurerName, currency: getCurrency(), amount: amountCents !== null ? formatKes(amountCents) : '—', date: receivedOn })}
             </div>
             {receivablesError ? (
-              <div className="text-sm text-destructive">Couldn't load this insurer's policies — try again</div>
+              <div className="text-sm text-destructive">{t('money.receiptNew.loadError')}</div>
             ) : receivablesLoading ? (
-              <div className="text-sm text-muted-foreground">Loading policies...</div>
+              <div className="text-sm text-muted-foreground">{t('money.receiptNew.loadingPolicies')}</div>
             ) : hasLines ? (
               <MatchTable rows={matches} policies={policies} overrides={overrides} onPick={pick} />
             ) : (
               <AllocateOutstanding commissions={commissions} state={allocState} onChange={setAllocState} />
             )}
             <div className="text-sm">
-              Applied {getCurrency()} {formatKes(appliedCents)}
-              {amountCents !== null && !overApplied && <> — {getCurrency()} {formatKes(amountCents - appliedCents)} will stay unapplied</>}
+              {amountCents !== null && !overApplied
+                ? t('money.receiptNew.appliedLineWithUnapplied', { currency: getCurrency(), applied: formatKes(appliedCents), unapplied: formatKes(amountCents - appliedCents) })
+                : t('money.receiptNew.appliedLine', { currency: getCurrency(), applied: formatKes(appliedCents) })}
             </div>
             {overApplied && (
-              <div className="text-sm text-destructive">Applied amount is {getCurrency()} {formatKes(overCents)} more than the amount received</div>
+              <div className="text-sm text-destructive">{t('money.receiptNew.overApplied', { currency: getCurrency(), amount: formatKes(overCents) })}</div>
             )}
             <div className="flex justify-between">
-              <Button variant="outline" disabled={submitting} onClick={() => setStep(2)}>Back</Button>
+              <Button variant="outline" disabled={submitting} onClick={() => setStep(2)}>{t('common.back')}</Button>
               <Button disabled={!canConfirm || receivablesLoading || receivablesError} onClick={confirm}>
-                {submitting ? 'Recording...' : 'Confirm'}
+                {submitting ? t('money.receiptNew.recording') : t('money.shared.confirm')}
               </Button>
             </div>
           </CardContent>
