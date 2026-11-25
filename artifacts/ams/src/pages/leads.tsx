@@ -97,7 +97,10 @@ export default function Leads() {
   const search = useSearch();
   useEffect(() => {
     const id = new URLSearchParams(search).get('lead');
-    if (id) setOpenIdState(id);
+    if (!id) return;
+    setOpenIdState(id);
+    // Drop the parameter once read, so the bell can open the same lead again later.
+    window.history.replaceState(null, '', window.location.pathname);
   }, [search]);
   const setOpenId = (id: string | null) => {
     setOpenIdState(id);

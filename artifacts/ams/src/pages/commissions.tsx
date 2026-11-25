@@ -1,5 +1,5 @@
 import { getCurrency } from '@/lib/money';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,8 +56,9 @@ export default function Commissions() {
   const createReceipt = useCreateReceipt();
   const { toast } = useToast();
 
+  const commissionSchema = useMemo(() => makeCommissionSchema(t), [t]);
   const form = useForm<CommissionFormValues>({
-    resolver: zodResolver(makeCommissionSchema(t)),
+    resolver: zodResolver(commissionSchema),
     defaultValues: {
       policy_id: '',
       amount: 0,
