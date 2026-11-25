@@ -18,13 +18,26 @@ export const LANGUAGES: { code: LanguageCode; name: string; english: string }[] 
   { code: 'ar', name: 'العربية', english: 'Arabic' },
 ];
 
+// Page-level strings live in locales/<lang>/<section>.json and are merged in as
+// translation.<section>, so each part of the app can be translated on its own.
+const sectionFiles = import.meta.glob('./locales/*/*.json', { eager: true, import: 'default' }) as Record<string, Record<string, unknown>>;
+
+function withSections(lang: LanguageCode, base: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...base };
+  for (const [path, json] of Object.entries(sectionFiles)) {
+    const m = path.match(/\.\/locales\/([a-z]{2})\/([\w-]+)\.json$/);
+    if (m && m[1] === lang) out[m[2]] = json;
+  }
+  return out;
+}
+
 export const resources = {
-  en: { translation: en },
-  sw: { translation: sw },
-  fr: { translation: fr },
-  pt: { translation: pt },
-  es: { translation: es },
-  ar: { translation: ar },
+  en: { translation: withSections('en', en) },
+  sw: { translation: withSections('sw', sw) },
+  fr: { translation: withSections('fr', fr) },
+  pt: { translation: withSections('pt', pt) },
+  es: { translation: withSections('es', es) },
+  ar: { translation: withSections('ar', ar) },
 } as const;
 
 export function normaliseLanguage(code: string | null | undefined): LanguageCode {

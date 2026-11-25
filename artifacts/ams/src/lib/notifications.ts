@@ -44,7 +44,7 @@ export function buildNotifications(
       detail: l.interest,
       date: l.next_follow_up,
       urgency: urgency(l.next_follow_up, today),
-      href: '/leads',
+      href: `/leads?lead=${l.id}`,
     });
   }
   for (const r of renewals) {

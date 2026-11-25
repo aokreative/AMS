@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearch } from 'wouter';
 import { Plus, Search, Loader2, BellRing } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLeadAction, useLeads } from '@/hooks/leads';
@@ -88,7 +89,19 @@ export default function Leads() {
   const [q, setQ] = useState('');
   const [agent, setAgent] = useState(ALL);
   const [dueOnly, setDueOnly] = useState(false);
-  const [openId, setOpenId] = useState<string | null>(null);
+  // Opened from the notification bell: /leads?lead=<id>
+  const [openId, setOpenIdState] = useState<string | null>(() => new URLSearchParams(window.location.search).get('lead'));
+  const search = useSearch();
+  useEffect(() => {
+    const id = new URLSearchParams(search).get('lead');
+    if (id) setOpenIdState(id);
+  }, [search]);
+  const setOpenId = (id: string | null) => {
+    setOpenIdState(id);
+    if (!id && new URLSearchParams(window.location.search).has('lead')) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  };
   const [adding, setAdding] = useState(false);
   const [dropTarget, setDropTarget] = useState<LeadStage | null>(null);
 

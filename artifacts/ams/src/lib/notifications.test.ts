@@ -28,7 +28,7 @@ describe('buildNotifications', () => {
   it('merges follow-ups and renewals, nearest first, overdue on top', () => {
     const n = buildNotifications(leads, renewals, today);
     expect(n.map((x) => x.id)).toEqual(['lead:l2', 'renewal:p1', 'lead:l1', 'renewal:p2']);
-    expect(n[0]).toMatchObject({ kind: 'follow_up', title: 'Follow up with Grace', urgency: 'overdue', href: '/leads' });
+    expect(n[0]).toMatchObject({ kind: 'follow_up', title: 'Follow up with Grace', urgency: 'overdue', href: '/leads?lead=l2' });
     expect(n[1]).toMatchObject({ kind: 'renewal', title: 'Kilimo Ltd renews', urgency: 'today', href: '/renewals' });
   });
 
