@@ -1,4 +1,5 @@
-import { stageLabel, type LeadStage } from '@/lib/leads';
+import { useTranslation } from 'react-i18next';
+import type { LeadStage } from '@/lib/leads';
 import { cn } from '@/lib/utils';
 
 const STYLE: Record<LeadStage, string> = {
@@ -11,9 +12,10 @@ const STYLE: Record<LeadStage, string> = {
 };
 
 export function StagePill({ stage, className }: { stage: LeadStage; className?: string }) {
+  const { t } = useTranslation();
   return (
     <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', STYLE[stage], className)}>
-      {stageLabel(stage)}
+      {t(`workspace.stage.${stage}`)}
     </span>
   );
 }

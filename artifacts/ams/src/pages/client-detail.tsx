@@ -25,6 +25,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useTranslation } from 'react-i18next';
 import { commissionFields, refineCommission, withCommissionColumns, commissionDefaults } from '@/lib/policy-form';
 import { PolicyCommissionFields } from '@/components/PolicyCommissionFields';
 import { RenewalBadges } from '@/components/renewals/RenewalBadges';
@@ -32,21 +33,25 @@ import { useRenewalForPolicies } from '@/hooks/renewals';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 
-const policySchema = z.object({
-  insurer_id: z.string().min(1, 'Required'),
-  product_line_id: z.string().min(1, 'Required'),
-  agent_id: z.string().min(1, 'Required'),
-  policy_number: z.string().min(1, 'Required'),
-  premium_amount: z.coerce.number().min(1, 'Must be positive'),
+const makePolicySchema = (t: (key: string) => string) => z.object({
+  insurer_id: z.string().min(1, t('clients.required')),
+  product_line_id: z.string().min(1, t('clients.required')),
+  agent_id: z.string().min(1, t('clients.required')),
+  policy_number: z.string().min(1, t('clients.required')),
+  premium_amount: z.coerce.number().min(1, t('clients.mustBePositive')),
   commission_rate: z.coerce.number().min(0).max(100),
-  start_date: z.string().min(1, 'Required'),
-  expiry_date: z.string().min(1, 'Required'),
+  start_date: z.string().min(1, t('clients.required')),
+  expiry_date: z.string().min(1, t('clients.required')),
   status: z.enum(['active', 'expired', 'cancelled', 'pending']),
   notes: z.string().optional(),
   ...commissionFields,
 }).superRefine(refineCommission);
 
+type PolicyFormValues = z.infer<ReturnType<typeof makePolicySchema>>;
+
 export default function ClientDetail() {
+  const { t } = useTranslation();
+  const policySchema = React.useMemo(() => makePolicySchema(t), [t]);
   const [, params] = useRoute('/clients/:id');
   const clientId = params?.id || '';
   const { session, profile, isOwnerOrManager } = useAuth();
@@ -95,10 +100,10 @@ export default function ClientDetail() {
     }
   }, [profile?.id, form]);
 
-  if (isClientLoading) return <div className="p-8">Loading client details...</div>;
-  if (!client) return <div className="p-8">Client not found</div>;
+  if (isClientLoading) return <div className="p-8">{t('clients.loadingClient')}</div>;
+  if (!client) return <div className="p-8">{t('clients.notFound')}</div>;
 
-  const onAddPolicy = (values: z.infer<typeof policySchema>) => {
+  const onAddPolicy = (values: PolicyFormValues) => {
     createPolicy.mutate(withCommissionColumns({
       ...values,
       // Agents never choose an agent: policies are always recorded against themselves
@@ -106,12 +111,12 @@ export default function ClientDetail() {
       client_id: clientId,
     }), {
       onSuccess: () => {
-        toast({ title: 'Policy added' });
+        toast({ title: t('clients.policyAdded') });
         setIsAddPolicyOpen(false);
         form.reset();
       },
       onError: (err) => {
-        toast({ title: 'Error adding policy', description: err.message, variant: 'destructive' });
+        toast({ title: t('clients.errorAddingPolicy'), description: err.message, variant: 'destructive' });
       }
     });
   };
@@ -120,12 +125,12 @@ export default function ClientDetail() {
     if (!newAgentId) return;
     reassignClient.mutate({ clientId, newAgentId }, {
       onSuccess: (result) => {
-        toast({ title: `Reassigned — ${result.policies_moved} policies moved` });
+        toast({ title: t('clients.reassigned', { count: result.policies_moved }) });
         setIsReassignOpen(false);
         setNewAgentId('');
       },
       onError: (err) => {
-        toast({ title: 'Could not reassign client', description: err.message, variant: 'destructive' });
+        toast({ title: t('clients.couldNotReassign'), description: err.message, variant: 'destructive' });
       }
     });
   };
@@ -134,11 +139,11 @@ export default function ClientDetail() {
     if (!deletePolicyId) return;
     deletePolicy.mutate(deletePolicyId, {
       onSuccess: () => {
-        toast({ title: 'Policy deleted' });
+        toast({ title: t('clients.policyDeleted') });
         setDeletePolicyId(null);
       },
       onError: (err) => {
-        toast({ title: 'Error deleting policy', description: err.message, variant: 'destructive' });
+        toast({ title: t('clients.errorDeletingPolicy'), description: err.message, variant: 'destructive' });
       }
     });
   };
@@ -146,15 +151,15 @@ export default function ClientDetail() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => window.history.back()}>
-          <ArrowLeft className="h-4 w-4" />
+        <Button variant="outline" size="icon" aria-label={t('clients.back')} onClick={() => window.history.back()}>
+          <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
         </Button>
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight">{client.name}</h1>
             <Badge variant={client.type === 'corporate' ? 'default' : 'secondary'} className="gap-1">
               {client.type === 'corporate' ? <Building2 className="w-3 h-3" /> : <User className="w-3 h-3" />}
-              <span className="capitalize">{client.type}</span>
+              <span>{client.type === 'corporate' ? t('clients.corporate') : t('clients.individual')}</span>
             </Badge>
           </div>
         </div>
@@ -163,44 +168,44 @@ export default function ClientDetail() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg">Contact Information</CardTitle>
-            <Button variant="ghost" size="icon" onClick={() => setIsEditClientOpen(true)}>
+            <CardTitle className="text-lg">{t('clients.contactInfo')}</CardTitle>
+            <Button variant="ghost" size="icon" aria-label={t('clients.editAria')} onClick={() => setIsEditClientOpen(true)}>
               <Edit className="h-4 w-4" />
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <div className="text-sm font-medium text-muted-foreground">Email</div>
+              <div className="text-sm font-medium text-muted-foreground">{t('clients.emailLabel')}</div>
               <div>{client.email || '-'}</div>
             </div>
             <div>
-              <div className="text-sm font-medium text-muted-foreground">Phone</div>
+              <div className="text-sm font-medium text-muted-foreground">{t('clients.phoneLabel')}</div>
               <div>{client.phone || '-'}</div>
             </div>
             <div>
-              <div className="text-sm font-medium text-muted-foreground">Address</div>
+              <div className="text-sm font-medium text-muted-foreground">{t('clients.addressLabel')}</div>
               <div>{client.address || '-'}</div>
             </div>
             <div>
-              <div className="text-sm font-medium text-muted-foreground">Assigned to</div>
+              <div className="text-sm font-medium text-muted-foreground">{t('clients.assignedTo')}</div>
               <div className="flex items-center justify-between gap-2">
                 <span data-testid="text-client-assignee">{client.assigned_agent?.full_name ?? '—'}</span>
                 {isOwnerOrManager && (
                   <Button variant="outline" size="sm" onClick={() => setIsReassignOpen(true)} data-testid="button-reassign-client">
-                    <UserCog className="w-4 h-4 mr-2" /> Reassign
+                    <UserCog className="w-4 h-4 me-2" /> {t('clients.reassign')}
                   </Button>
                 )}
               </div>
             </div>
             <div className="pt-4 border-t">
-              <div className="text-sm font-medium text-muted-foreground">Identifiers</div>
+              <div className="text-sm font-medium text-muted-foreground">{t('clients.identifiers')}</div>
               <div className="grid grid-cols-2 mt-2">
                 <div>
-                  <div className="text-xs text-muted-foreground">KRA PIN</div>
+                  <div className="text-xs text-muted-foreground">{t('clients.kraPin')}</div>
                   <div className="text-sm font-medium">{client.kra_pin || '-'}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground">{client.type === 'corporate' ? 'Reg No.' : 'ID No.'}</div>
+                  <div className="text-xs text-muted-foreground">{client.type === 'corporate' ? t('clients.regNo') : t('clients.idNo')}</div>
                   <div className="text-sm font-medium">{client.id_or_reg_number || '-'}</div>
                 </div>
               </div>
@@ -210,16 +215,16 @@ export default function ClientDetail() {
 
         <Card className="md:col-span-2 flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg">Policies</CardTitle>
+            <CardTitle className="text-lg">{t('clients.policies')}</CardTitle>
             
             <Dialog open={isAddPolicyOpen} onOpenChange={setIsAddPolicyOpen}>
               <DialogTrigger asChild>
-                <Button size="sm"><Plus className="w-4 h-4 mr-2" /> Add Policy</Button>
+                <Button size="sm"><Plus className="w-4 h-4 me-2" /> {t('clients.addPolicy')}</Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Add New Policy for {client.name}</DialogTitle>
-                  <DialogDescription>Enter the policy details below.</DialogDescription>
+                  <DialogTitle>{t('clients.addPolicyTitle', { name: client.name })}</DialogTitle>
+                  <DialogDescription>{t('clients.addPolicyDesc')}</DialogDescription>
                 </DialogHeader>
                 
                 <Form {...form}>
@@ -230,9 +235,9 @@ export default function ClientDetail() {
                         name="insurer_id"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Insurer</FormLabel>
+                            <FormLabel>{t('clients.insurer')}</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl><SelectTrigger><SelectValue placeholder="Select insurer" /></SelectTrigger></FormControl>
+                              <FormControl><SelectTrigger><SelectValue placeholder={t('clients.selectInsurer')} /></SelectTrigger></FormControl>
                               <SelectContent>
                                 {insurers?.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
                               </SelectContent>
@@ -246,9 +251,9 @@ export default function ClientDetail() {
                         name="product_line_id"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Product Line</FormLabel>
+                            <FormLabel>{t('clients.productLine')}</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl><SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger></FormControl>
+                              <FormControl><SelectTrigger><SelectValue placeholder={t('clients.selectProduct')} /></SelectTrigger></FormControl>
                               <SelectContent>
                                 {productLines?.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                               </SelectContent>
@@ -265,7 +270,7 @@ export default function ClientDetail() {
                         name="policy_number"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Policy Number</FormLabel>
+                            <FormLabel>{t('clients.policyNumber')}</FormLabel>
                             <FormControl><Input {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
@@ -276,14 +281,14 @@ export default function ClientDetail() {
                         name="status"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Status</FormLabel>
+                            <FormLabel>{t('clients.status')}</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                               <SelectContent>
-                                <SelectItem value="active">Active</SelectItem>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="expired">Expired</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                                <SelectItem value="active">{t('clients.statusActive')}</SelectItem>
+                                <SelectItem value="pending">{t('clients.statusPending')}</SelectItem>
+                                <SelectItem value="expired">{t('clients.statusExpired')}</SelectItem>
+                                <SelectItem value="cancelled">{t('clients.statusCancelled')}</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -298,7 +303,7 @@ export default function ClientDetail() {
                         name="premium_amount"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Premium ({getCurrency()})</FormLabel>
+                            <FormLabel>{t('clients.premium', { currency: getCurrency() })}</FormLabel>
                             <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
@@ -309,7 +314,7 @@ export default function ClientDetail() {
                         name="commission_rate"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Commission Rate (%)</FormLabel>
+                            <FormLabel>{t('clients.commissionRate')}</FormLabel>
                             <FormControl><Input type="number" step="0.1" {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
@@ -318,7 +323,7 @@ export default function ClientDetail() {
                     </div>
                     
                     <div className="p-3 bg-muted/50 rounded-md text-sm flex justify-between items-center">
-                      <span className="font-medium text-muted-foreground">Expected Commission:</span>
+                      <span className="font-medium text-muted-foreground">{t('clients.expectedCommission')}</span>
                       <span className="font-bold">
                         {formatCurrency((form.watch('premium_amount') || 0) * (form.watch('commission_rate') || 0) / 100)}
                       </span>
@@ -332,7 +337,7 @@ export default function ClientDetail() {
                         name="start_date"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Start Date</FormLabel>
+                            <FormLabel>{t('clients.startDate')}</FormLabel>
                             <FormControl><Input type="date" {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
@@ -343,7 +348,7 @@ export default function ClientDetail() {
                         name="expiry_date"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Expiry Date</FormLabel>
+                            <FormLabel>{t('clients.expiryDate')}</FormLabel>
                             <FormControl><Input type="date" {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
@@ -357,7 +362,7 @@ export default function ClientDetail() {
                         name="agent_id"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Assigned Agent</FormLabel>
+                            <FormLabel>{t('clients.assignedAgent')}</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                               <SelectContent>
@@ -371,7 +376,7 @@ export default function ClientDetail() {
                     )}
 
                     <Button type="submit" className="w-full mt-4" disabled={createPolicy.isPending}>
-                      {createPolicy.isPending ? "Saving..." : "Save Policy"}
+                      {createPolicy.isPending ? t('clients.saving') : t('clients.savePolicy')}
                     </Button>
                   </form>
                 </Form>
@@ -380,21 +385,21 @@ export default function ClientDetail() {
           </CardHeader>
           <CardContent className="flex-1 p-0">
             {isPoliciesLoading ? (
-              <div className="p-4 text-center">Loading policies...</div>
+              <div className="p-4 text-center">{t('clients.loadingPolicies')}</div>
             ) : !policies || policies.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border-t">
                 <FileText className="h-12 w-12 mb-4 opacity-20" />
-                <p>No policies recorded for this client.</p>
+                <p>{t('clients.noPolicies')}</p>
               </div>
             ) : (
               <div className="border-t">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Policy #</TableHead>
-                      <TableHead>Details</TableHead>
-                      <TableHead className="text-right">Premium</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>{t('clients.colPolicyNo')}</TableHead>
+                      <TableHead>{t('clients.colDetails')}</TableHead>
+                      <TableHead className="text-end">{t('clients.colPremium')}</TableHead>
+                      <TableHead>{t('clients.colStatus')}</TableHead>
                       {isOwnerOrManager && <TableHead className="w-[50px]"></TableHead>}
                     </TableRow>
                   </TableHeader>
@@ -408,19 +413,19 @@ export default function ClientDetail() {
                         <TableCell>
                           <div className="text-sm font-medium">{policy.product_line?.name}</div>
                           <div className="text-xs text-muted-foreground">{policy.insurer?.name}</div>
-                          <div className="text-xs text-muted-foreground mt-1">Exp: {formatDate(policy.expiry_date)}</div>
+                          <div className="text-xs text-muted-foreground mt-1">{t('clients.expShort', { date: formatDate(policy.expiry_date) })}</div>
                         </TableCell>
-                        <TableCell className="text-right font-medium">
+                        <TableCell className="text-end font-medium">
                           {formatCurrency(policy.premium_amount)}
                         </TableCell>
                         <TableCell>
                           <Badge variant={getStatusColor(policy.status)} className="capitalize">
-                            {policy.status}
+                            {t(`clients.status${policy.status.charAt(0).toUpperCase()}${policy.status.slice(1)}`, { defaultValue: policy.status })}
                           </Badge>
                         </TableCell>
                         {isOwnerOrManager && (
                           <TableCell>
-                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeletePolicyId(policy.id)}>
+                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" aria-label={t('clients.deletePolicyAria')} onClick={() => setDeletePolicyId(policy.id)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </TableCell>
@@ -438,13 +443,13 @@ export default function ClientDetail() {
       <Dialog open={isReassignOpen} onOpenChange={(open) => { setIsReassignOpen(open); if (!open) setNewAgentId(''); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reassign {client.name}</DialogTitle>
+            <DialogTitle>{t('clients.reassignTitle', { name: client.name })}</DialogTitle>
             <DialogDescription>
-              Move this client and all of their policies to another active member.
+              {t('clients.reassignDesc')}
             </DialogDescription>
           </DialogHeader>
           <Select value={newAgentId} onValueChange={setNewAgentId}>
-            <SelectTrigger data-testid="select-reassign-agent"><SelectValue placeholder="Select member" /></SelectTrigger>
+            <SelectTrigger data-testid="select-reassign-agent"><SelectValue placeholder={t('clients.selectMember')} /></SelectTrigger>
             <SelectContent>
               {members?.filter(m => m.id !== client.assigned_agent_id).map(m => (
                 <SelectItem key={m.id} value={m.id}>{m.full_name}</SelectItem>
@@ -452,9 +457,9 @@ export default function ClientDetail() {
             </SelectContent>
           </Select>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsReassignOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsReassignOpen(false)}>{t('common.cancel')}</Button>
             <Button onClick={handleReassign} disabled={!newAgentId || reassignClient.isPending}>
-              {reassignClient.isPending ? 'Reassigning...' : 'Reassign'}
+              {reassignClient.isPending ? t('clients.reassigning') : t('clients.reassign')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -463,15 +468,15 @@ export default function ClientDetail() {
       <AlertDialog open={!!deletePolicyId} onOpenChange={(open) => !open && setDeletePolicyId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Policy?</AlertDialogTitle>
+            <AlertDialogTitle>{t('clients.deletePolicyTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this policy? This action cannot be undone and will delete associated commission records.
+              {t('clients.deletePolicyDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeletePolicyId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeletePolicyId(null)}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeletePolicy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={deletePolicy.isPending}>
-              {deletePolicy.isPending ? "Deleting..." : "Delete"}
+              {deletePolicy.isPending ? t('clients.deleting') : t('clients.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

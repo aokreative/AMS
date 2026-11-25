@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,7 @@ export function LeadForm({ open, onOpenChange, lead, onSaved }: {
   lead?: Lead | null;
   onSaved?: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const { isOwnerOrManager, session } = useAuth();
   const { data: productLines } = useProductLines();
   const { data: members } = useAgencyMembers();
@@ -67,58 +69,58 @@ export function LeadForm({ open, onOpenChange, lead, onSaved }: {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{lead ? 'Edit lead' : 'Add a lead'}</DialogTitle>
-          <DialogDescription>Someone who might buy cover. You can log every contact with them afterwards.</DialogDescription>
+          <DialogTitle>{lead ? t('workspace.form.edit') : t('workspace.form.add')}</DialogTitle>
+          <DialogDescription>{t('workspace.form.description')}</DialogDescription>
         </DialogHeader>
         <form
           className="grid gap-4"
           onSubmit={(e) => { e.preventDefault(); save(); }}
         >
           <div className="grid gap-1.5">
-            <Label htmlFor="lead-name">Name</Label>
+            <Label htmlFor="lead-name">{t('workspace.form.name')}</Label>
             <Input id="lead-name" value={f.full_name} onChange={(e) => set('full_name')(e.target.value)} placeholder="Mary Wanjiku" required autoFocus />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5">
-              <Label htmlFor="lead-phone">Phone</Label>
+              <Label htmlFor="lead-phone">{t('workspace.form.phone')}</Label>
               <Input id="lead-phone" type="tel" value={f.phone} onChange={(e) => set('phone')(e.target.value)} placeholder="0712 345 678" />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="lead-email">Email</Label>
+              <Label htmlFor="lead-email">{t('workspace.form.email')}</Label>
               <Input id="lead-email" type="email" value={f.email} onChange={(e) => set('email')(e.target.value)} />
             </div>
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="lead-interest">Looking for</Label>
-            <Input id="lead-interest" value={f.interest} onChange={(e) => set('interest')(e.target.value)} placeholder="Comprehensive cover for a Toyota Fielder" />
+            <Label htmlFor="lead-interest">{t('workspace.form.interest')}</Label>
+            <Input id="lead-interest" value={f.interest} onChange={(e) => set('interest')(e.target.value)} placeholder={t('workspace.form.interestPlaceholder')} />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5">
-              <Label>Product line</Label>
+              <Label>{t('workspace.form.productLine')}</Label>
               <Select value={f.product_line_id} onValueChange={set('product_line_id')}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NONE}>Not decided</SelectItem>
+                  <SelectItem value={NONE}>{t('workspace.form.notDecided')}</SelectItem>
                   {productLines?.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-1.5">
-              <Label>How they found you</Label>
+              <Label>{t('workspace.form.source')}</Label>
               <Select value={f.source} onValueChange={set('source')}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NONE}>Not recorded</SelectItem>
-                  {SOURCES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                  <SelectItem value={NONE}>{t('workspace.form.notRecorded')}</SelectItem>
+                  {SOURCES.map((s) => <SelectItem key={s.value} value={s.value}>{t(`workspace.source.${s.value}`)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           </div>
           {!lead && isOwnerOrManager && (
             <div className="grid gap-1.5">
-              <Label>Agent</Label>
+              <Label>{t('workspace.form.agent')}</Label>
               <Select value={f.assigned_agent_id} onValueChange={set('assigned_agent_id')}>
-                <SelectTrigger><SelectValue placeholder="Pick an agent" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('workspace.form.pickAgent')} /></SelectTrigger>
                 <SelectContent>
                   {members?.map((m) => <SelectItem key={m.id} value={m.id}>{m.full_name}</SelectItem>)}
                 </SelectContent>
@@ -126,15 +128,15 @@ export function LeadForm({ open, onOpenChange, lead, onSaved }: {
             </div>
           )}
           <div className="grid gap-1.5">
-            <Label htmlFor="lead-notes">Notes</Label>
+            <Label htmlFor="lead-notes">{t('workspace.form.notes')}</Label>
             <Textarea id="lead-notes" rows={2} value={f.notes} onChange={(e) => set('notes')(e.target.value)} />
           </div>
           {act.error && <p className="text-sm text-destructive">{(act.error as Error).message}</p>}
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
             <Button type="submit" disabled={act.isPending}>
               {act.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-              {lead ? 'Save changes' : 'Add lead'}
+              {lead ? t('workspace.form.saveChanges') : t('workspace.form.addLead')}
             </Button>
           </DialogFooter>
         </form>

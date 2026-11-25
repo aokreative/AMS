@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { getCurrency } from '@/lib/money';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -26,23 +27,24 @@ export function AllocateOutstanding({
   state: AllocationState;
   onChange: (s: AllocationState) => void;
 }) {
+  const { t } = useTranslation();
   if (commissions.length === 0) {
-    return <div className="text-sm text-muted-foreground border rounded-md p-4">This insurer has no outstanding commissions. The whole receipt will stay unapplied.</div>;
+    return <div className="text-sm text-muted-foreground border rounded-md p-4">{t('money.allocate.none')}</div>;
   }
   return (
     <div className="space-y-2">
       <p className="text-sm text-muted-foreground">
-        No statement lines entered. Tick the outstanding commissions this receipt pays; amounts are capped at what is remaining.
+        {t('money.allocate.intro')}
       </p>
       <div className="border rounded-md bg-card overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-10" />
-              <TableHead>Policy</TableHead>
-              <TableHead>Expected</TableHead>
-              <TableHead className="text-right">Remaining</TableHead>
-              <TableHead className="w-36">Apply ({getCurrency()})</TableHead>
+              <TableHead>{t('money.shared.policy')}</TableHead>
+              <TableHead>{t('money.shared.expected')}</TableHead>
+              <TableHead className="text-end">{t('money.shared.remaining')}</TableHead>
+              <TableHead className="w-36">{t('money.allocate.applyCur', { currency: getCurrency() })}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -54,7 +56,7 @@ export function AllocateOutstanding({
                   <TableCell>
                     <Checkbox
                       checked={s.checked}
-                      aria-label={`Apply to ${c.policyNumber}`}
+                      aria-label={t('money.allocate.ariaApply', { policy: c.policyNumber })}
                       onCheckedChange={(v) => onChange({ ...state, [c.id]: { ...s, checked: v === true } })}
                     />
                   </TableCell>
@@ -63,14 +65,14 @@ export function AllocateOutstanding({
                     <div className="text-xs text-muted-foreground">{c.clientName}</div>
                   </TableCell>
                   <TableCell>{c.expectedDate ? formatDate(c.expectedDate) : '—'}</TableCell>
-                  <TableCell className="text-right">{formatKes(c.remainingCents)}</TableCell>
+                  <TableCell className="text-end">{formatKes(c.remainingCents)}</TableCell>
                   <TableCell>
                     <Input
                       inputMode="decimal"
                       value={s.amount}
                       onChange={(e) => onChange({ ...state, [c.id]: { ...s, amount: e.target.value } })}
                     />
-                    {over && <div className="text-xs text-muted-foreground mt-1">Capped at {formatKes(c.remainingCents)}</div>}
+                    {over && <div className="text-xs text-muted-foreground mt-1">{t('money.allocate.capped', { amount: formatKes(c.remainingCents) })}</div>}
                   </TableCell>
                 </TableRow>
               );

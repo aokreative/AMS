@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import type { PolicyRenewalInfo } from '@/hooks/renewals';
 import { stageLabel } from '@/lib/renewals';
@@ -16,6 +17,7 @@ export function RenewalBadges({
   info: PolicyRenewalInfo | undefined;
   numberById: Record<string, string>;
 }) {
+  const { t } = useTranslation();
   if (!info) return null;
   const stage = info.stage[policyId];
   const renewedAs = info.renewedAs[policyId];
@@ -25,17 +27,17 @@ export function RenewalBadges({
     <div className="mt-1 flex flex-col items-start gap-1">
       {stage && (
         <Badge variant="outline" className="text-xs font-normal">
-          Renewal: {stageLabel(stage)}
+          {t('policies.renewalStage', { stage: stageLabel(stage) })}
         </Badge>
       )}
       {renewedAs && (
         <span className="text-xs text-muted-foreground">
-          Renewed as {numberById[renewedAs] ?? 'a new policy'}
+          {t('policies.renewedAs', { number: numberById[renewedAs] ?? t('policies.aNewPolicy') })}
         </span>
       )}
       {renewedFrom && (
         <span className="text-xs text-muted-foreground">
-          Renewed from {numberById[renewedFrom] ?? 'an earlier policy'}
+          {t('policies.renewedFrom', { number: numberById[renewedFrom] ?? t('policies.anEarlierPolicy') })}
         </span>
       )}
     </div>

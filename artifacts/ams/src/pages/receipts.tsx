@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInsurers } from '@/hooks/queries';
 import { useReceipts, useInsurerMoneySummary } from '@/hooks/receipts';
@@ -13,6 +14,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { Plus } from 'lucide-react';
 
 export default function Receipts() {
+  const { t } = useTranslation();
   const { isOwnerOrManager } = useAuth();
   const [, navigate] = useLocation();
   const [insurerId, setInsurerId] = useState('all');
@@ -23,37 +25,37 @@ export default function Receipts() {
   const { data: receipts, isLoading } = useReceipts({ insurerId, month: month || undefined });
 
   if (!isOwnerOrManager) {
-    return <div className="text-muted-foreground">Only owners and managers can view receipts.</div>;
+    return <div className="text-muted-foreground">{t('money.receiptDetail.ownersOnly')}</div>;
   }
 
-  const insurerName = (id: string) => insurers?.find(i => i.id === id)?.name ?? 'Insurer';
+  const insurerName = (id: string) => insurers?.find(i => i.id === id)?.name ?? t('money.shared.insurer');
   const unappliedCards = (money ?? []).filter(m => m.unapplied > 0.005);
 
   const statusOf = (r: { applied: number; unapplied: number }) =>
-    r.applied <= 0 ? 'Not applied' : r.unapplied > 0.005 ? 'Partly applied' : 'Fully applied';
+    r.applied <= 0 ? 'notApplied' : r.unapplied > 0.005 ? 'partlyApplied' : 'fullyApplied';
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="sr-only">Receipts</h1>
-          <p className="text-muted-foreground">Money received from insurers and where it was applied.</p>
+          <h1 className="sr-only">{t('nav.receipts')}</h1>
+          <p className="text-muted-foreground">{t('money.receipts.subtitle')}</p>
         </div>
         <Button onClick={() => navigate('/receipts/new')}>
-          <Plus className="w-4 h-4 mr-2" /> Record receipt
+          <Plus className="w-4 h-4 me-2" /> {t('money.shared.recordReceipt')}
         </Button>
       </div>
 
       {unappliedCards.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold tracking-tight">Unapplied money</h2>
+          <h2 className="text-lg font-semibold tracking-tight">{t('money.receipts.unappliedMoney')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {unappliedCards.map(m => (
               <Card key={m.insurerId} className="bg-card">
                 <CardContent className="p-4">
                   <div className="text-sm font-medium text-muted-foreground">{insurerName(m.insurerId)}</div>
                   <div className="text-lg font-bold">{formatCurrency(m.unapplied)}</div>
-                  <div className="text-xs text-muted-foreground">Received, not yet applied</div>
+                  <div className="text-xs text-muted-foreground">{t('money.receipts.receivedNotApplied')}</div>
                 </CardContent>
               </Card>
             ))}
@@ -63,33 +65,33 @@ export default function Receipts() {
 
       <div className="flex flex-col sm:flex-row gap-4">
         <Select value={insurerId} onValueChange={setInsurerId}>
-          <SelectTrigger className="w-[220px] bg-card"><SelectValue placeholder="Insurer" /></SelectTrigger>
+          <SelectTrigger className="w-[220px] bg-card"><SelectValue placeholder={t('money.shared.insurer')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All insurers</SelectItem>
+            <SelectItem value="all">{t('money.receipts.allInsurers')}</SelectItem>
             {insurers?.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Input type="month" className="w-[180px] bg-card" value={month} onChange={(e) => setMonth(e.target.value)} aria-label="Month" />
-        {month && <Button variant="ghost" onClick={() => setMonth('')}>Clear month</Button>}
+        <Input type="month" className="w-[180px] bg-card" value={month} onChange={(e) => setMonth(e.target.value)} aria-label={t('money.receipts.month')} />
+        {month && <Button variant="ghost" onClick={() => setMonth('')}>{t('money.receipts.clearMonth')}</Button>}
       </div>
 
       <div className="border rounded-md bg-card overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Insurer</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              <TableHead className="text-right">Applied</TableHead>
-              <TableHead className="text-right">Unapplied</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>{t('money.shared.date')}</TableHead>
+              <TableHead>{t('money.shared.insurer')}</TableHead>
+              <TableHead className="text-end">{t('money.shared.amount')}</TableHead>
+              <TableHead className="text-end">{t('money.shared.applied')}</TableHead>
+              <TableHead className="text-end">{t('money.shared.unapplied')}</TableHead>
+              <TableHead>{t('money.shared.status')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center py-8">{t('common.loading')}</TableCell></TableRow>
             ) : !receipts || receipts.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No receipts found.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t('money.receipts.noReceipts')}</TableCell></TableRow>
             ) : (
               receipts.map(r => {
                 const status = statusOf(r);
@@ -97,14 +99,14 @@ export default function Receipts() {
                   <TableRow key={r.id}>
                     <TableCell>
                       <Link href={`/receipts/${r.id}`} className="font-medium text-primary underline">{formatDate(r.received_on)}</Link>
-                      {r.is_opening_balance && <Badge variant="secondary" className="ml-2 text-muted-foreground">Opening balance</Badge>}
+                      {r.is_opening_balance && <Badge variant="secondary" className="ms-2 text-muted-foreground">{t('money.shared.openingBalance')}</Badge>}
                     </TableCell>
                     <TableCell>{r.insurer?.name ?? '-'}</TableCell>
-                    <TableCell className="text-right font-medium">{formatCurrency(r.amount)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(r.applied)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(r.unapplied)}</TableCell>
+                    <TableCell className="text-end font-medium">{formatCurrency(r.amount)}</TableCell>
+                    <TableCell className="text-end">{formatCurrency(r.applied)}</TableCell>
+                    <TableCell className="text-end">{formatCurrency(r.unapplied)}</TableCell>
                     <TableCell>
-                      <Badge variant={status === 'Fully applied' ? 'success' : status === 'Partly applied' ? 'warning' : 'secondary'}>{status}</Badge>
+                      <Badge variant={status === 'fullyApplied' ? 'success' : status === 'partlyApplied' ? 'warning' : 'secondary'}>{t(`money.receipts.${status}`)}</Badge>
                     </TableCell>
                   </TableRow>
                 );

@@ -9,15 +9,26 @@ import { useMonthlyPremiumVolume, useTopClients } from '@/hooks/queries';
 import { getCurrency } from '@/lib/money';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { useLeadPipeline, useLeads } from '@/hooks/leads';
-import { followUpState, pipelineSummary, stageLabel as stageLabelLead } from '@/lib/leads';
+import { followUpState, pipelineSummary } from '@/lib/leads';
 import { todayNairobi } from '@/lib/subscription';
 import { startOfMonth, endOfMonth, startOfDay, format } from 'date-fns';
+import { enGB, fr as frLocale, es as esLocale, pt as ptLocale, ar as arLocale } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import { OnboardingChecklist } from '@/components/OnboardingChecklist';
 import { projectedMonthlyCommission } from '@/lib/projection';
 import { stageLabel } from '@/lib/renewals';
 import type { RenewalStage } from '@/lib/types';
 
+const DATE_LOCALES: Record<string, typeof enGB> = { en: enGB, fr: frLocale, es: esLocale, pt: ptLocale, ar: arLocale };
+
+/** Weekday, day and month in the interface language (date-fns has no Swahili locale, so Intl covers it). */
+function longDay(d: Date, lang: string): string {
+  if (lang === 'sw') return new Intl.DateTimeFormat('sw-KE', { weekday: 'long', day: 'numeric', month: 'long' }).format(d);
+  return format(d, 'EEEE d MMMM', { locale: DATE_LOCALES[lang] ?? enGB });
+}
+
 export default function Dashboard() {
+  const { t, i18n } = useTranslation();
   const { agency, session, profile, isOwnerOrManager } = useAuth();
   const isAgent = !!profile && !isOwnerOrManager;
   const my = (label: string, agentLabel: string) => (isAgent ? agentLabel : label);
@@ -176,7 +187,8 @@ export default function Dashboard() {
 
   const firstName = profile?.full_name?.split(' ')[0];
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const greetingBase = t(hour < 12 ? 'workspace.dash.greetingMorning' : hour < 17 ? 'workspace.dash.greetingAfternoon' : 'workspace.dash.greetingEvening');
+  const greeting = firstName ? t('workspace.dash.greetingName', { greeting: greetingBase, name: firstName }) : greetingBase;
   const { data: pipelineRows } = useLeadPipeline();
   const pipe = pipelineSummary(pipelineRows ?? []);
   const collectedPct = metrics && metrics.expectedThisMonth > 0
@@ -184,10 +196,10 @@ export default function Dashboard() {
     : 0;
 
   const tiles = [
-    { label: 'Follow-ups due', value: dueLeads.length, href: '/leads' },
-    { label: 'Renewals this week', value: metrics?.renewalsThisWeek ?? 0, href: '/renewals' },
-    { label: 'Open leads', value: pipe.openCount, href: '/leads' },
-    { label: 'Overdue commissions', value: metrics?.overdueCount ?? 0, href: '/commissions' },
+    { label: t('workspace.dash.tileFollowUps'), value: dueLeads.length, href: '/leads' },
+    { label: t('workspace.dash.tileRenewals'), value: metrics?.renewalsThisWeek ?? 0, href: '/renewals' },
+    { label: t('workspace.dash.tileOpenLeads'), value: pipe.openCount, href: '/leads' },
+    { label: t('workspace.dash.tileOverdue'), value: metrics?.overdueCount ?? 0, href: '/commissions' },
   ];
 
   return (
@@ -211,17 +223,17 @@ export default function Dashboard() {
         <div className="pointer-events-none absolute -end-24 -top-24 h-72 w-72 rounded-full bg-white/[0.06]" aria-hidden />
         <div className="relative grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
-            <p className="text-sm text-white/90">{format(new Date(), 'EEEE d MMMM')}</p>
+            <p className="text-sm text-white/90">{longDay(new Date(), i18n.language)}</p>
             <h2 id="hero-greeting" className="mt-1 text-2xl font-semibold sm:text-3xl">
-              {greeting}{firstName ? `, ${firstName}` : ''}
+              {greeting}
             </h2>
-            <p className="mt-5 text-sm text-white/90">{my('Commission collected this month', 'Your commission collected this month')}</p>
+            <p className="mt-5 text-sm text-white/90">{my(t('workspace.dash.collected'), t('workspace.dash.collectedMine'))}</p>
             <p className="font-display text-4xl font-bold tabular-nums sm:text-5xl">{isLoading ? '—' : formatCurrency(metrics?.receivedThisMonth)}</p>
-            <div className="mt-3 h-1.5 w-full max-w-sm overflow-hidden rounded-full bg-white/15" role="progressbar" aria-valuenow={collectedPct} aria-valuemin={0} aria-valuemax={100} aria-label="Commission collected against expected">
+            <div className="mt-3 h-1.5 w-full max-w-sm overflow-hidden rounded-full bg-white/15" role="progressbar" aria-valuenow={collectedPct} aria-valuemin={0} aria-valuemax={100} aria-label={t('workspace.dash.progressLabel')}>
               <div className="h-full rounded-full bg-white/85 transition-[width] duration-700" style={{ width: `${collectedPct}%` }} />
             </div>
             <p className="mt-2 text-sm text-white/90">
-              {collectedPct}% of {formatCurrency(metrics?.expectedThisMonth)} expected · {formatCurrency(pipe.openQuoted)} being quoted
+              {t('workspace.dash.collectedLine', { pct: collectedPct, expected: formatCurrency(metrics?.expectedThisMonth), quoted: formatCurrency(pipe.openQuoted) })}
             </p>
           </div>
           <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -242,10 +254,10 @@ export default function Dashboard() {
 
       {/* Number cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatTile icon={Wallet} tone="money" label={my('Premium in force', 'Your premium in force')} value={isLoading ? '—' : formatCurrency(metrics?.totalPremium)} note={`${metrics?.activeCount ?? 0} active policies`} />
-        <StatTile icon={FileText} tone="brand" label={my('Active policies', 'Your active policies')} value={isLoading ? '—' : String(metrics?.activeCount ?? 0)} note={`${metrics?.expiringCount ?? 0} renew in 30 days`} />
-        <StatTile icon={TrendingUp} tone="brand" label="Pipeline value" value={formatCurrency(pipe.openQuoted)} note={`${pipe.openCount} open ${pipe.openCount === 1 ? 'lead' : 'leads'}`} href="/leads" />
-        <StatTile icon={Coins} tone="due" label={my('Commission expected', 'Your commission expected')} value={isLoading ? '—' : formatCurrency(metrics?.expectedThisMonth)} note="This month" />
+        <StatTile icon={Wallet} tone="money" label={my(t('workspace.dash.premiumInForce'), t('workspace.dash.premiumInForceMine'))} value={isLoading ? '—' : formatCurrency(metrics?.totalPremium)} note={t('workspace.dash.activeNote', { count: metrics?.activeCount ?? 0 })} />
+        <StatTile icon={FileText} tone="brand" label={my(t('workspace.dash.activePolicies'), t('workspace.dash.activePoliciesMine'))} value={isLoading ? '—' : String(metrics?.activeCount ?? 0)} note={t('workspace.dash.renewNote', { count: metrics?.expiringCount ?? 0 })} />
+        <StatTile icon={TrendingUp} tone="brand" label={t('workspace.dash.pipelineValue')} value={formatCurrency(pipe.openQuoted)} note={t('workspace.dash.openNote', { count: pipe.openCount })} href="/leads" />
+        <StatTile icon={Coins} tone="due" label={my(t('workspace.dash.commissionExpected'), t('workspace.dash.commissionExpectedMine'))} value={isLoading ? '—' : formatCurrency(metrics?.expectedThisMonth)} note={t('workspace.dash.thisMonth')} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
@@ -291,6 +303,7 @@ function StatTile({ icon: Icon, tone, label, value, note, href }: {
 }
 
 function PremiumChart() {
+  const { t } = useTranslation();
   const { data, isLoading } = useMonthlyPremiumVolume();
   const [series, setSeries] = useState<'premium' | 'expected'>('premium');
   const currency = getCurrency();
@@ -298,8 +311,8 @@ function PremiumChart() {
   return (
     <section className="rounded-2xl border bg-card p-5 shadow-panel lg:col-span-3" aria-labelledby="chart-h">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="chart-h" className="text-lg font-semibold">{series === 'premium' ? 'Premium written' : 'Commission expected'}</h2>
-        <div className="inline-flex rounded-lg border bg-muted p-0.5 text-sm" aria-label="Chart">
+        <h2 id="chart-h" className="text-lg font-semibold">{series === 'premium' ? t('workspace.dash.chartPremiumTitle') : t('workspace.dash.chartCommissionTitle')}</h2>
+        <div className="inline-flex rounded-lg border bg-muted p-0.5 text-sm" aria-label={t('workspace.dash.chartLabel')}>
           {(['premium', 'expected'] as const).map((k) => (
             <button
               key={k}
@@ -308,7 +321,7 @@ function PremiumChart() {
               onClick={() => setSeries(k)}
               className={cn('rounded-md px-3 py-1 font-medium transition-colors', series === k ? 'bg-card shadow-sm' : 'text-muted-foreground hover:text-foreground')}
             >
-              {k === 'premium' ? 'Premium' : 'Commission'}
+              {k === 'premium' ? t('workspace.dash.premium') : t('workspace.dash.commission')}
             </button>
           ))}
         </div>
@@ -317,7 +330,7 @@ function PremiumChart() {
         {isLoading ? (
           <div className="h-full animate-pulse rounded-xl bg-muted" />
         ) : (data?.length ?? 0) === 0 ? (
-          <p className="pt-20 text-center text-sm text-muted-foreground">Policies you add will chart here month by month.</p>
+          <p className="pt-20 text-center text-sm text-muted-foreground">{t('workspace.dash.chartEmpty')}</p>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -331,7 +344,7 @@ function PremiumChart() {
               <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
               <YAxis tickLine={false} axisLine={false} width={72} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} tickFormatter={compact} />
               <ChartTooltip
-                formatter={(v: number) => [formatCurrency(v), series === 'premium' ? 'Premium' : 'Commission']}
+                formatter={(v: number) => [formatCurrency(v), series === 'premium' ? t('workspace.dash.premium') : t('workspace.dash.commission')]}
                 contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 12, color: 'hsl(var(--popover-foreground))' }}
               />
               <Area type="monotone" dataKey={series} stroke="hsl(var(--primary))" strokeWidth={2.5} fill="url(#area-fill)" dot={{ r: 3.5, fill: 'hsl(var(--primary))', strokeWidth: 0 }} activeDot={{ r: 5 }} />
@@ -344,18 +357,19 @@ function PremiumChart() {
 }
 
 function TopClients() {
+  const { t } = useTranslation();
   const { data, isLoading } = useTopClients();
   const max = Math.max(1, ...(data ?? []).map((c) => c.premium));
   return (
     <section className="rounded-2xl border bg-card p-5 shadow-panel lg:col-span-2" aria-labelledby="top-h">
       <div className="flex items-baseline justify-between">
-        <h2 id="top-h" className="text-lg font-semibold">Top clients by premium</h2>
-        <Link href="/clients" className="text-sm text-primary hover:underline">All clients</Link>
+        <h2 id="top-h" className="text-lg font-semibold">{t('workspace.dash.topClients')}</h2>
+        <Link href="/clients" className="text-sm text-primary hover:underline">{t('workspace.dash.allClients')}</Link>
       </div>
       {isLoading ? (
         <div className="mt-4 space-y-3">{[1, 2, 3, 4].map((i) => <div key={i} className="h-6 animate-pulse rounded bg-muted" />)}</div>
       ) : (data?.length ?? 0) === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">No policies yet.</p>
+        <p className="mt-4 text-sm text-muted-foreground">{t('workspace.dash.noPolicies')}</p>
       ) : (
         <ul className="mt-4 space-y-4">
           {data!.map((c) => (

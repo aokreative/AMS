@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +33,7 @@ const languageName = (code: string) => LANGUAGES.find((l) => l.code === code)?.n
  * figures exactly as before. Every change is listed with "Switch back".
  */
 export function LanguageCurrencyCard() {
+  const { t } = useTranslation();
   const { agency, isOwner, refreshProfile } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -64,9 +66,9 @@ export function LanguageCurrencyCard() {
       await refreshProfile();
       void qc.invalidateQueries({ queryKey: ['agency-setting-changes'] });
       void qc.invalidateQueries();
-      toast({ title: v.setting === 'currency' ? `Currency is now ${v.value}` : `Language is now ${languageName(v.value)}` });
+      toast({ title: v.setting === 'currency' ? t('agency.currencyNow', { value: v.value }) : t('agency.languageNow', { value: languageName(v.value) }) });
     },
-    onError: (err: any) => toast({ title: 'Could not save', description: err.message, variant: 'destructive' }),
+    onError: (err: any) => toast({ title: t('agency.couldNotSave'), description: err.message, variant: 'destructive' }),
   });
 
   if (!agency) return null;
@@ -74,16 +76,16 @@ export function LanguageCurrencyCard() {
   return (
     <Card className="mt-6">
       <CardHeader>
-        <CardTitle>Language and currency</CardTitle>
+        <CardTitle>{t('agency.languageCurrency')}</CardTitle>
         <CardDescription>
-          Everyone in the agency sees this language, and every amount is shown in this currency.{' '}
-          {isOwner ? 'Only Owners can change them.' : 'Only an Owner can change them.'}
+          {t('agency.languageCurrencyDesc')}{' '}
+          {isOwner ? t('agency.ownersOnlyChange') : t('agency.ownerOnlyChange')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label>Language</Label>
+            <Label>{t('agency.languageLabel')}</Label>
             <Select
               value={agency.language}
               disabled={!isOwner || save.isPending}
@@ -96,7 +98,7 @@ export function LanguageCurrencyCard() {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Currency</Label>
+            <Label>{t('agency.currencyLabel')}</Label>
             <Select
               value={agency.currency}
               disabled={!isOwner || save.isPending}
@@ -112,7 +114,7 @@ export function LanguageCurrencyCard() {
 
         {isOwner && (history.data?.length ?? 0) > 0 && (
           <div className="space-y-2">
-            <div className="text-sm font-medium">Recent changes</div>
+            <div className="text-sm font-medium">{t('agency.recentChanges')}</div>
             <ul className="divide-y rounded-md border text-sm">
               {history.data!.map((h) => {
                 const current = h.setting === 'currency' ? agency.currency : agency.language;
@@ -120,7 +122,7 @@ export function LanguageCurrencyCard() {
                 return (
                   <li key={h.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
                     <span>
-                      <span className="capitalize">{h.setting}</span>: {label(h.old_value)} → {label(h.new_value)}
+                      <span className="capitalize">{h.setting === 'currency' ? t('agency.currencyLabel') : t('agency.languageLabel')}</span>: {label(h.old_value)} → {label(h.new_value)}
                       <span className="block text-xs text-muted-foreground">
                         {format(new Date(h.changed_at), 'd MMM yyyy, HH:mm')}{h.user ? ` · ${h.user.full_name}` : ''}
                       </span>
@@ -132,7 +134,7 @@ export function LanguageCurrencyCard() {
                         disabled={save.isPending}
                         onClick={() => save.mutate({ setting: h.setting, value: h.old_value })}
                       >
-                        Switch back to {label(h.old_value)}
+                        {t('agency.switchBack', { value: label(h.old_value) })}
                       </Button>
                     )}
                   </li>
@@ -146,22 +148,23 @@ export function LanguageCurrencyCard() {
       <AlertDialog open={!!pendingCurrency} onOpenChange={(o) => { if (!o) setPendingCurrency(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Change the currency to {pendingCurrency}?</AlertDialogTitle>
+            <AlertDialogTitle>{t('agency.changeCurrencyTitle', { currency: pendingCurrency })}</AlertDialogTitle>
             <AlertDialogDescription>
-              Amounts are not converted. Every figure keeps its number and only the label changes:{' '}
-              {formatMoney(15000, agency.currency)} will show as {formatMoney(15000, pendingCurrency ?? agency.currency)}.
-              The change is recorded, and you can switch back at any time to see the figures exactly as before.
+              {t('agency.changeCurrencyDesc', {
+                from: formatMoney(15000, agency.currency),
+                to: formatMoney(15000, pendingCurrency ?? agency.currency),
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (pendingCurrency) save.mutate({ setting: 'currency', value: pendingCurrency });
                 setPendingCurrency(null);
               }}
             >
-              Change to {pendingCurrency}
+              {t('agency.changeTo', { currency: pendingCurrency })}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

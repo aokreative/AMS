@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -16,27 +17,28 @@ export type MatchRow = {
   applyCents: number;
 };
 
-const BADGES: Record<MatchStatus, { label: string; variant: 'success' | 'warning' | 'secondary' | 'destructive' | 'default' | 'outline' }> = {
-  matched: { label: 'Matched', variant: 'success' },
-  short: { label: 'Short', variant: 'warning' },
-  over: { label: 'Over', variant: 'warning' },
-  unmatched: { label: 'Unmatched', variant: 'destructive' },
-  new_commission: { label: 'New commission', variant: 'default' },
-  reversal: { label: 'Reversal — not applied', variant: 'secondary' },
+const BADGES: Record<MatchStatus, { labelKey: string; variant: 'success' | 'warning' | 'secondary' | 'destructive' | 'default' | 'outline' }> = {
+  matched: { labelKey: 'money.match.matched', variant: 'success' },
+  short: { labelKey: 'money.match.short', variant: 'warning' },
+  over: { labelKey: 'money.match.over', variant: 'warning' },
+  unmatched: { labelKey: 'money.match.unmatched', variant: 'destructive' },
+  new_commission: { labelKey: 'money.match.newCommission', variant: 'default' },
+  reversal: { labelKey: 'money.match.reversalNotApplied', variant: 'secondary' },
 };
 
 function PolicyPicker({ policies, onPick }: { policies: ReceivablePolicy[]; onPick: (id: string) => void }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" size="sm">Pick policy</Button>
+        <Button type="button" variant="outline" size="sm">{t('money.match.pickPolicy')}</Button>
       </PopoverTrigger>
       <PopoverContent className="w-72 p-0" align="start">
         <Command>
-          <CommandInput placeholder="Search policy no. or client..." />
+          <CommandInput placeholder={t('money.match.searchPolicy')} />
           <CommandList>
-            <CommandEmpty>No policy found.</CommandEmpty>
+            <CommandEmpty>{t('money.match.noPolicyFound')}</CommandEmpty>
             <CommandGroup>
               {policies.map((p) => (
                 <CommandItem
@@ -72,17 +74,18 @@ export function MatchTable({
   overrides: Record<string, string>;
   onPick: (key: string, policyId: string | null) => void;
 }) {
+  const { t } = useTranslation();
   const nameOf = (id: string | null) => policies.find((p) => p.id === id)?.policy_number ?? '';
   return (
     <div className="border rounded-md bg-card overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Policy no.</TableHead>
-            <TableHead>Client</TableHead>
-            <TableHead className="text-right">Commission</TableHead>
-            <TableHead>Match</TableHead>
-            <TableHead className="text-right">To apply</TableHead>
+            <TableHead>{t('money.shared.policyNo')}</TableHead>
+            <TableHead>{t('money.shared.client')}</TableHead>
+            <TableHead className="text-end">{t('money.shared.commission')}</TableHead>
+            <TableHead>{t('money.match.matchCol')}</TableHead>
+            <TableHead className="text-end">{t('money.match.toApply')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -94,25 +97,25 @@ export function MatchTable({
                 <TableCell className="font-medium">
                   {r.line.policyNumber || '—'}
                   {overridden && (
-                    <div className="text-xs text-muted-foreground">Linked to {nameOf(r.policyId)}</div>
+                    <div className="text-xs text-muted-foreground">{t('money.match.linkedTo', { policy: nameOf(r.policyId) })}</div>
                   )}
                 </TableCell>
                 <TableCell>{r.line.clientName || '—'}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-end">
                   {r.line.commissionCents === null ? '—' : formatKes(r.line.commissionCents)}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant={badge.variant}>{badge.label}</Badge>
+                    <Badge variant={badge.variant}>{t(badge.labelKey)}</Badge>
                     {r.status === 'unmatched' && <PolicyPicker policies={policies} onPick={(id) => onPick(r.key, id)} />}
                     {overridden && (
                       <Button type="button" variant="ghost" size="sm" onClick={() => onPick(r.key, null)}>
-                        Clear
+                        {t('money.commissions.clear')}
                       </Button>
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="text-right">{formatKes(r.applyCents)}</TableCell>
+                <TableCell className="text-end">{formatKes(r.applyCents)}</TableCell>
               </TableRow>
             );
           })}

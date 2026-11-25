@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function RemoveMemberDialog({ member, onOpenChange }: Props) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { data: members } = useAgencyMembers();
   const removeMember = useRemoveMember();
@@ -29,10 +31,15 @@ export function RemoveMemberDialog({ member, onOpenChange }: Props) {
       { userId: member.id, reassignTo },
       {
         onSuccess: (res) => {
-          toast({ title: `Removed — ${res.clients_moved} clients and ${res.policies_moved} policies reassigned` });
+          toast({
+            title: t('agency.removedToast', {
+              clients: t('agency.clientsCount', { count: res.clients_moved }),
+              policies: t('agency.policiesCount', { count: res.policies_moved }),
+            }),
+          });
           onOpenChange(false);
         },
-        onError: (err: any) => toast({ title: 'Could not remove member', description: err.message, variant: 'destructive' }),
+        onError: (err: any) => toast({ title: t('agency.couldNotRemove'), description: err.message, variant: 'destructive' }),
       },
     );
   };
@@ -41,15 +48,15 @@ export function RemoveMemberDialog({ member, onOpenChange }: Props) {
     <Dialog open={!!member} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Remove {member?.full_name}</DialogTitle>
+          <DialogTitle>{t('agency.removeTitle', { name: member?.full_name })}</DialogTitle>
           <DialogDescription>
-            They will lose access immediately. Their clients and policies move to the member you pick.
+            {t('agency.removeDesc')}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
-          <Label>Reassign their clients to</Label>
+          <Label>{t('agency.reassignLabel')}</Label>
           <Select value={reassignTo} onValueChange={setReassignTo}>
-            <SelectTrigger><SelectValue placeholder="Select a member" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('agency.selectMember')} /></SelectTrigger>
             <SelectContent>
               {options.map((m) => (
                 <SelectItem key={m.id} value={m.id}>{m.full_name}</SelectItem>
@@ -58,9 +65,9 @@ export function RemoveMemberDialog({ member, onOpenChange }: Props) {
           </Select>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
           <Button variant="destructive" onClick={confirm} disabled={!reassignTo || removeMember.isPending}>
-            {removeMember.isPending ? 'Removing...' : 'Remove member'}
+            {removeMember.isPending ? t('agency.removing') : t('agency.removeMember')}
           </Button>
         </DialogFooter>
       </DialogContent>

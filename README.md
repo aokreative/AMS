@@ -106,6 +106,7 @@ New migrations go in `supabase/migrations/` and should be applied in order.
 | 020 | Leads pipeline: leads + lead_activities (contacts with channel, figure discussed, follow-up), stage moves new→contacted→quoted→won→paid / lost, convert a paid lead to client + pending policy, lead_pipeline view; RPC-only writes; covered by the demo reset |
 | 020a | Leads review fixes: convert_lead only uses the lead agent's clients for agents, clear errors for bad numbers/dates/NaN and duplicate policy numbers, remove_member hands leads over, sample demo leads (only the lead tables re-saved into the demo copy) |
 | 020b | set_lead_follow_up: set or clear a lead's next follow-up without logging a contact |
+| 021 | exchange_rates (KES per unit of USD/TZS/UGX, readable by anyone) + admin_set_exchange_rate for the superadmin |
 
 ### Running the database tests
 
@@ -163,7 +164,8 @@ Every active policy expiring within 90 days (or already expired) is in the pipel
 
 - **Sign-up:** details → 6-digit email code (Supabase "Confirm signup" template must contain `{{ .Token }}`; see `docs/LAUNCH.md`) → agency created → **setup wizard** at `/onboarding`: language → currency → plan (pay with Paystack; payment is required to open the agency; clicking a plan shows who it suits, its limits and what it adds). Owners of an agency whose setup isn't finished are sent back to the wizard. Signing in with an unconfirmed email asks for a code too.
 - **Currencies:** each agency works in KES, TZS, UGX or USD (`agencies.currency`, chosen once in setup). Every amount in the app shows in it (`formatCurrency` → `lib/money.ts`). Plans are still billed in KES.
-- **Languages:** English, Kiswahili, French, Portuguese, Spanish, Arabic (right-to-left). Per person (`users.language`, switcher in the sidebar and on sign-in pages). Translations live in `artifacts/ams/src/i18n/locales/*.json`; a test checks every language has every key. Sign-in, sign-up, code, setup, menus, plans and the banner are translated; other pages fall back to English for now.
+- **Languages:** English, Kiswahili, French, Portuguese, Spanish, Arabic (right-to-left). Per person (`users.language`, switcher in the sidebar and on sign-in pages). Shared strings live in `artifacts/ams/src/i18n/locales/<lang>.json`; each area has its own file in `locales/<lang>/<section>.json` (clients, policies, money, payouts, agency, workspace, billing), loaded as `t('<section>.…')`. A test checks every language has every key and the right plural forms. The whole agency app is translated; the superadmin page and the legal texts stay in English. Dates follow the interface language.
+- **Plan prices in other currencies:** agencies using USD, TZS or UGX see plan prices as "≈ USD 27" at the rates the superadmin sets on /admin, with a note that Paystack charges the KES price.
 - **Owners per plan:** Starter 1, Growth 2, Enterprise 3, Enterprise Plus unlimited. Owners can invite an Owner or promote a member; the last Owner can't be demoted, and nobody can remove themselves. Reminder emails go to every Owner.
 
 ## Leads

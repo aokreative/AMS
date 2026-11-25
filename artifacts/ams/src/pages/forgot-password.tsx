@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2, AlertCircle, MailCheck } from 'lucide-react';
 
 export default function ForgotPassword() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,8 +28,8 @@ export default function ForgotPassword() {
       // reported by Supabase, so nobody can probe which addresses have accounts.
       setError(
         resetError.message.toLowerCase().includes('rate limit')
-          ? 'Too many reset emails were requested. Wait a few minutes and try again.'
-          : resetError.message || 'Could not send the reset email. Please try again.',
+          ? t('workspace.forgot.rateLimit')
+          : resetError.message || t('workspace.forgot.failed'),
       );
       return;
     }
@@ -43,9 +45,9 @@ export default function ForgotPassword() {
 
         <Card className="border-border/50 shadow-xl">
           <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-2xl font-bold tracking-tight text-center">Reset your password</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight text-center">{t('workspace.forgot.title')}</CardTitle>
             <CardDescription className="text-center">
-              {sent ? 'Check your inbox.' : "Enter your email and we'll send you a link to set a new password."}
+              {sent ? t('workspace.forgot.descSent') : t('workspace.forgot.desc')}
             </CardDescription>
           </CardHeader>
 
@@ -55,17 +57,16 @@ export default function ForgotPassword() {
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-muted text-sm">
                   <MailCheck className="w-4 h-4 mt-0.5 shrink-0 text-primary" />
                   <span>
-                    If an account exists for <strong>{email.trim()}</strong>, a reset link is on its way. It can take a
-                    minute; check your spam folder too.
+                    <Trans i18nKey="workspace.forgot.sent" values={{ email: email.trim() }} components={{ b: <strong /> }} />
                   </span>
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col space-y-3 pt-4">
                 <Button variant="outline" className="w-full" onClick={() => setSent(false)}>
-                  Send to a different email
+                  {t('workspace.forgot.differentEmail')}
                 </Button>
                 <a href="/login" className="text-xs text-primary font-medium hover:underline">
-                  Back to sign in
+                  {t('workspace.forgot.backToSignIn')}
                 </a>
               </CardFooter>
             </>
@@ -79,7 +80,7 @@ export default function ForgotPassword() {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email address</Label>
+                  <Label htmlFor="email">{t('common.email')}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -94,11 +95,11 @@ export default function ForgotPassword() {
               </CardContent>
               <CardFooter className="flex flex-col space-y-3 pt-4">
                 <Button type="submit" className="w-full" disabled={loading || !email.trim()}>
-                  {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Send reset link
+                  {loading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
+                  {t('workspace.forgot.send')}
                 </Button>
                 <a href="/login" className="text-xs text-primary font-medium hover:underline">
-                  Back to sign in
+                  {t('workspace.forgot.backToSignIn')}
                 </a>
               </CardFooter>
             </form>

@@ -10,6 +10,7 @@ import { useInitializePayment, tierFitError } from '@/hooks/subscription';
 import { ALLOWED_MONTHS, formatKes, OWNERS, paymentAmountKes, TIERS as STANDARD_TIERS, todayNairobi, withCustomPrice } from '@/lib/subscription';
 import { cn } from '@/lib/utils';
 import { PlanDetails } from './PlanDetails';
+import { usePlanPrice } from '@/hooks/fx';
 
 /**
  * Plan cards (the selected one opens to show what it includes) + months + total + "Pay with Paystack".
@@ -21,16 +22,20 @@ export function PlanPicker({
   footer,
   demo,
   onDemoChoose,
+  currency,
 }: {
   active?: boolean;
   footer?: React.ReactNode;
   demo?: boolean;
   onDemoChoose?: (tier: string, months: number) => void;
+  /** Show prices in this currency instead of the agency's (used by the demo). */
+  currency?: string;
 }) {
   const { t } = useTranslation();
   const { agency: realAgency } = useAuth();
   const agency = demo ? null : realAgency;
   const init = useInitializePayment();
+  const price = usePlanPrice(currency);
   const today = todayNairobi();
   const current = agency?.subscription_tier ?? 'starter';
   // A superadmin may have set a special monthly price on the current plan; the server charges the same.
@@ -102,10 +107,10 @@ export function PlanPicker({
                 <span className="text-sm font-medium whitespace-nowrap">
                   {customPrice != null && x.key === current && (
                     <span className="me-1 text-xs text-muted-foreground line-through">
-                      {formatKes(STANDARD_TIERS.find((s) => s.key === x.key)?.price_kes ?? 0)}
+                      {price.main(STANDARD_TIERS.find((s) => s.key === x.key)?.price_kes ?? 0)}
                     </span>
                   )}
-                  {formatKes(x.price_kes)} <span className="text-xs text-muted-foreground">{t('plans.perMonth')}</span>
+                  {price.main(x.price_kes)} <span className="text-xs text-muted-foreground">{t('plans.perMonth')}</span>
                 </span>
               </span>
               <span className="block text-xs text-muted-foreground">{limits(x)}</span>
@@ -127,7 +132,7 @@ export function PlanPicker({
           <SelectContent>
             {monthChoices.map((m) => (
               <SelectItem key={m} value={String(m)}>
-                {m === 0 ? 'Upgrade only (rest of this period)' : t('plans.month', { count: m })}
+                {m === 0 ? t('billing.upgradeOnly') : t('plans.month', { count: m })}
               </SelectItem>
             ))}
           </SelectContent>
@@ -137,15 +142,18 @@ export function PlanPicker({
       {amount && (
         <div className="rounded-lg bg-muted p-3 text-sm space-y-1">
           {amount.difference > 0 && (
-            <div className="flex justify-between"><span>Difference for the rest of this period</span><span>{formatKes(amount.difference)}</span></div>
+            <div className="flex justify-between"><span>{t('billing.difference')}</span><span>{price.main(amount.difference)}</span></div>
           )}
           {amount.months > 0 && (
             <div className="flex justify-between">
               <span>{t('plans.month', { count: effectiveMonths })} · {TIERS.find((x) => x.key === tier)?.name}</span>
-              <span>{formatKes(amount.months)}</span>
+              <span>{price.main(amount.months)}</span>
             </div>
           )}
-          <div className="flex justify-between border-t pt-1 font-semibold"><span>{t('plans.total')}</span><span>{formatKes(amount.total)}</span></div>
+          <div className="flex justify-between border-t pt-1 font-semibold"><span>{t('plans.total')}</span><span>{price.main(amount.total)}</span></div>
+          {price.charged(amount.total) && (
+            <p className="pt-1 text-xs text-muted-foreground">{t('billing.chargedAs', { amount: price.charged(amount.total) })}</p>
+          )}
         </div>
       )}
 

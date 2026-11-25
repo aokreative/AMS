@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { getCurrency } from '@/lib/money';
 import { usePolicies } from '@/hooks/queries';
@@ -25,6 +26,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { ArrowLeft, FileText, Trash2 } from 'lucide-react';
 
 export default function ReceiptDetail() {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { isOwnerOrManager } = useAuth();
@@ -44,17 +46,17 @@ export default function ReceiptDetail() {
   const { data: receivables } = useInsurerReceivables(applyOpen ? receipt?.insurer_id : undefined);
   const { data: insurerPolicies } = usePolicies(receipt ? { insurerId: receipt.insurer_id } : undefined);
 
-  const showError = (err: Error) => toast({ title: 'Error', description: err.message, variant: 'destructive' });
+  const showError = (err: Error) => toast({ title: t('money.shared.error'), description: err.message, variant: 'destructive' });
 
   if (!isOwnerOrManager) {
-    return <div className="text-muted-foreground">Only owners and managers can view receipts.</div>;
+    return <div className="text-muted-foreground">{t('money.receiptDetail.ownersOnly')}</div>;
   }
-  if (isLoading) return <div className="py-8 text-center">Loading...</div>;
+  if (isLoading) return <div className="py-8 text-center">{t('common.loading')}</div>;
   if (!receipt) {
     return (
       <div className="space-y-4">
-        <Button variant="ghost" onClick={() => navigate('/receipts')}><ArrowLeft className="w-4 h-4 mr-2" /> Receipts</Button>
-        <div className="text-muted-foreground">Receipt not found</div>
+        <Button variant="ghost" onClick={() => navigate('/receipts')}><ArrowLeft className="w-4 h-4 me-2 rtl:rotate-180" /> {t('nav.receipts')}</Button>
+        <div className="text-muted-foreground">{t('money.receiptDetail.notFound')}</div>
       </div>
     );
   }
@@ -75,9 +77,9 @@ export default function ReceiptDetail() {
   }
 
   const lineStatus = (l: ReceiptLineWithPolicy) => {
-    if (!l.policy_id) return { label: 'Unmatched', variant: 'destructive' as const };
-    if ((appliedByLine.get(l.id) ?? 0) > 0) return { label: 'Applied', variant: 'success' as const };
-    return { label: 'Matched', variant: 'secondary' as const };
+    if (!l.policy_id) return { label: t('money.match.unmatched'), variant: 'destructive' as const };
+    if ((appliedByLine.get(l.id) ?? 0) > 0) return { label: t('money.shared.applied'), variant: 'success' as const };
+    return { label: t('money.match.matched'), variant: 'secondary' as const };
   };
 
   const term = policySearch.trim().toLowerCase();
@@ -88,7 +90,7 @@ export default function ReceiptDetail() {
     if (!linkingLine) return;
     linkLine.mutate({ lineId: linkingLine.id, policyId }, {
       onSuccess: (res) => {
-        toast({ title: `Linked — ${formatCurrency(Number(res.applied))} applied` });
+        toast({ title: t('money.receiptDetail.toastLinked', { amount: formatCurrency(Number(res.applied)) }) });
         setLinkingLine(null);
         setPolicySearch('');
       },
@@ -98,7 +100,7 @@ export default function ReceiptDetail() {
 
   const handleUndo = (id: string) => {
     undo.mutate(id, {
-      onSuccess: () => toast({ title: 'Applied amount undone' }),
+      onSuccess: () => toast({ title: t('money.receiptDetail.toastUndone') }),
       onError: showError,
     });
   };
@@ -106,7 +108,7 @@ export default function ReceiptDetail() {
   const handleDelete = () => {
     deleteReceipt.mutate({ id: receipt.id, filePath: receipt.file_path }, {
       onSuccess: () => {
-        toast({ title: 'Receipt deleted' });
+        toast({ title: t('money.receiptDetail.toastDeleted') });
         navigate('/receipts');
       },
       onError: (err) => { showError(err); setDeleteOpen(false); },
@@ -125,7 +127,7 @@ export default function ReceiptDetail() {
       .map((a) => ({ commissionId: a.commissionId, amount: a.cents / 100 }));
     applyMoney.mutate({ receiptId: receipt.id, allocations }, {
       onSuccess: (res) => {
-        toast({ title: `Applied ${formatCurrency(Number(res.applied))} — ${formatCurrency(Number(res.unapplied))} still unapplied` });
+        toast({ title: t('money.receiptDetail.toastApplied', { applied: formatCurrency(Number(res.applied)), unapplied: formatCurrency(Number(res.unapplied)) }) });
         setApplyOpen(false);
         setAllocState({});
       },
@@ -137,52 +139,52 @@ export default function ReceiptDetail() {
 
   return (
     <div className="space-y-6">
-      <Button variant="ghost" size="sm" onClick={() => navigate('/receipts')}><ArrowLeft className="w-4 h-4 mr-2" /> Receipts</Button>
+      <Button variant="ghost" size="sm" onClick={() => navigate('/receipts')}><ArrowLeft className="w-4 h-4 me-2 rtl:rotate-180" /> {t('nav.receipts')}</Button>
 
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{receipt.insurer?.name ?? 'Receipt'}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{receipt.insurer?.name ?? t('money.receiptDetail.receiptFallback')}</h1>
           <p className="text-muted-foreground">
-            Received {formatDate(receipt.received_on)}
-            {receipt.bank_reference ? ` - Ref ${receipt.bank_reference}` : ''}
-            {receipt.is_opening_balance && <Badge variant="secondary" className="ml-2 text-muted-foreground">Opening balance</Badge>}
+            {t('money.receiptDetail.receivedOn', { date: formatDate(receipt.received_on) })}
+            {receipt.bank_reference ? t('money.receiptDetail.refSuffix', { ref: receipt.bank_reference }) : ''}
+            {receipt.is_opening_balance && <Badge variant="secondary" className="ms-2 text-muted-foreground">{t('money.shared.openingBalance')}</Badge>}
           </p>
         </div>
         <div className="flex gap-2">
           {unappliedCents > 0 && (
-            <Button onClick={() => { setAllocState({}); setApplyOpen(true); }}>Apply unapplied money</Button>
+            <Button onClick={() => { setAllocState({}); setApplyOpen(true); }}>{t('money.receiptDetail.applyUnapplied')}</Button>
           )}
           {receipt.file_path && (
-            <Button variant="outline" onClick={openPdf}><FileText className="w-4 h-4 mr-2" /> View PDF</Button>
+            <Button variant="outline" onClick={openPdf}><FileText className="w-4 h-4 me-2" /> {t('money.receiptDetail.viewPdf')}</Button>
           )}
           {!receipt.is_opening_balance && (
             <Button variant="destructive" disabled={!canDelete} onClick={() => setDeleteOpen(true)}>
-              <Trash2 className="w-4 h-4 mr-2" /> Delete
+              <Trash2 className="w-4 h-4 me-2" /> {t('money.shared.delete')}
             </Button>
           )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card><CardContent className="p-4"><div className="text-sm text-muted-foreground">Amount</div><div className="text-xl font-bold">{formatCurrency(receipt.amount)}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-sm text-muted-foreground">Applied</div><div className="text-xl font-bold">{formatCurrency(receipt.applied)}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-sm text-muted-foreground">Unapplied</div><div className="text-xl font-bold">{formatCurrency(receipt.unapplied)}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-sm text-muted-foreground">{t('money.shared.amount')}</div><div className="text-xl font-bold">{formatCurrency(receipt.amount)}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-sm text-muted-foreground">{t('money.shared.applied')}</div><div className="text-xl font-bold">{formatCurrency(receipt.applied)}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-sm text-muted-foreground">{t('money.shared.unapplied')}</div><div className="text-xl font-bold">{formatCurrency(receipt.unapplied)}</div></CardContent></Card>
       </div>
 
       {receipt.lines.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold tracking-tight">Statement lines</h2>
+          <h2 className="text-lg font-semibold tracking-tight">{t('money.receiptDetail.statementLines')}</h2>
           <div className="border rounded-md bg-card overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>#</TableHead>
-                  <TableHead>Policy number</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead className="text-right">Commission</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead>{t('money.receiptDetail.lineNo')}</TableHead>
+                  <TableHead>{t('money.shared.policyNumber')}</TableHead>
+                  <TableHead>{t('money.shared.client')}</TableHead>
+                  <TableHead>{t('money.shared.period')}</TableHead>
+                  <TableHead className="text-end">{t('money.shared.commission')}</TableHead>
+                  <TableHead>{t('money.shared.status')}</TableHead>
+                  <TableHead className="text-end">{t('money.shared.action')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -194,12 +196,12 @@ export default function ReceiptDetail() {
                       <TableCell>{l.policy_number ?? '-'}</TableCell>
                       <TableCell>{l.client_name ?? '-'}</TableCell>
                       <TableCell>{formatDate(l.period)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(l.commission)}</TableCell>
+                      <TableCell className="text-end">{formatCurrency(l.commission)}</TableCell>
                       <TableCell><Badge variant={st.variant}>{st.label}</Badge></TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-end">
                         {!l.policy_id && (
                           <Button size="sm" variant="outline" onClick={() => { setLinkingLine(l); setPolicySearch(l.policy_number ?? ''); }}>
-                            Link to policy
+                            {t('money.receiptDetail.linkToPolicy')}
                           </Button>
                         )}
                       </TableCell>
@@ -213,21 +215,21 @@ export default function ReceiptDetail() {
       )}
 
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold tracking-tight">Applied to commissions</h2>
+        <h2 className="text-lg font-semibold tracking-tight">{t('money.receiptDetail.appliedToCommissions')}</h2>
         <div className="border rounded-md bg-card overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Policy</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Expected</TableHead>
-                <TableHead className="text-right">Applied</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead>{t('money.shared.policy')}</TableHead>
+                <TableHead>{t('money.shared.client')}</TableHead>
+                <TableHead>{t('money.shared.expected')}</TableHead>
+                <TableHead className="text-end">{t('money.shared.applied')}</TableHead>
+                <TableHead className="text-end">{t('money.shared.action')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {receipt.allocations.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nothing applied yet.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">{t('money.receiptDetail.nothingApplied')}</TableCell></TableRow>
               ) : receipt.allocations.map(a => (
                 <TableRow key={a.id}>
                   <TableCell>
@@ -237,9 +239,9 @@ export default function ReceiptDetail() {
                   </TableCell>
                   <TableCell>{a.commission?.policy?.client?.name ?? '-'}</TableCell>
                   <TableCell>{a.commission ? formatCurrency(a.commission.amount) : '-'}</TableCell>
-                  <TableCell className="text-right font-medium">{formatCurrency(a.amount)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="sm" variant="outline" disabled={undo.isPending} onClick={() => handleUndo(a.id)}>Undo</Button>
+                  <TableCell className="text-end font-medium">{formatCurrency(a.amount)}</TableCell>
+                  <TableCell className="text-end">
+                    <Button size="sm" variant="outline" disabled={undo.isPending} onClick={() => handleUndo(a.id)}>{t('money.receiptDetail.undo')}</Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -251,20 +253,20 @@ export default function ReceiptDetail() {
       <Dialog open={!!linkingLine} onOpenChange={(open) => { if (!open) { setLinkingLine(null); setPolicySearch(''); } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Link to policy</DialogTitle>
+            <DialogTitle>{t('money.receiptDetail.linkToPolicy')}</DialogTitle>
             <DialogDescription>
-              Policies with {receipt.insurer?.name ?? 'this insurer'} only. Line: {linkingLine?.policy_number ?? '-'} / {linkingLine?.client_name ?? '-'}.
+              {t('money.receiptDetail.linkDescription', { insurer: receipt.insurer?.name ?? t('money.shared.insurerFallback'), policy: linkingLine?.policy_number ?? '-', client: linkingLine?.client_name ?? '-' })}
             </DialogDescription>
           </DialogHeader>
-          <Input placeholder="Search policy number or client..." value={policySearch} onChange={(e) => setPolicySearch(e.target.value)} />
+          <Input placeholder={t('money.receiptDetail.searchPolicyPlaceholder')} value={policySearch} onChange={(e) => setPolicySearch(e.target.value)} />
           <div className="max-h-72 overflow-y-auto border rounded-md divide-y">
             {policyOptions.length === 0 ? (
-              <div className="p-4 text-sm text-muted-foreground text-center">No matching policies.</div>
+              <div className="p-4 text-sm text-muted-foreground text-center">{t('money.receiptDetail.noMatchingPolicies')}</div>
             ) : policyOptions.slice(0, 50).map(p => (
               <button
                 key={p.id}
                 type="button"
-                className="w-full text-left px-3 py-2 hover:bg-muted disabled:opacity-50"
+                className="w-full text-start px-3 py-2 hover:bg-muted disabled:opacity-50"
                 disabled={linkLine.isPending}
                 onClick={() => handleLink(p.id)}
               >
@@ -279,18 +281,18 @@ export default function ReceiptDetail() {
       <Dialog open={applyOpen} onOpenChange={(open) => { setApplyOpen(open); if (!open) setAllocState({}); }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Apply unapplied money</DialogTitle>
+            <DialogTitle>{t('money.receiptDetail.applyUnapplied')}</DialogTitle>
             <DialogDescription>
-              {getCurrency()} {formatKes(unappliedCents)} is unapplied on this receipt. Tick the {receipt.insurer?.name ?? 'insurer'} commissions it pays.
+              {t('money.receiptDetail.applyDescription', { currency: getCurrency(), amount: formatKes(unappliedCents), insurer: receipt.insurer?.name ?? t('money.shared.insurerFallback') })}
             </DialogDescription>
           </DialogHeader>
           <AllocateOutstanding commissions={applyCommissions} state={allocState} onChange={setAllocState} />
           {overCents > 0 && (
-            <div className="text-sm text-destructive">Applied amount is {getCurrency()} {formatKes(overCents)} more than the unapplied money</div>
+            <div className="text-sm text-destructive">{t('money.receiptDetail.overUnapplied', { currency: getCurrency(), amount: formatKes(overCents) })}</div>
           )}
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setApplyOpen(false)}>Cancel</Button>
-            <Button onClick={handleApply} disabled={applyMoney.isPending || pickedCents <= 0 || overCents > 0}>Confirm</Button>
+            <Button variant="outline" onClick={() => setApplyOpen(false)}>{t('common.cancel')}</Button>
+            <Button onClick={handleApply} disabled={applyMoney.isPending || pickedCents <= 0 || overCents > 0}>{t('money.shared.confirm')}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -298,14 +300,14 @@ export default function ReceiptDetail() {
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this receipt?</AlertDialogTitle>
+            <AlertDialogTitle>{t('money.receiptDetail.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the receipt, its statement lines and the stored PDF. This cannot be undone.
+              {t('money.receiptDetail.deleteDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={deleteReceipt.isPending}>Delete</AlertDialogAction>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={deleteReceipt.isPending}>{t('money.shared.delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

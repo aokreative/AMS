@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PasswordInput } from '@/components/PasswordInput';
 import { Link, useLocation } from 'wouter';
 import { supabase } from '@/lib/supabase';
@@ -9,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { BrandLockup } from '@/components/BrandLockup';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, AlertCircle } from 'lucide-react';
-import { TermsConsent, TERMS_REQUIRED_MESSAGE } from '@/components/TermsConsent';
+import { TermsConsent } from '@/components/TermsConsent';
 import { VerifyEmailCode } from '@/components/VerifyEmailCode';
 import { joinNextStep, signUpOutcome } from '@/lib/auth';
 
@@ -19,8 +20,8 @@ interface InvitePreview {
   email: string;
 }
 
-const INVALID_LINK =
-  'This invite link is invalid or has expired. Ask the person who invited you for a new one.';
+// Marker for "show the invalid-link message"; the text itself is translated where it is shown.
+const INVALID_LINK = 'invalid';
 
 function capitalise(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -49,6 +50,7 @@ function ErrorBox({ message }: { message: string }) {
 }
 
 export default function Join() {
+  const { t } = useTranslation();
   const code = new URLSearchParams(window.location.search).get('code');
   const { session, profile, isLoading: authLoading, refreshProfile } = useAuth();
   const [, setLocation] = useLocation();
@@ -107,7 +109,7 @@ export default function Join() {
     e.preventDefault();
     if (submitting) return;
     if (!agreed) {
-      setError(TERMS_REQUIRED_MESSAGE);
+      setError(t('auth.termsRequired'));
       return;
     }
     setSubmitting(true);
@@ -115,7 +117,7 @@ export default function Join() {
     try {
       await accept();
     } catch (err: any) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      setError(err.message || t('workspace.join.genericError'));
     } finally {
       setSubmitting(false);
     }
@@ -128,19 +130,19 @@ export default function Join() {
     setError(null);
 
     if (!fullName.trim()) {
-      setError('Enter your full name');
+      setError(t('workspace.join.enterName'));
       return;
     }
     if (!agreed) {
-      setError(TERMS_REQUIRED_MESSAGE);
+      setError(t('auth.termsRequired'));
       return;
     }
     if (mode === 'signup' && password.length < 8) {
-      setError('Password must be at least 8 characters.');
+      setError(t('workspace.join.passwordTooShort'));
       return;
     }
     if (mode === 'signin' && !password) {
-      setError('Enter your password.');
+      setError(t('workspace.join.enterPassword'));
       return;
     }
 
@@ -166,7 +168,7 @@ export default function Join() {
           const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
           step = joinNextStep({ signInError: signInError?.message ?? null });
           if (step === 'error') {
-            throw new Error('An account with this email already exists. Sign in instead with your existing password.');
+            throw new Error(t('workspace.join.accountExists'));
           }
         }
       }
@@ -177,7 +179,7 @@ export default function Join() {
       }
       await accept();
     } catch (err: any) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      setError(err.message || t('workspace.join.genericError'));
     } finally {
       setSubmitting(false);
     }
@@ -203,15 +205,15 @@ export default function Join() {
     return (
       <Shell>
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold tracking-tight text-center">Invite unavailable</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight text-center">{t('workspace.join.unavailable')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <ErrorBox message={previewError ?? INVALID_LINK} />
+          <ErrorBox message={t('workspace.join.invalidLink')} />
         </CardContent>
         <CardFooter>
           <p className="text-sm text-center text-muted-foreground w-full">
             <Link href="/login" className="text-primary font-medium hover:underline">
-              Go to sign in
+              {t('workspace.join.goSignIn')}
             </Link>
           </p>
         </CardFooter>
@@ -219,11 +221,11 @@ export default function Join() {
     );
   }
 
-  const roleLabel = capitalise(preview.role);
+  const roleLabel = t(`roles.${preview.role}`, { defaultValue: capitalise(preview.role) });
   const header = (
     <CardHeader className="space-y-1 pb-6">
-      <CardTitle className="text-2xl font-bold tracking-tight text-center">Join {preview.agency_name}</CardTitle>
-      <CardDescription className="text-center">You've been invited as {roleLabel}</CardDescription>
+      <CardTitle className="text-2xl font-bold tracking-tight text-center">{t('workspace.join.title', { agency: preview.agency_name })}</CardTitle>
+      <CardDescription className="text-center">{t('workspace.join.invitedAs', { role: roleLabel })}</CardDescription>
     </CardHeader>
   );
 
@@ -245,7 +247,7 @@ export default function Join() {
             try {
               await accept();
             } catch (err: any) {
-              setError(err.message || 'Something went wrong. Please try again.');
+              setError(err.message || t('workspace.join.genericError'));
               setCodeStep(null);
             } finally {
               setSubmitting(false);
@@ -263,11 +265,11 @@ export default function Join() {
         <Shell>
           {header}
           <CardContent className="space-y-4">
-            <p className="text-sm text-center">This account already belongs to an agency</p>
+            <p className="text-sm text-center">{t('workspace.join.alreadyBelongs')}</p>
           </CardContent>
           <CardFooter>
             <Button asChild className="w-full">
-              <Link href="/dashboard">Go to dashboard</Link>
+              <Link href="/dashboard">{t('workspace.join.goDashboard')}</Link>
             </Button>
           </CardFooter>
         </Shell>
@@ -281,12 +283,12 @@ export default function Join() {
           <CardContent className="space-y-4">
             {error && <ErrorBox message={error} />}
             <p className="text-sm text-center">
-              You're signed in as {session.email}. Sign out to accept this invite.
+              {t('workspace.join.signedInAs', { email: session.email })}
             </p>
           </CardContent>
           <CardFooter>
             <Button className="w-full" onClick={() => { void handleSignOut(); }}>
-              Sign out
+              {t('common.signOut')}
             </Button>
           </CardFooter>
         </Shell>
@@ -300,11 +302,11 @@ export default function Join() {
           <CardContent className="space-y-4">
             {error && <ErrorBox message={error} />}
             <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
+              <Label htmlFor="email">{t('common.email')}</Label>
               <Input id="email" type="email" value={preview.email} disabled />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="fullName">Your full name</Label>
+              <Label htmlFor="fullName">{t('common.fullName')}</Label>
               <Input
                 id="fullName"
                 placeholder="Jane Kamau"
@@ -319,8 +321,8 @@ export default function Join() {
           </CardContent>
           <CardFooter className="pt-4">
             <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Join {preview.agency_name}
+              {submitting && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
+              {t('workspace.join.joinAgency', { agency: preview.agency_name })}
             </Button>
           </CardFooter>
         </form>
@@ -336,13 +338,13 @@ export default function Join() {
           {error && <ErrorBox message={error} />}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email address</Label>
+            <Label htmlFor="email">{t('common.email')}</Label>
             <Input id="email" type="email" value={preview.email} disabled />
           </div>
 
           {(
             <div className="space-y-2">
-              <Label htmlFor="fullName">Your full name</Label>
+              <Label htmlFor="fullName">{t('common.fullName')}</Label>
               <Input
                 id="fullName"
                 placeholder="Jane Kamau"
@@ -356,10 +358,10 @@ export default function Join() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('common.password')}</Label>
             <PasswordInput
               id="password"
-              placeholder={mode === 'signup' ? 'At least 8 characters' : 'Your password'}
+              placeholder={mode === 'signup' ? t('auth.passwordHint') : t('workspace.join.passwordPlaceholderSignIn')}
               value={password}
               onChange={e => { setPassword(e.target.value); setError(null); }}
               required
@@ -374,22 +376,22 @@ export default function Join() {
 
         <CardFooter className="flex flex-col space-y-3 pt-4">
           <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {submitting && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
             {submitting
-              ? 'Joining…'
+              ? t('workspace.join.joining')
               : mode === 'signup'
-                ? `Join ${preview.agency_name}`
-                : 'Sign in and join'}
+                ? t('workspace.join.joinAgency', { agency: preview.agency_name })
+                : t('workspace.join.signInAndJoin')}
           </Button>
           <p className="text-sm text-center text-muted-foreground">
-            {mode === 'signup' ? 'Already have an account?' : 'New here?'}{' '}
+            {mode === 'signup' ? t('auth.haveAccount') : t('workspace.join.newHere')}{' '}
             <button
               type="button"
               className="text-primary font-medium hover:underline"
               disabled={submitting}
               onClick={() => { setMode(mode === 'signup' ? 'signin' : 'signup'); setError(null); }}
             >
-              {mode === 'signup' ? 'Sign in instead' : 'Create an account'}
+              {mode === 'signup' ? t('workspace.join.signInInstead') : t('workspace.join.createAccount')}
             </button>
           </p>
         </CardFooter>

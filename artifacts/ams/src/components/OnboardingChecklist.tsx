@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'wouter';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Circle, ChevronRight, X, Rocket } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export function OnboardingChecklist({ agencyId, hasInsurers, hasClients, hasPolicies }: Props) {
+  const { t } = useTranslation();
   const storageKey = `ams-onboarding-dismissed-${agencyId}`;
   const [dismissed, setDismissed] = useState(() => {
     try { return localStorage.getItem(storageKey) === 'true'; } catch { return false; }
@@ -29,22 +31,22 @@ export function OnboardingChecklist({ agencyId, hasInsurers, hasClients, hasPoli
   const steps: ChecklistStep[] = [
     {
       id: 'insurers',
-      label: 'Add your first insurer',
-      description: 'Add the insurance companies you work with.',
+      label: t('workspace.checklist.insurersLabel'),
+      description: t('workspace.checklist.insurersDesc'),
       href: '/insurers',
       done: hasInsurers,
     },
     {
       id: 'clients',
-      label: 'Add your first client',
-      description: 'Start building your client register.',
+      label: t('workspace.checklist.clientsLabel'),
+      description: t('workspace.checklist.clientsDesc'),
       href: '/clients',
       done: hasClients,
     },
     {
       id: 'policies',
-      label: 'Create your first policy',
-      description: 'Link a client to a policy and start tracking commissions.',
+      label: t('workspace.checklist.policiesLabel'),
+      description: t('workspace.checklist.policiesDesc'),
       href: '/policies',
       done: hasPolicies,
     },
@@ -56,8 +58,8 @@ export function OnboardingChecklist({ agencyId, hasInsurers, hasClients, hasPoli
   // Auto-dismiss 3 seconds after all steps are complete
   useEffect(() => {
     if (allDone && !dismissed) {
-      const t = setTimeout(() => dismiss(), 3000);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => dismiss(), 3000);
+      return () => clearTimeout(timer);
     }
     return undefined;
   }, [allDone, dismissed]);
@@ -76,16 +78,16 @@ export function OnboardingChecklist({ agencyId, hasInsurers, hasClients, hasPoli
           <Rocket className="w-5 h-5 text-primary" />
           <div>
             <p className="font-semibold text-sm">
-              {allDone ? 'You\'re all set! 🎉' : 'Get started with your agency'}
+              {allDone ? t('workspace.checklist.doneTitle') : t('workspace.checklist.startTitle')}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
               {allDone
-                ? 'All setup steps complete — dismissing shortly.'
-                : `${completedCount} of ${steps.length} steps complete`}
+                ? t('workspace.checklist.doneBody')
+                : t('workspace.checklist.progress', { done: completedCount, total: steps.length })}
             </p>
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="h-7 w-7 -mt-1 -mr-1" onClick={dismiss}>
+        <Button variant="ghost" size="icon" className="h-7 w-7 -mt-1 -me-1" onClick={dismiss} aria-label={t('workspace.checklist.dismiss')}>
           <X className="w-4 h-4" />
         </Button>
       </CardHeader>
@@ -116,7 +118,7 @@ export function OnboardingChecklist({ agencyId, hasInsurers, hasClients, hasPoli
                   )}
                 </div>
                 {!step.done && (
-                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground flex-shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground flex-shrink-0 rtl:rotate-180" />
                 )}
               </div>
             </Link>

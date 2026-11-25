@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useInsurers, useCreateInsurer, useUpdateInsurer, useDeleteInsurer } from '@/hooks/queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,17 +19,19 @@ import { useInsurerMoneySummary } from '@/hooks/receipts';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/lib/utils';
 
-const insurerSchema = z.object({
-  name: z.string().min(2, 'Name is required'),
-  contact_email: z.string().email('Invalid email').optional().or(z.literal('')).nullable(),
+const makeInsurerSchema = (t: (key: string) => string) => z.object({
+  name: z.string().min(2, t('agency.nameRequired')),
+  contact_email: z.string().email(t('agency.invalidEmail')).optional().or(z.literal('')).nullable(),
   contact_phone: z.string().optional().nullable(),
-  website: z.string().url('Invalid URL').optional().or(z.literal('')).nullable(),
+  website: z.string().url(t('agency.invalidUrl')).optional().or(z.literal('')).nullable(),
   is_active: z.boolean().default(true),
 });
 
-type InsurerFormValues = z.infer<typeof insurerSchema>;
+type InsurerFormValues = z.infer<ReturnType<typeof makeInsurerSchema>>;
 
 export default function Insurers() {
+  const { t } = useTranslation();
+  const insurerSchema = useMemo(() => makeInsurerSchema(t), [t]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingInsurer, setEditingInsurer] = useState<any | null>(null);
@@ -63,7 +66,7 @@ export default function Insurers() {
     if (editingInsurer) {
       updateInsurer.mutate({ id: editingInsurer.id, ...values }, {
         onSuccess: () => {
-          toast({ title: 'Insurer updated' });
+          toast({ title: t('agency.insurerUpdated') });
           setIsAddOpen(false);
           setEditingInsurer(null);
           form.reset();
@@ -72,7 +75,7 @@ export default function Insurers() {
     } else {
       createInsurer.mutate(values, {
         onSuccess: () => {
-          toast({ title: 'Insurer added' });
+          toast({ title: t('agency.insurerAdded') });
           setIsAddOpen(false);
           form.reset();
         }
@@ -94,7 +97,7 @@ export default function Insurers() {
 
   const toggleActive = (insurer: any, checked: boolean) => {
     updateInsurer.mutate({ id: insurer.id, is_active: checked }, {
-      onSuccess: () => toast({ title: checked ? 'Insurer activated' : 'Insurer deactivated' })
+      onSuccess: () => toast({ title: checked ? t('agency.insurerActivated') : t('agency.insurerDeactivated') })
     });
   };
 
@@ -102,11 +105,11 @@ export default function Insurers() {
     if (!deleteId) return;
     deleteInsurer.mutate(deleteId, {
       onSuccess: () => {
-        toast({ title: 'Insurer deleted' });
+        toast({ title: t('agency.insurerDeleted') });
         setDeleteId(null);
       },
       onError: (err) => {
-        toast({ title: 'Error deleting insurer', description: err.message, variant: 'destructive' });
+        toast({ title: t('agency.errorDeletingInsurer'), description: err.message, variant: 'destructive' });
       }
     });
   };
@@ -127,8 +130,8 @@ export default function Insurers() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="sr-only">Insurers</h1>
-          <p className="text-muted-foreground">Manage the insurance companies you broker for.</p>
+          <h1 className="sr-only">{t('agency.insurersTitle')}</h1>
+          <p className="text-muted-foreground">{t('agency.insurersSubtitle')}</p>
         </div>
         
         <Dialog open={isAddOpen} onOpenChange={(open) => {
@@ -139,12 +142,12 @@ export default function Insurers() {
           }
         }}>
           <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-2" /> Add Insurer</Button>
+            <Button><Plus className="w-4 h-4 me-2" /> {t('agency.addInsurer')}</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editingInsurer ? 'Edit Insurer' : 'Add New Insurer'}</DialogTitle>
-              <DialogDescription>Enter the details for this underwriter.</DialogDescription>
+              <DialogTitle>{editingInsurer ? t('agency.editInsurer') : t('agency.addNewInsurer')}</DialogTitle>
+              <DialogDescription>{t('agency.insurerDialogDesc')}</DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -153,7 +156,7 @@ export default function Insurers() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Company Name</FormLabel>
+                      <FormLabel>{t('agency.companyName')}</FormLabel>
                       <FormControl><Input {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -165,7 +168,7 @@ export default function Insurers() {
                     name="contact_email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Contact Email</FormLabel>
+                        <FormLabel>{t('agency.contactEmail')}</FormLabel>
                         <FormControl><Input type="email" {...field} value={field.value || ''} /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -176,7 +179,7 @@ export default function Insurers() {
                     name="contact_phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Contact Phone</FormLabel>
+                        <FormLabel>{t('agency.contactPhone')}</FormLabel>
                         <FormControl><Input {...field} value={field.value || ''} /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -188,7 +191,7 @@ export default function Insurers() {
                   name="website"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Website URL</FormLabel>
+                      <FormLabel>{t('agency.websiteUrl')}</FormLabel>
                       <FormControl><Input placeholder="https://" {...field} value={field.value || ''} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -200,8 +203,8 @@ export default function Insurers() {
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                       <div className="space-y-0.5">
-                        <FormLabel>Active Status</FormLabel>
-                        <p className="text-[0.8rem] text-muted-foreground">Active insurers appear in policy dropdowns.</p>
+                        <FormLabel>{t('agency.activeStatus')}</FormLabel>
+                        <p className="text-[0.8rem] text-muted-foreground">{t('agency.activeInsurersHelp')}</p>
                       </div>
                       <FormControl>
                         <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -210,7 +213,7 @@ export default function Insurers() {
                   )}
                 />
                 <Button type="submit" className="w-full" disabled={createInsurer.isPending || updateInsurer.isPending}>
-                  {editingInsurer ? "Save Changes" : "Add Insurer"}
+                  {editingInsurer ? t('agency.saveChanges') : t('agency.addInsurer')}
                 </Button>
               </form>
             </Form>
@@ -220,16 +223,16 @@ export default function Insurers() {
 
       <div className="flex items-center gap-2">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search insurers..."
-            className="pl-9 bg-card"
+            placeholder={t('agency.searchInsurers')}
+            className="ps-9 bg-card"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <Button variant="secondary" size="sm" onClick={handleExportCsv}>
-          <Download className="w-4 h-4 mr-2" /> Export CSV
+          <Download className="w-4 h-4 me-2" /> {t('agency.exportCsv')}
         </Button>
       </div>
 
@@ -237,25 +240,25 @@ export default function Insurers() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Company Name</TableHead>
-              <TableHead>Contact Email</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>{t('agency.companyName')}</TableHead>
+              <TableHead>{t('agency.contactEmail')}</TableHead>
+              <TableHead>{t('agency.colPhone')}</TableHead>
+              <TableHead>{t('agency.colStatus')}</TableHead>
               {isOwnerOrManager && (
                 <>
-                  <TableHead className="text-right">Outstanding</TableHead>
-                  <TableHead className="text-right">Overdue</TableHead>
-                  <TableHead className="text-right">Unapplied</TableHead>
+                  <TableHead className="text-end">{t('agency.colOutstanding')}</TableHead>
+                  <TableHead className="text-end">{t('agency.colOverdue')}</TableHead>
+                  <TableHead className="text-end">{t('agency.colUnapplied')}</TableHead>
                 </>
               )}
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-end">{t('agency.colActions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={colCount} className="text-center py-8">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={colCount} className="text-center py-8">{t('common.loading')}</TableCell></TableRow>
             ) : filteredInsurers?.length === 0 ? (
-              <TableRow><TableCell colSpan={colCount} className="text-center py-8 text-muted-foreground">No insurers found.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={colCount} className="text-center py-8 text-muted-foreground">{t('agency.noInsurers')}</TableCell></TableRow>
             ) : (
               filteredInsurers?.map((insurer) => (
                 <TableRow key={insurer.id} className={!insurer.is_active ? "opacity-60 bg-muted/30" : ""}>
@@ -267,27 +270,28 @@ export default function Insurers() {
                   <TableCell>{insurer.contact_phone || '-'}</TableCell>
                   <TableCell>
                     {insurer.is_active ? (
-                      <Badge variant="success" className="gap-1"><ShieldCheck className="w-3 h-3" /> Active</Badge>
+                      <Badge variant="success" className="gap-1"><ShieldCheck className="w-3 h-3" /> {t('agency.active')}</Badge>
                     ) : (
-                      <Badge variant="secondary" className="gap-1"><ShieldBan className="w-3 h-3" /> Inactive</Badge>
+                      <Badge variant="secondary" className="gap-1"><ShieldBan className="w-3 h-3" /> {t('agency.inactive')}</Badge>
                     )}
                   </TableCell>
                   {isOwnerOrManager && (
                     <>
-                      <TableCell className="text-right">{formatCurrency(moneyFor(insurer.id)?.outstanding ?? 0)}</TableCell>
-                      <TableCell className={`text-right ${(moneyFor(insurer.id)?.overdue ?? 0) > 0 ? 'text-destructive' : ''}`}>{formatCurrency(moneyFor(insurer.id)?.overdue ?? 0)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(moneyFor(insurer.id)?.unapplied ?? 0)}</TableCell>
+                      <TableCell className="text-end">{formatCurrency(moneyFor(insurer.id)?.outstanding ?? 0)}</TableCell>
+                      <TableCell className={`text-end ${(moneyFor(insurer.id)?.overdue ?? 0) > 0 ? 'text-destructive' : ''}`}>{formatCurrency(moneyFor(insurer.id)?.overdue ?? 0)}</TableCell>
+                      <TableCell className="text-end">{formatCurrency(moneyFor(insurer.id)?.unapplied ?? 0)}</TableCell>
                     </>
                   )}
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(insurer)}>
+                  <TableCell className="text-end">
+                    <Button variant="ghost" size="icon" aria-label={t('agency.edit')} onClick={() => openEdit(insurer)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10 ml-1" onClick={() => setDeleteId(insurer.id)}>
+                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10 ms-1" aria-label={t('agency.delete')} onClick={() => setDeleteId(insurer.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                     <Switch 
-                      className="ml-2" 
+                      className="ms-2" 
+                      aria-label={t('agency.activeStatus')}
                       checked={insurer.is_active} 
                       onCheckedChange={(c) => toggleActive(insurer, c)} 
                     />
@@ -302,15 +306,15 @@ export default function Insurers() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Insurer?</AlertDialogTitle>
+            <AlertDialogTitle>{t('agency.deleteInsurerTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this insurer? This action cannot be undone.
+              {t('agency.deleteInsurerDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeleteId(null)}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={deleteInsurer.isPending}>
-              {deleteInsurer.isPending ? "Deleting..." : "Delete"}
+              {deleteInsurer.isPending ? t('agency.deleting') : t('agency.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

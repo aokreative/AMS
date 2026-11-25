@@ -124,6 +124,7 @@ export default function Demo() {
               </CardHeader>
               <CardContent>
                 <PlanPicker
+                  currency={currency}
                   demo
                   onDemoChoose={(tier) => {
                     setPlan(tier);

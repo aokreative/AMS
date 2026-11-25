@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { UseFormReturn } from 'react-hook-form';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,7 @@ export function PolicyCommissionFields({
   /** Pre-filled forms (e.g. Renew): keep the loaded commission type until the user picks another product line. */
   keepInitialBasis?: boolean;
 }) {
+  const { t } = useTranslation();
   const manual = useRef(false);
   const initialLine = useRef<string | null>(null);
   const productLineId: string = form.watch('product_line_id');
@@ -43,7 +45,7 @@ export function PolicyCommissionFields({
         name="commission_basis"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Commission type</FormLabel>
+            <FormLabel>{t('policies.commissionType')}</FormLabel>
             <Select
               value={field.value}
               onValueChange={(v) => {
@@ -53,8 +55,8 @@ export function PolicyCommissionFields({
             >
               <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
               <SelectContent>
-                <SelectItem value="annual">Annual</SelectItem>
-                <SelectItem value="per_premium">Per premium</SelectItem>
+                <SelectItem value="annual">{t('policies.annual')}</SelectItem>
+                <SelectItem value="per_premium">{t('policies.perPremium')}</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
@@ -68,14 +70,14 @@ export function PolicyCommissionFields({
             name="premium_frequency"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Payment frequency</FormLabel>
+                <FormLabel>{t('policies.paymentFrequency')}</FormLabel>
                 <Select value={field.value || ''} onValueChange={field.onChange}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
+                  <FormControl><SelectTrigger><SelectValue placeholder={t('policies.select')} /></SelectTrigger></FormControl>
                   <SelectContent>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                    <SelectItem value="half_yearly">Half-yearly</SelectItem>
-                    <SelectItem value="yearly">Yearly</SelectItem>
+                    <SelectItem value="monthly">{t('policies.monthly')}</SelectItem>
+                    <SelectItem value="quarterly">{t('policies.quarterly')}</SelectItem>
+                    <SelectItem value="half_yearly">{t('policies.halfYearly')}</SelectItem>
+                    <SelectItem value="yearly">{t('policies.yearly')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -87,7 +89,7 @@ export function PolicyCommissionFields({
             name="instalment_premium"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Amount per payment</FormLabel>
+                <FormLabel>{t('policies.amountPerPayment')}</FormLabel>
                 <FormControl><Input type="number" step="0.01" {...field} value={field.value ?? ''} /></FormControl>
                 <FormMessage />
               </FormItem>
@@ -98,8 +100,8 @@ export function PolicyCommissionFields({
             name="renewal_commission_rate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Later-years rate (%)</FormLabel>
-                <FormControl><Input type="number" step="0.1" placeholder="Optional" {...field} value={field.value ?? ''} /></FormControl>
+                <FormLabel>{t('policies.laterYearsRate')}</FormLabel>
+                <FormControl><Input type="number" step="0.1" placeholder={t('policies.optional')} {...field} value={field.value ?? ''} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}

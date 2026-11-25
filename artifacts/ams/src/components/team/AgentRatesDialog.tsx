@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ interface OverrideRow {
 }
 
 export function AgentRatesDialog({ member, canEdit, onOpenChange }: Props) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { data: productLines } = useProductLines();
   const { data: rates, isLoading } = useAgentRates(member?.id);
@@ -44,7 +46,7 @@ export function AgentRatesDialog({ member, canEdit, onOpenChange }: Props) {
     setNextKey(ovs.length + 1);
   }, [member?.id, rates]);
 
-  const lineName = (id: string) => productLines?.find((p) => p.id === id)?.name ?? 'Product line';
+  const lineName = (id: string) => productLines?.find((p) => p.id === id)?.name ?? t('payouts.productLine');
 
   const updateRow = (key: number, patch: Partial<OverrideRow>) =>
     setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
@@ -55,17 +57,17 @@ export function AgentRatesDialog({ member, canEdit, onOpenChange }: Props) {
     const def = parse(defaultRate);
     const overrides = rows.map((r) => ({ product_line_id: r.productLineId, rate: parse(r.rate) }));
     if ((def !== null && Number.isNaN(def)) || overrides.some((o) => o.rate === null || Number.isNaN(o.rate))) {
-      toast({ title: 'Could not save rates', description: 'Rate must be between 0 and 100', variant: 'destructive' });
+      toast({ title: t('payouts.couldNotSaveRates'), description: t('payouts.rateRange'), variant: 'destructive' });
       return;
     }
     setRates.mutate(
       { userId: member.id, defaultRate: def, overrides: overrides.map((o) => ({ product_line_id: o.product_line_id, rate: o.rate as number })) },
       {
         onSuccess: () => {
-          toast({ title: `Rates saved for ${member.full_name}` });
+          toast({ title: t('payouts.ratesSaved', { name: member.full_name }) });
           onOpenChange(false);
         },
-        onError: (err: any) => toast({ title: 'Could not save rates', description: err.message, variant: 'destructive' }),
+        onError: (err: any) => toast({ title: t('payouts.couldNotSaveRates'), description: err.message, variant: 'destructive' }),
       },
     );
   };
@@ -74,19 +76,19 @@ export function AgentRatesDialog({ member, canEdit, onOpenChange }: Props) {
     <Dialog open={!!member} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Rates for {member?.full_name}</DialogTitle>
+          <DialogTitle>{t('payouts.ratesFor', { name: member?.full_name ?? '' })}</DialogTitle>
           <DialogDescription>
-            Share of commission received that this member earns. A product line rate overrides the default.
-            {!canEdit && ' Only the owner can change rates.'}
+            {t('payouts.ratesDesc')}
+            {!canEdit && ` ${t('payouts.ownerOnly')}`}
           </DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
-          <div className="py-4 text-sm text-muted-foreground">Loading...</div>
+          <div className="py-4 text-sm text-muted-foreground">{t('common.loading')}</div>
         ) : (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="default-rate">Default rate (%)</Label>
+              <Label htmlFor="default-rate">{t('payouts.defaultRate')}</Label>
               <Input
                 id="default-rate"
                 type="number"
@@ -94,22 +96,22 @@ export function AgentRatesDialog({ member, canEdit, onOpenChange }: Props) {
                 min={0}
                 max={100}
                 step="0.01"
-                placeholder="None"
+                placeholder={t('payouts.none')}
                 value={defaultRate}
                 onChange={(e) => setDefaultRate(e.target.value)}
                 disabled={!canEdit}
                 className="w-32"
               />
-              <p className="text-xs text-muted-foreground">Leave blank for no default: they earn nothing without a rate.</p>
+              <p className="text-xs text-muted-foreground">{t('payouts.defaultHint')}</p>
             </div>
 
             <div className="space-y-2">
-              <Label>Product line overrides</Label>
-              {rows.length === 0 && <p className="text-sm text-muted-foreground">No overrides.</p>}
+              <Label>{t('payouts.overrides')}</Label>
+              {rows.length === 0 && <p className="text-sm text-muted-foreground">{t('payouts.noOverrides')}</p>}
               {rows.map((r) => (
                 <div key={r.key} className="flex items-center gap-2">
                   <Select value={r.productLineId} onValueChange={(v) => updateRow(r.key, { productLineId: v })} disabled={!canEdit}>
-                    <SelectTrigger className="flex-1"><SelectValue placeholder="Product line">{r.productLineId ? lineName(r.productLineId) : undefined}</SelectValue></SelectTrigger>
+                    <SelectTrigger className="flex-1"><SelectValue placeholder={t('payouts.productLine')}>{r.productLineId ? lineName(r.productLineId) : undefined}</SelectValue></SelectTrigger>
                     <SelectContent>
                       {(productLines ?? []).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                     </SelectContent>
@@ -120,7 +122,7 @@ export function AgentRatesDialog({ member, canEdit, onOpenChange }: Props) {
                     min={0}
                     max={100}
                     step="0.01"
-                    aria-label="Override rate (%)"
+                    aria-label={t('payouts.overrideRate')}
                     placeholder="%"
                     value={r.rate}
                     onChange={(e) => updateRow(r.key, { rate: e.target.value })}
@@ -128,7 +130,7 @@ export function AgentRatesDialog({ member, canEdit, onOpenChange }: Props) {
                     className="w-24"
                   />
                   {canEdit && (
-                    <Button variant="ghost" size="icon" aria-label="Remove override" onClick={() => setRows((rs) => rs.filter((x) => x.key !== r.key))}>
+                    <Button variant="ghost" size="icon" aria-label={t('payouts.removeOverride')} onClick={() => setRows((rs) => rs.filter((x) => x.key !== r.key))}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   )}
@@ -140,7 +142,7 @@ export function AgentRatesDialog({ member, canEdit, onOpenChange }: Props) {
                   size="sm"
                   onClick={() => { setRows((rs) => [...rs, { key: nextKey, productLineId: '', rate: '' }]); setNextKey((k) => k + 1); }}
                 >
-                  <Plus className="w-4 h-4 mr-1" /> Add override
+                  <Plus className="w-4 h-4 me-1" /> {t('payouts.addOverride')}
                 </Button>
               )}
             </div>
@@ -148,10 +150,10 @@ export function AgentRatesDialog({ member, canEdit, onOpenChange }: Props) {
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>{canEdit ? 'Cancel' : 'Close'}</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{canEdit ? t('common.cancel') : t('common.close')}</Button>
           {canEdit && (
             <Button onClick={save} disabled={setRates.isPending || isLoading}>
-              {setRates.isPending ? 'Saving...' : 'Save rates'}
+              {setRates.isPending ? t('payouts.saving') : t('payouts.saveRates')}
             </Button>
           )}
         </DialogFooter>
